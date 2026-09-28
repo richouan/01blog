@@ -1,0 +1,33 @@
+# Compiled Java / Maven
+target/
+backend/target/
+*.class
+*.jar
+*.war
+
+# Node / Angular dependencies and build output
+node_modules/
+frontend/node_modules/
+.angular/
+frontend/.angular/
+dist/
+frontend/dist/
+
+# Local media uploads
+uploads/
+backend/uploads/
+
+# IDE and OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Agent and AI internal folders
+.agents/
+.gemini/
+
+# Environment / local configs
+*.local
+*.log
