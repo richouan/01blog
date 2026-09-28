@@ -26,12 +26,19 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    // Role of the user: ROLE_USER or ROLE_ADMIN
+    // @Enumerated(EnumType.STRING) stores the text "ROLE_USER" in PostgreSQL instead of a number (0 or 1)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
+
     // Timestamp when the user registered
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     // Default constructor is required by JPA/Hibernate
     public User() {
+        this.role = UserRole.ROLE_USER; // Default role for any new user
         this.createdAt = LocalDateTime.now();
     }
 
@@ -40,6 +47,7 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.role = UserRole.ROLE_USER; // Default role
         this.createdAt = LocalDateTime.now();
     }
 
@@ -83,5 +91,13 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 }
