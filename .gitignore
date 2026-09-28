@@ -16,6 +16,7 @@ frontend/dist/
 # Local media uploads
 uploads/
 backend/uploads/
+LEARNING_BOOK.md
 
 # IDE and OS files
 .idea/
