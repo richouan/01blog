@@ -4,6 +4,9 @@ backend/target/
 *.class
 *.jar
 *.war
+mvnw
+mvnw.cmd
+.mvn/
 
 # Node / Angular dependencies and build output
 node_modules/
@@ -26,9 +29,12 @@ LEARNING_BOOK.md
 Thumbs.db
 
 # Agent and AI internal folders
+rules/
 .agents/
 .gemini/
-
+AGENTS.md
+RESUME_ON_LINUX.md
+ROADMAP.md
 # Environment / local configs
 *.local
 *.log
