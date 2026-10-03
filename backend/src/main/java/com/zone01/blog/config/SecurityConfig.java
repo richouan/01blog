@@ -9,6 +9,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -22,15 +23,19 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    
+    private final JwtAuthFilter jwtAuthFilter;
+
+    // Inject our custom JWT filter
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Configures HTTP security rules (the bouncer of our backend).
-     */
+    // Configures HTTP security rules (the bouncer of our backend)
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -49,7 +54,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/uploads/**").permitAll()
                 // All other endpoints require the user to be logged in
                 .anyRequest().authenticated()
-            );
+            )
+
+            // Execute our JWT filter before the standard username/password filter
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
