@@ -24,12 +24,28 @@ Before running the project, make sure you have the following installed:
 
 ## 🗄️ Database Setup
 
+### Option A: Standard PostgreSQL (System Service)
 1. Open PostgreSQL (via `psql` or pgAdmin).
 2. Create the project database:
    ```sql
    CREATE DATABASE blog_db;
    ```
-3. The tables will be created automatically by Hibernate (`ddl-auto=update`) when the backend starts.
+
+### Option B: Zone01 Linux Machine (Non-Sudo / User-Space PostgreSQL)
+If developing on a restricted Zone01 Linux machine without `sudo`:
+```bash
+# 1. Set environment paths
+export PATH="/home/richouan/.local/pgsql/usr/lib/postgresql/16/bin:/home/richouan/.local/pgsql/usr/bin:$PATH"
+export LD_LIBRARY_PATH="/home/richouan/.local/pgsql/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
+
+# 2. Start user-space PostgreSQL server on port 5432
+pg_ctl -D /home/richouan/pgdata -o "-k /tmp -p 5432" -l /home/richouan/pgdata/logfile start
+
+# 3. Stop server when done
+pg_ctl -D /home/richouan/pgdata stop
+```
+
+> **Note:** The tables (`users`, `posts`, etc.) will be created automatically by Hibernate (`ddl-auto=update`) when the backend starts.
 
 ---
 
