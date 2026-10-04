@@ -1,0 +1,55 @@
+.navbar-nb {
+  background-color: #ffffff;
+  border-bottom: var(--nb-border);
+  box-shadow: 0 3px 0px rgba(18, 18, 20, 0.05);
+  z-index: 1030;
+}
+
+.nav-item-nb {
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--nb-black);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1.5px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.nav-item-nb:hover {
+  background-color: #f4f4f5;
+  color: var(--nb-black);
+}
+
+.nav-item-active {
+  background-color: var(--nb-yellow) !important;
+  border: var(--nb-border-sm) !important;
+  box-shadow: 2px 2px 0px var(--nb-black) !important;
+  color: var(--nb-black) !important;
+}
+
+.user-avatar-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: var(--nb-yellow);
+  border: 1.5px solid var(--nb-black);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  font-family: var(--nb-font-display);
+}
+
+.user-name-label {
+  max-width: 140px;
+}
+
+@media (max-width: 576px) {
+  .user-name-label {
+    max-width: 90px;
+  }
+}

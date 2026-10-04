@@ -1,37 +1,6 @@
 <div class="home-wrapper py-3 py-md-4">
   <div class="container px-3 px-sm-4">
     
-    <!-- Top Responsive Navbar / Brand Header -->
-    <header class="card-nb mb-3 mb-md-4">
-      <div class="card-nb-body py-2 py-sm-3 px-3 px-sm-4">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-          
-          <!-- Brand -->
-          <div class="d-flex align-items-center gap-2">
-            <span class="fs-4 fw-bold font-display">01Blog<span class="text-primary">.</span></span>
-            <span class="badge-nb badge-nb-yellow py-1 px-2 d-none d-sm-inline-flex">Zone01 Feed</span>
-          </div>
-
-          <!-- User Info & Header Sign Out -->
-          <div class="d-flex align-items-center gap-2 gap-sm-3" *ngIf="currentUser">
-            <div class="d-flex align-items-center gap-2">
-              <span class="user-avatar-sm">{{ currentUser.username.charAt(0).toUpperCase() }}</span>
-              <span class="fw-bold font-display text-truncate user-name-label">@{{ currentUser.username }}</span>
-              <span class="badge-nb badge-nb-mint d-none d-md-inline-block">
-                {{ currentUser.role === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
-              </span>
-            </div>
-
-            <button (click)="onLogout()" class="btn-nb-secondary py-1 px-2 px-sm-3" title="Sign Out">
-              <i class="bi bi-box-arrow-right"></i>
-              <span class="d-none d-sm-inline ms-1">Sign Out</span>
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </header>
-
     <!-- Main Feed Column (Centered & Responsive) -->
     <div class="row justify-content-center">
       <div class="col-12 col-md-10 col-lg-8">

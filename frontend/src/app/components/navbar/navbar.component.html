@@ -1,0 +1,59 @@
+<header class="navbar-nb sticky-top" *ngIf="currentUser && !isAuthPage()">
+  <div class="container px-3 px-sm-4">
+    <div class="d-flex align-items-center justify-content-between py-2 py-sm-3">
+
+      <!-- Left: Brand & Navigation Links -->
+      <div class="d-flex align-items-center gap-3 gap-md-4">
+        <!-- Logo -->
+        <a routerLink="/" class="text-decoration-none d-flex align-items-center gap-2">
+          <span class="fs-4 fw-bold font-display text-dark">01Blog<span class="text-primary">.</span></span>
+          <span class="badge-nb badge-nb-yellow py-1 px-2 d-none d-sm-inline-flex">Zone01</span>
+        </a>
+
+        <!-- Main Navigation -->
+        <nav class="d-flex align-items-center gap-2">
+          <a
+            routerLink="/"
+            [routerLinkActiveOptions]="{ exact: true }"
+            routerLinkActive="nav-item-active"
+            class="nav-item-nb text-decoration-none"
+          >
+            <i class="bi bi-newspaper"></i>
+            <span class="d-none d-sm-inline ms-1">Feed</span>
+          </a>
+          <a
+            routerLink="/profile"
+            routerLinkActive="nav-item-active"
+            class="nav-item-nb text-decoration-none"
+          >
+            <i class="bi bi-person-badge"></i>
+            <span class="d-none d-sm-inline ms-1">My Block</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Right: User Info & Actions -->
+      <div class="d-flex align-items-center gap-2 gap-sm-3">
+        <!-- User Avatar & Tag -->
+        <div class="d-flex align-items-center gap-2">
+          <span class="user-avatar-sm">
+            {{ currentUser.username.charAt(0).toUpperCase() }}
+          </span>
+          <span class="fw-bold font-display text-truncate user-name-label d-none d-sm-inline">
+            @{{ currentUser.username }}
+          </span>
+          <span class="badge-nb badge-nb-mint d-none d-md-inline-block">
+            {{ currentUser.role === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
+          </span>
+        </div>
+
+        <!-- Sign Out Button -->
+        <button (click)="onLogout()" class="btn-nb-secondary py-1 px-2 px-sm-3" title="Sign Out">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="d-none d-sm-inline ms-1">Sign Out</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</header>
