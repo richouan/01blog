@@ -1,0 +1,94 @@
+<div class="home-wrapper py-3 py-md-4">
+  <div class="container px-3 px-sm-4">
+    
+    <!-- Top Responsive Navbar / Brand Header -->
+    <header class="card-nb mb-3 mb-md-4">
+      <div class="card-nb-body py-2 py-sm-3 px-3 px-sm-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          
+          <!-- Brand -->
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-4 fw-bold font-display">01Blog<span class="text-primary">.</span></span>
+            <span class="badge-nb badge-nb-yellow py-1 px-2 d-none d-sm-inline-flex">Zone01 Feed</span>
+          </div>
+
+          <!-- User Info & Header Sign Out -->
+          <div class="d-flex align-items-center gap-2 gap-sm-3" *ngIf="currentUser">
+            <div class="d-flex align-items-center gap-2">
+              <span class="user-avatar-sm">{{ currentUser.username.charAt(0).toUpperCase() }}</span>
+              <span class="fw-bold font-display text-truncate user-name-label">@{{ currentUser.username }}</span>
+              <span class="badge-nb badge-nb-mint d-none d-md-inline-block">
+                {{ currentUser.role === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
+              </span>
+            </div>
+
+            <button (click)="onLogout()" class="btn-nb-secondary py-1 px-2 px-sm-3" title="Sign Out">
+              <i class="bi bi-box-arrow-right"></i>
+              <span class="d-none d-sm-inline ms-1">Sign Out</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Feed Column (Centered & Responsive) -->
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8">
+
+        <!-- Feed Placeholder / Post Input Mockup for Day 3 -->
+        <div class="card-nb mb-3 mb-md-4">
+          <div class="card-nb-body p-3 p-sm-4">
+            <div class="d-flex gap-2 gap-sm-3 align-items-start">
+              <span class="user-avatar-md flex-shrink-0">
+                {{ currentUser?.username?.charAt(0)?.toUpperCase() || 'U' }}
+              </span>
+              <div class="flex-grow-1">
+                <div class="post-input-mockup p-2 px-3 text-muted">
+                  Share a project update, question, or snippet...
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-dark border-opacity-10">
+                  <div class="d-flex gap-2 text-muted small">
+                    <span class="badge-nb badge-nb-yellow"><i class="bi bi-image me-1"></i> Media</span>
+                    <span class="badge-nb badge-nb-coral"><i class="bi bi-code-slash me-1"></i> Code</span>
+                  </div>
+                  <button class="btn-nb-primary py-1 px-3 fs-6" disabled>
+                    <span>Post</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feed Empty State / Ready Stream -->
+        <div class="card-nb">
+          <div class="card-nb-header py-2 px-3 px-sm-4">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-collection-fill text-primary"></i>
+              <span class="fw-bold font-display small text-uppercase">Stream Feed</span>
+            </div>
+            <span class="badge-nb badge-nb-mint">Active Session</span>
+          </div>
+
+          <div class="card-nb-body text-center py-4 py-sm-5 px-3">
+            <div class="empty-feed-icon mx-auto mb-3">
+              <i class="bi bi-newspaper"></i>
+            </div>
+            <h2 class="h5 fw-bold font-display mb-2">No posts in your feed yet</h2>
+            <p class="text-muted small mx-auto mb-3 feed-subtext">
+              Welcome to 01Blog, <span class="fw-bold text-dark">@{{ currentUser?.username }}</span>. Posts published by you and students you subscribe to will appear here in chronological order.
+            </p>
+            <div class="d-inline-flex flex-wrap justify-content-center gap-2">
+              <span class="badge-nb badge-nb-yellow">0 Posts</span>
+              <span class="badge-nb badge-nb-coral">0 Followers</span>
+              <span class="badge-nb badge-nb-mint">0 Following</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

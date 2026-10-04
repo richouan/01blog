@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -21,7 +21,11 @@ export class RegisterComponent {
   errorMessage = '';
   successMessage = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
 //------ just for ui feedback ------
   isPasswordTouched(): boolean {
@@ -91,14 +95,20 @@ export class RegisterComponent {
     }).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.successMessage = `Account initialized for user '${response.username}' [ROLE_USER]. Redirecting...`;
+        this.successMessage = `Account initialized for user '${response.username}'. Redirecting to login...`;
+        this.cdr.detectChanges();
         setTimeout(() => {
-          this.router.navigate(['/']);
+          this.router.navigate(['/login']);
         }, 1200);
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Server error occurred during registration.';
+        if (err.status === 0) {
+          this.errorMessage = 'Cannot connect to backend server. Make sure it is running on port 8080.';
+        } else {
+          this.errorMessage = err.error?.message || 'Server error occurred during registration.';
+        }
+        this.cdr.detectChanges();
       }
     });
   }

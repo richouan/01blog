@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -17,11 +17,17 @@ export class LoginComponent {
 
   isLoading = false;
   errorMessage = '';
+  successMessage = '';
 
-  constructor(private authService: AuthService, private router: Router) { }
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   onSubmit(): void {
     this.errorMessage = '';
+    this.successMessage = '';
 
     // Validate inputs
     if (!this.username.trim() || !this.password) {
@@ -35,15 +41,24 @@ export class LoginComponent {
       username: this.username.trim(),
       password: this.password
     }).subscribe({
-      next: () => {
+      next: (response) => {
         this.isLoading = false;
-        // Navigate to home feed upon successful login
-        this.router.navigate(['/']);
+        this.successMessage = `Welcome back, @${response.username}! Redirecting...`;
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.router.navigate(['/']);
+        }, 900);
       },
       error: (err) => {
         this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Invalid username or password.';
+        if (err.status === 0) {
+          this.errorMessage = 'Cannot connect to backend server. Make sure it is running on port 8080.';
+        } else {
+          this.errorMessage = err.error?.message || 'Invalid username or password.';
+        }
+        this.cdr.detectChanges();
       }
     });
   }
 }
+

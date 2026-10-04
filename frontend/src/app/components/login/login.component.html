@@ -7,7 +7,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3 px-1">
           <div class="d-flex align-items-center gap-2">
             <span class="fs-3 fw-bold font-display">01Blog<span class="text-primary">.</span></span>
-            <span class="badge-nb badge-nb-yellow py-1 px-3">Zone01 Pool</span>
+            <span class="badge-nb badge-nb-yellow py-1 px-3">Zone01 Oujda</span>
           </div>
         </div>
 
@@ -25,7 +25,7 @@
                 <span class="text-muted small">Enter your credentials to access your block</span>
               </div>
             </div>
-            <span class="badge-nb badge-nb-blue">Auth</span>
+            <span class="badge-nb badge-nb-blue">Log in</span>
           </div>
 
           <!-- Card Body -->
@@ -37,6 +37,15 @@
               <div>
                 <span class="fw-bold me-1">Error:</span>
                 <span>{{ errorMessage }}</span>
+              </div>
+            </div>
+
+            <!-- Success Banner -->
+            <div *ngIf="successMessage" class="alert-nb alert-nb-success py-2 px-3 mb-3" role="alert">
+              <i class="bi bi-check-circle-fill fs-5 mt-1"></i>
+              <div>
+                <span class="fw-bold me-1">Success:</span>
+                <span>{{ successMessage }}</span>
               </div>
             </div>
 
