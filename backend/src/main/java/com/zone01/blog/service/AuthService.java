@@ -24,15 +24,46 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    // Registers a new user with hashed password and returns an auth token
+    // Registers a new user with validation, hashed password, and returns an auth token
     public AuthResponse register(RegisterRequest request) {
-        // Validate that the username is not already taken
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username is already taken");
+        if (request == null) {
+            throw new IllegalArgumentException("Request payload cannot be empty");
         }
 
-        // Validate that the email is not already registered
-        if (userRepository.existsByEmail(request.getEmail())) {
+        // Validate username
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        String username = request.getUsername().trim();
+        if (username.length() < 3 || username.length() > 30) {
+            throw new IllegalArgumentException("Username must be between 3 and 30 characters");
+        }
+        if (!username.matches("^[a-zA-Z0-9_.-]+$")) {
+            throw new IllegalArgumentException("Username can only contain alphanumeric characters, dots, underscores, and dashes");
+        }
+
+        // Validate email
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        String email = request.getEmail().trim().toLowerCase();
+        if (!email.matches("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$")) {
+            throw new IllegalArgumentException("Please provide a valid email address");
+        }
+
+        // Validate password
+        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (request.getPassword().length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters long");
+        }
+
+        // Validate uniqueness
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username is already taken");
+        }
+        if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email is already registered");
         }
 
@@ -40,7 +71,7 @@ public class AuthService {
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
         // Create and persist the new user entity
-        User user = new User(request.getUsername(), request.getEmail(), hashedPassword);
+        User user = new User(username, email, hashedPassword);
         userRepository.save(user);
 
         // Generate a JWT token for immediate login
@@ -51,8 +82,19 @@ public class AuthService {
 
     // Authenticates an existing user and returns an auth token
     public AuthResponse login(LoginRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Invalid username or password");
+        }
+
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty() ||
+            request.getPassword() == null || request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Invalid username or password");
+        }
+
+        String username = request.getUsername().trim();
+
         // Look up the user by username
-        User user = userRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
 
         // Verify the provided password matches the hashed password in the database
