@@ -1,0 +1,120 @@
+<div class="auth-page-wrapper">
+  <div class="container py-3">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+
+        <!-- Clean Brand Header -->
+        <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-3 fw-bold font-display">01Blog<span class="text-primary">.</span></span>
+            <span class="badge-nb badge-nb-yellow py-1 px-3">Zone01 Pool</span>
+          </div>
+        </div>
+
+        <!-- Neo-Brutalist Login Card -->
+        <div class="card-nb">
+          
+          <!-- Card Header -->
+          <div class="card-nb-header py-3 px-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="header-icon-box">
+                <i class="bi bi-box-arrow-in-right"></i>
+              </div>
+              <div>
+                <h1 class="h5 mb-0 fw-bold font-display">Student Sign In</h1>
+                <span class="text-muted small">Enter your credentials to access your block</span>
+              </div>
+            </div>
+            <span class="badge-nb badge-nb-blue">Auth</span>
+          </div>
+
+          <!-- Card Body -->
+          <div class="card-nb-body py-4 px-4">
+
+            <!-- Error Banner -->
+            <div *ngIf="errorMessage" class="alert-nb alert-nb-danger py-2 px-3 mb-3" role="alert">
+              <i class="bi bi-exclamation-octagon-fill fs-5 mt-1"></i>
+              <div>
+                <span class="fw-bold me-1">Error:</span>
+                <span>{{ errorMessage }}</span>
+              </div>
+            </div>
+
+            <!-- Login Form -->
+            <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+
+              <!-- Username Field -->
+              <div class="form-group-nb">
+                <label for="login-username" class="label-nb">
+                  <i class="bi bi-at me-1"></i> Username
+                </label>
+                <input
+                  type="text"
+                  id="login-username"
+                  name="username"
+                  class="input-nb"
+                  placeholder="e.g. richouan"
+                  [(ngModel)]="username"
+                  required
+                  autocomplete="username"
+                  [disabled]="isLoading"
+                />
+              </div>
+
+              <!-- Password Field -->
+              <div class="form-group-nb mt-3">
+                <label for="login-password" class="label-nb">
+                  <i class="bi bi-lock-fill me-1"></i> Password
+                </label>
+                <input
+                  type="password"
+                  id="login-password"
+                  name="password"
+                  class="input-nb"
+                  placeholder="••••••••••••"
+                  [(ngModel)]="password"
+                  required
+                  autocomplete="current-password"
+                  [disabled]="isLoading"
+                />
+              </div>
+
+              <!-- Submit Button -->
+              <div class="mt-4 pt-1">
+                <button
+                  type="submit"
+                  class="btn-nb-primary w-100 py-3"
+                  [disabled]="isLoading || !username || !password"
+                >
+                  <span *ngIf="!isLoading" class="d-inline-flex align-items-center gap-2">
+                    <span class="fs-6">Sign In to 01Blog</span>
+                    <i class="bi bi-arrow-right"></i>
+                  </span>
+                  <span *ngIf="isLoading" class="d-inline-flex align-items-center gap-2">
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                    <span>Authenticating...</span>
+                  </span>
+                </button>
+              </div>
+
+            </form>
+
+            <!-- Card Footer Switch to Register -->
+            <div class="d-flex align-items-center justify-content-between mt-4 pt-3 border-top border-2 border-dark border-opacity-10">
+              <span class="text-muted">New to 01Blog?</span>
+              <a routerLink="/register" class="btn-nb-secondary text-decoration-none py-2 px-3">
+                <span>Create Account</span>
+                <i class="bi bi-person-plus-fill"></i>
+              </a>
+            </div>
+
+          </div>
+          <!-- /Card Body -->
+
+        </div>
+        <!-- /Neo-Brutalist Login Card -->
+
+      </div>
+    </div>
+  </div>
+</div>

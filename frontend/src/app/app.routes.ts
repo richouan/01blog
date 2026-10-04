@@ -1,8 +1,13 @@
 import { Routes } from '@angular/router';
+import { LoginComponent } from './components/login/login.component';
+import { RegisterComponent } from './components/register/register.component';
 
 export const routes: Routes = [
-  // Redirect empty root path to login by default
+  // Default route redirects to login
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  // Wildcard route to catch invalid URLs
-  { path: '**', redirectTo: '' }
+  // Authentication routes
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  // Wildcard fallback redirects to login
+  { path: '**', redirectTo: 'login' }
 ];

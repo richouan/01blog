@@ -1,0 +1,19 @@
+.auth-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background-color: var(--nb-yellow);
+  border: var(--nb-border-sm);
+  box-shadow: 2px 2px 0px var(--nb-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
