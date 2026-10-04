@@ -23,6 +23,25 @@ export class RegisterComponent {
 
   constructor(private authService: AuthService, private router: Router) {}
 
+//------ just for ui feedback ------
+  isPasswordTouched(): boolean {
+    return this.password.length > 0;
+  }
+
+  isPasswordValid(): boolean {
+    return this.password.length >= 6;
+  }
+
+  isConfirmPasswordTouched(): boolean {
+    return this.confirmPassword.length > 0;
+  }
+
+  isConfirmPasswordValid(): boolean {
+    return this.confirmPassword.length > 0 && this.confirmPassword === this.password && this.isPasswordValid();
+  }
+// ----------------
+
+
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -47,7 +66,7 @@ export class RegisterComponent {
     // Validate email regex format
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(this.email.trim())) {
-      this.errorMessage = 'Please enter a valid email address (e.g. student@zone01.com).';
+      this.errorMessage = 'Please enter a valid email address (e.g. richouan@zone01.ma).';
       return;
     }
 

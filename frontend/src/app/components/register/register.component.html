@@ -104,6 +104,8 @@
                       id="password"
                       name="password"
                       class="input-nb"
+                      [class.input-nb-invalid]="isPasswordTouched() && !isPasswordValid()"
+                      [class.input-nb-valid]="isPasswordTouched() && isPasswordValid()"
                       placeholder="••••••••••••"
                       [(ngModel)]="password"
                       required
@@ -111,6 +113,14 @@
                       autocomplete="new-password"
                       [disabled]="isLoading"
                     />
+                    <div *ngIf="isPasswordTouched()" class="mt-1">
+                      <span *ngIf="!isPasswordValid()" class="text-danger small fw-semibold">
+                        <i class="bi bi-x-circle-fill me-1"></i> Min 6 characters required
+                      </span>
+                      <span *ngIf="isPasswordValid()" class="text-success small fw-semibold">
+                        <i class="bi bi-check-circle-fill me-1"></i> Valid password
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -125,12 +135,22 @@
                       id="confirmPassword"
                       name="confirmPassword"
                       class="input-nb"
+                      [class.input-nb-invalid]="isConfirmPasswordTouched() && !isConfirmPasswordValid()"
+                      [class.input-nb-valid]="isConfirmPasswordTouched() && isConfirmPasswordValid()"
                       placeholder="••••••••••••"
                       [(ngModel)]="confirmPassword"
                       required
                       autocomplete="new-password"
                       [disabled]="isLoading"
                     />
+                    <div *ngIf="isConfirmPasswordTouched()" class="mt-1">
+                      <span *ngIf="!isConfirmPasswordValid()" class="text-danger small fw-semibold">
+                        <i class="bi bi-x-circle-fill me-1"></i> Passwords do not match
+                      </span>
+                      <span *ngIf="isConfirmPasswordValid()" class="text-success small fw-semibold">
+                        <i class="bi bi-check-circle-fill me-1"></i> Passwords match
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -140,7 +160,7 @@
                 <button
                   type="submit"
                   class="btn-nb-primary w-100 py-3"
-                  [disabled]="isLoading || !username || !email || !password"
+                  [disabled]="isLoading || !username || !email || !isPasswordValid() || !isConfirmPasswordValid()"
                 >
                   <span *ngIf="!isLoading" class="d-inline-flex align-items-center gap-2">
                     <span class="fs-6">Create Your Account</span>

@@ -179,6 +179,28 @@ h1, h2, h3, h4, h5, h6, .font-display {
   box-shadow: var(--nb-shadow-sm);
 }
 
+.input-nb.input-nb-valid {
+  border-color: var(--nb-mint) !important;
+  background-color: #f0fdf4;
+  box-shadow: 3px 3px 0px var(--nb-mint) !important;
+}
+
+.input-nb.input-nb-valid:focus {
+  border-color: var(--nb-mint) !important;
+  box-shadow: 4px 4px 0px var(--nb-mint) !important;
+}
+
+.input-nb.input-nb-invalid {
+  border-color: var(--nb-coral) !important;
+  background-color: #fff1f2;
+  box-shadow: 3px 3px 0px var(--nb-coral) !important;
+}
+
+.input-nb.input-nb-invalid:focus {
+  border-color: var(--nb-coral) !important;
+  box-shadow: 4px 4px 0px var(--nb-coral) !important;
+}
+
 .input-nb::placeholder {
   color: #a1a1aa;
 }
