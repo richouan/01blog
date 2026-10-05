@@ -17,7 +17,7 @@ export class UserService {
     return this.http.get<UserProfile>(`${this.apiUrl}/me`);
   }
 
-  // Fetch public profile of any user by username (for user block page)
+  // Fetch public profile of any user by username (for user profile page)
   getUserProfile(username: string): Observable<UserProfile> {
     return this.http.get<UserProfile>(`${this.apiUrl}/${username}`);
   }

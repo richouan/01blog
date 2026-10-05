@@ -20,7 +20,7 @@
           <span>{{ actionMessage }}</span>
         </div>
 
-        <!-- Profile Header Card (Neo-Brutalist Block Banner) -->
+        <!-- Profile Header Card (Neo-Brutalist Profile Banner) -->
         <div class="card-nb mb-3 mb-md-4">
           <!-- Colorful Neo-Brutalist Top Cover Strip -->
           <div class="profile-cover-strip"></div>
@@ -42,7 +42,7 @@
                       {{ (profile?.role || currentUser?.role) === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
                     </span>
                     <span *ngIf="isOwnProfile" class="badge-nb badge-nb-yellow d-none d-md-inline-flex">
-                      My Block
+                      My Profile
                     </span>
                   </div>
                   <span class="text-muted fw-bold font-display small">
@@ -76,7 +76,7 @@
                   </a>
                 </ng-container>
 
-                <!-- If viewing another student's block: Subscribe + Report + Feed -->
+                <!-- If viewing another student's profile: Subscribe + Report + Feed -->
                 <ng-container *ngIf="!isOwnProfile">
                   <button
                     (click)="onToggleFollow()"
@@ -91,7 +91,7 @@
                   <button
                     (click)="copyProfileLink()"
                     class="btn-nb-secondary py-1 px-2 px-sm-3 fs-6"
-                    title="Share Student Block"
+                    title="Share Student Profile"
                   >
                     <i class="bi bi-share"></i>
                   </button>
@@ -128,7 +128,7 @@
           </div>
         </div>
 
-        <!-- Block Content Tabs -->
+        <!-- Profile Content Tabs -->
         <div class="card-nb">
           <!-- Tab Navigation Header -->
           <div class="card-nb-header p-0">
@@ -147,7 +147,7 @@
                 class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent"
               >
                 <i class="bi bi-info-circle-fill me-1"></i>
-                <span>About Block</span>
+                <span>About Profile</span>
               </button>
             </div>
           </div>
@@ -160,10 +160,10 @@
                 <i class="bi bi-pencil-square"></i>
               </div>
               <h2 class="h5 fw-bold font-display mb-2">
-                {{ isOwnProfile ? 'No posts on your block yet' : 'No posts published yet by @' + profile?.username }}
+                {{ isOwnProfile ? 'No posts on your profile yet' : 'No posts published yet by @' + profile?.username }}
               </h2>
               <p class="text-muted small mx-auto mb-3 max-w-450">
-                {{ isOwnProfile ? 'Your personal block is ready! In Day 3, you will be able to create, edit, and publish rich posts with images and videos right here.' : 'When this student publishes updates or articles, they will appear here.' }}
+                {{ isOwnProfile ? 'Your personal profile is ready! In Day 3, you will be able to create, edit, and publish rich posts with images and videos right here.' : 'When this student publishes updates or articles, they will appear here.' }}
               </p>
               <a routerLink="/" class="btn-nb-primary py-1 px-3 fs-6 text-decoration-none">
                 <i class="bi bi-arrow-left me-1"></i> Return to Feed
@@ -173,7 +173,7 @@
             <!-- Tab 2: About / Student Metadata -->
             <div *ngIf="activeTab === 'about'" class="py-2">
               <h2 class="h6 fw-bold font-display text-uppercase mb-3 text-muted">
-                {{ isOwnProfile ? 'My Account Details' : 'Student Block Information' }}
+                {{ isOwnProfile ? 'My Account Details' : 'Student Profile Information' }}
               </h2>
               <div class="list-group list-group-flush gap-2">
                 <div class="about-item p-3 d-flex justify-content-between align-items-center">
@@ -204,9 +204,9 @@
                   </span>
                 </div>
                 <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Block Type</span>
+                  <span class="text-muted small fw-bold font-display">Profile Type</span>
                   <span class="badge-nb badge-nb-mint">
-                    <i class="bi bi-check-circle-fill me-1"></i>Public Zone01 Block
+                    <i class="bi bi-check-circle-fill me-1"></i>Public Zone01 Profile
                   </span>
                 </div>
               </div>

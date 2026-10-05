@@ -11,7 +11,7 @@ export const routes: Routes = [
   { path: '', component: HomeComponent, canActivate: [authGuard] },
   // User search and discovery
   { path: 'search', component: UserSearchComponent, canActivate: [authGuard] },
-  // User profile / Block page (own profile or another student's block)
+  // User profile page (own profile or another student's profile)
   { path: 'profile', component: UserProfileComponent, canActivate: [authGuard] },
   { path: 'profile/:username', component: UserProfileComponent, canActivate: [authGuard] },
   // Guest-only routes (redirects logged-in users to '/')

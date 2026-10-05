@@ -6,7 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { CurrentUser, UserProfile } from '../../models/auth.models';
 
-// UserProfileComponent displays personal or other students' Block pages
+// UserProfileComponent displays personal or other students' Profile pages
 @Component({
   selector: 'app-user-profile',
   standalone: true,
@@ -61,7 +61,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
     const loggedInUsername = this.authService.getCurrentUser()?.username;
 
-    // Check if viewing own profile or another student's block
+    // Check if viewing own profile or another student's profile
     if (!targetUsername || targetUsername === loggedInUsername) {
       this.isOwnProfile = true;
       this.sub.add(
@@ -89,7 +89,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
             this.cdr.detectChanges();
           },
           error: (err) => {
-            this.errorMessage = err.error?.message || `Student block '@${targetUsername}' not found.`;
+            this.errorMessage = err.error?.message || `Student profile '@${targetUsername}' not found.`;
             this.isLoading = false;
             this.cdr.detectChanges();
           }
@@ -111,7 +111,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           if (this.profile) {
             this.profile.followersCount = (this.profile.followersCount || 0) + 1;
           }
-          this.actionMessage = `Subscribed to @${targetUsername}'s block!`;
+          this.actionMessage = `Subscribed to @${targetUsername}'s profile!`;
           this.isTogglingFollow = false;
           this.cdr.detectChanges();
           setTimeout(() => {
