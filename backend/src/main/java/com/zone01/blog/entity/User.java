@@ -2,39 +2,48 @@ package com.zone01.blog.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 // @Entity marks this class as a database table managed by Hibernate
 @Entity
-// @Table specifies the name of the table in PostgreSQL ("users" instead of "user" to avoid SQL reserved keyword)
+
 @Table(name = "users")
 public class User {
 
-    // Primary key with auto-increment (1, 2, 3...)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Unique username, cannot be null
     @Column(nullable = false, unique = true)
     private String username;
 
-    // Unique email, cannot be null
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Hashed password (never store plain text passwords!)
     @Column(nullable = false)
     private String password;
 
-    // Role of the user: ROLE_USER or ROLE_ADMIN
-    // @Enumerated(EnumType.STRING) stores the text "ROLE_USER" in PostgreSQL instead of a number (0 or 1)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
 
-    // Timestamp when the user registered
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // following
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "user_subscriptions",
+        joinColumns = @JoinColumn(name = "subscriber_id"),
+        inverseJoinColumns = @JoinColumn(name = "target_id")
+    )
+    private Set<User> following = new HashSet<>();
+
+    // (followers)
+    @ManyToMany(mappedBy = "following", fetch = FetchType.LAZY)
+    private Set<User> followers = new HashSet<>();
 
     // Default constructor is required by JPA/Hibernate
     public User() {
@@ -99,5 +108,45 @@ public class User {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public Set<User> getFollowing() {
+        return following;
+    }
+
+    public void setFollowing(Set<User> following) {
+        this.following = following;
+    }
+
+    public Set<User> getFollowers() {
+        return followers;
+    }
+
+    public void setFollowers(Set<User> followers) {
+        this.followers = followers;
+    }
+
+    // follow another user
+    public void follow(User target) {
+        this.following.add(target);
+        target.getFollowers().add(this);
+    }
+
+    public void unfollow(User target) {
+        this.following.remove(target);
+        target.getFollowers().remove(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id != null && Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
