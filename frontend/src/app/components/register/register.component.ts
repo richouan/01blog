@@ -95,11 +95,11 @@ export class RegisterComponent {
     }).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.successMessage = `Account initialized for user '${response.username}'. Redirecting to login...`;
+        this.successMessage = `Account created for @${response.username}! Redirecting to feed...`;
         this.cdr.detectChanges();
         setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 1200);
+          this.router.navigate(['/']);
+        }, 900);
       },
       error: (err) => {
         this.isLoading = false;
