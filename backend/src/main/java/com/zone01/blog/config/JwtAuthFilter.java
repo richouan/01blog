@@ -56,9 +56,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                 new SimpleGrantedAuthority(user.getRole().name())
                         );
 
-                        // Build authentication token with user entity as principal
+                        // Build authentication token with username string as principal
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                user,
+                                user.getUsername(),
                                 null,
                                 authorities
                         );

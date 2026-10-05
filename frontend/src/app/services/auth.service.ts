@@ -58,9 +58,16 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
-  // Check if user is currently authenticated
+  // Check if user is currently authenticated with a valid (unexpired) token
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    if (!token || this.isTokenExpired(token)) {
+      if (token) {
+        this.logout();
+      }
+      return false;
+    }
+    return true;
   }
 
   // Check if logged-in user has admin privileges
@@ -74,6 +81,24 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  // Helper to check if a JWT token payload has expired
+  isTokenExpired(token: string): boolean {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return true;
+      }
+      const payload = JSON.parse(atob(parts[1]));
+      if (payload && payload.exp) {
+        // exp is in seconds, convert to ms
+        return payload.exp * 1000 < Date.now();
+      }
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
   // Helper to read initial user state from localStorage on app load
   private loadUserFromStorage(): CurrentUser | null {
     const token = localStorage.getItem('token');
@@ -81,6 +106,12 @@ export class AuthService {
     const role = localStorage.getItem('role');
 
     if (token && username && role) {
+      if (this.isTokenExpired(token)) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('role');
+        return null;
+      }
       return { username, role };
     }
     return null;

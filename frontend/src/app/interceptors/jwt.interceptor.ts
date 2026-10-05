@@ -1,22 +1,30 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
+import { catchError, throwError } from 'rxjs';
 
-// Attach JWT Bearer token to outgoing HTTP requests if user is logged in
+// Attach JWT Bearer token to outgoing HTTP requests and auto-logout on 401 errors
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
 
-  // If a JWT token exists in localStorage, clone the request and attach the Authorization header
+  let authReq = req;
   if (token) {
-    const clonedRequest = req.clone({
+    authReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
       }
     });
-    return next(clonedRequest);
   }
 
-  // If no token exists (e.g. login or register requests), pass request unchanged
-  return next(req);
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      // If server returns 401 Unauthorized on protected routes, automatically clear session and redirect to login
+      if (error.status === 401 && !req.url.includes('/api/auth/login')) {
+        authService.logout();
+      }
+      return throwError(() => error);
+    })
+  );
 };
+
