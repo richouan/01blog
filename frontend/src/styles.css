@@ -5,11 +5,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 :root {
-  /* Neo-Brutalist Core Colors */
+  /* Neo-Brutalist Core Colors (Light Theme) */
   --nb-bg: #faf7f2;
   --nb-card-bg: #ffffff;
+  --nb-card-header: #ffffff;
   --nb-black: #121214;
+  --nb-border-color: #121214;
+  --nb-shadow-color: #121214;
   --nb-text-muted: #52525b;
+  --nb-input-bg: #ffffff;
+  --nb-subtle-bg: #f4f4f5;
+  --nb-scrollbar-thumb: #d4d4d8;
+  --nb-grid-dot: #121214;
   
   /* Punchy Accent Palette */
   --nb-yellow: #ffe600;
@@ -20,22 +27,45 @@
   --nb-purple: #a855f7;
   
   /* Borders & Hard Drop Shadows */
-  --nb-border: 2.5px solid var(--nb-black);
-  --nb-border-sm: 1.5px solid var(--nb-black);
-  --nb-shadow: 5px 5px 0px var(--nb-black);
-  --nb-shadow-sm: 3px 3px 0px var(--nb-black);
-  --nb-shadow-lg: 8px 8px 0px var(--nb-black);
+  --nb-border: 2.5px solid var(--nb-border-color);
+  --nb-border-sm: 1.5px solid var(--nb-border-color);
+  --nb-shadow: 5px 5px 0px var(--nb-shadow-color);
+  --nb-shadow-sm: 3px 3px 0px var(--nb-shadow-color);
+  --nb-shadow-lg: 8px 8px 0px var(--nb-shadow-color);
   
   /* Typography */
   --nb-font-display: 'Space Grotesk', -apple-system, sans-serif;
   --nb-font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
 }
 
+/* =========================================================
+   Neo-Brutalist Dark Theme (Bonus Feature)
+   ========================================================= */
+[data-theme="dark"] {
+  /* Stealth Obsidian Canvas & Elevated Surfaces */
+  --nb-bg: #0e0e12;
+  --nb-card-bg: #18181f;
+  --nb-card-header: #1f1f28;
+  --nb-black: #f4f4f6;
+  --nb-border-color: #383846;
+  --nb-shadow-color: #000000;
+  --nb-text-muted: #9e9ea8;
+  --nb-input-bg: #131318;
+  --nb-subtle-bg: #23232d;
+  --nb-scrollbar-thumb: #373746;
+  --nb-grid-dot: rgba(255, 255, 255, 0.08);
+
+  /* High-contrast luminous accents for dark canvas */
+  --nb-blue: #3b82f6;
+  --nb-cyan: #22d3ee;
+  --nb-purple: #c084fc;
+}
+
 /* Permanent stable scrollbar gutter to eliminate layout shift between routes */
 html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
-  scrollbar-color: #d4d4d8 var(--nb-bg);
+  scrollbar-color: var(--nb-scrollbar-thumb) var(--nb-bg);
 }
 
 /* Neo-Brutalist Custom Scrollbar */
@@ -44,18 +74,18 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--nb-bg, #faf7f2);
-  border-left: 1.5px solid var(--nb-black, #121214);
+  background: var(--nb-bg);
+  border-left: 1.5px solid var(--nb-border-color);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
-  border: 1.5px solid var(--nb-black, #121214);
+  background: var(--nb-scrollbar-thumb);
+  border: 1.5px solid var(--nb-border-color);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--nb-yellow, #ffe600);
+  background: var(--nb-yellow);
 }
 
 * {
@@ -71,10 +101,11 @@ body {
   padding: 0;
   /* Subtle retro grid pattern */
   background-image: 
-    radial-gradient(#121214 0.75px, transparent 0.75px), 
-    radial-gradient(#121214 0.75px, var(--nb-bg) 0.75px);
+    radial-gradient(var(--nb-grid-dot) 0.75px, transparent 0.75px), 
+    radial-gradient(var(--nb-grid-dot) 0.75px, var(--nb-bg) 0.75px);
   background-size: 24px 24px;
   background-position: 0 0, 12px 12px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 h1, h2, h3, h4, h5, h6, .font-display {
@@ -91,13 +122,13 @@ h1, h2, h3, h4, h5, h6, .font-display {
   box-shadow: var(--nb-shadow);
   border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.15s ease;
 }
 
 .card-nb-header {
   border-bottom: var(--nb-border);
   padding: 12px 18px;
-  background-color: #ffffff;
+  background-color: var(--nb-card-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -110,7 +141,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 /* Neo-Brutalist Buttons */
 .btn-nb-primary {
   background-color: var(--nb-yellow);
-  color: var(--nb-black);
+  color: #121214; /* Always ink black on yellow for guaranteed punchy contrast */
   border: var(--nb-border);
   box-shadow: var(--nb-shadow-sm);
   border-radius: 8px;
@@ -129,14 +160,14 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 .btn-nb-primary:hover:not(:disabled) {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px var(--nb-black);
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
   background-color: #ffd000;
-  color: var(--nb-black);
+  color: #121214;
 }
 
 .btn-nb-primary:active:not(:disabled) {
   transform: translate(3px, 3px);
-  box-shadow: 0px 0px 0px var(--nb-black);
+  box-shadow: 0px 0px 0px var(--nb-shadow-color);
 }
 
 .btn-nb-primary:disabled {
@@ -147,7 +178,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 .btn-nb-secondary {
-  background-color: #ffffff;
+  background-color: var(--nb-card-bg);
   color: var(--nb-black);
   border: var(--nb-border);
   box-shadow: var(--nb-shadow-sm);
@@ -166,8 +197,8 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 .btn-nb-secondary:hover {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px var(--nb-black);
-  background-color: #f4f4f5;
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+  background-color: var(--nb-subtle-bg);
   color: var(--nb-black);
 }
 
@@ -187,7 +218,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 .input-nb {
   width: 100%;
-  background-color: #ffffff;
+  background-color: var(--nb-input-bg);
   border: var(--nb-border);
   border-radius: 8px;
   padding: 11px 15px;
@@ -201,14 +232,14 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 .input-nb:focus {
-  background-color: #ffffff;
+  background-color: var(--nb-input-bg);
   border-color: var(--nb-black);
   box-shadow: var(--nb-shadow-sm);
 }
 
 .input-nb.input-nb-valid {
   border-color: var(--nb-mint) !important;
-  background-color: #f0fdf4;
+  background-color: var(--nb-input-bg);
   box-shadow: 3px 3px 0px var(--nb-mint) !important;
 }
 
@@ -219,7 +250,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 .input-nb.input-nb-invalid {
   border-color: var(--nb-coral) !important;
-  background-color: #fff1f2;
+  background-color: var(--nb-input-bg);
   box-shadow: 3px 3px 0px var(--nb-coral) !important;
 }
 
@@ -229,7 +260,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 }
 
 .input-nb::placeholder {
-  color: #a1a1aa;
+  color: var(--nb-text-muted);
 }
 
 /* Neo-Brutalist Badges / Tags */
@@ -243,19 +274,19 @@ h1, h2, h3, h4, h5, h6, .font-display {
   padding: 4px 10px;
   border: var(--nb-border-sm);
   border-radius: 6px;
-  box-shadow: 2px 2px 0px var(--nb-black);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .badge-nb-yellow {
   background-color: var(--nb-yellow);
-  color: var(--nb-black);
+  color: #121214;
 }
 
 .badge-nb-mint {
   background-color: var(--nb-mint);
-  color: var(--nb-black);
+  color: #121214;
 }
 
 .badge-nb-coral {
@@ -266,6 +297,65 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .badge-nb-blue {
   background-color: var(--nb-blue);
   color: #ffffff;
+}
+
+/* Neo-Brutalist Stat Cards */
+.stat-card {
+  border: var(--nb-border-sm);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px var(--nb-shadow-color);
+}
+
+/* Light Mode: Keep original 3 distinct pastel colors */
+.stat-card-yellow {
+  background-color: #fffbeb;
+  border-color: var(--nb-border-color);
+}
+
+.stat-card-coral {
+  background-color: #fff1f2;
+  border-color: var(--nb-border-color);
+}
+
+.stat-card-mint {
+  background-color: #f0fdf4;
+  border-color: var(--nb-border-color);
+}
+
+/* Dark Mode: Unify all 3 cards to the exact same sleek dark background */
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .stat-card-yellow,
+[data-theme="dark"] .stat-card-coral,
+[data-theme="dark"] .stat-card-mint {
+  background-color: var(--nb-subtle-bg) !important;
+  border-color: var(--nb-border-color) !important;
+}
+
+.stat-number {
+  font-family: var(--nb-font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: var(--nb-black);
+}
+
+.stat-label {
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--nb-text-muted);
 }
 
 /* Neo-Brutalist Callout / Alert Box */
@@ -285,13 +375,66 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .alert-nb-danger {
   background-color: #fee2e2;
   color: #991b1b;
-  border-color: var(--nb-black);
+  border-color: var(--nb-border-color);
 }
 
 .alert-nb-success {
   background-color: #dcfce7;
   color: #14532d;
-  border-color: var(--nb-black);
+  border-color: var(--nb-border-color);
+}
+
+/* Dark mode alert overrides */
+[data-theme="dark"] .alert-nb-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: var(--nb-border-color);
+}
+
+[data-theme="dark"] .alert-nb-success {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border-color: var(--nb-border-color);
+}
+
+/* Universal Dark Mode Overrides for Bootstrap Utilities */
+[data-theme="dark"] .text-dark {
+  color: var(--nb-black) !important;
+}
+
+[data-theme="dark"] .text-muted {
+  color: var(--nb-text-muted) !important;
+}
+
+[data-theme="dark"] .border-dark {
+  border-color: var(--nb-border-color) !important;
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: var(--nb-card-bg) !important;
+}
+
+/* Neo-Brutalist Theme Toggle Button on Auth Pages */
+.btn-theme-toggle-auth {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: var(--nb-border-sm);
+  background-color: var(--nb-card-bg);
+  color: var(--nb-black);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+}
+
+.btn-theme-toggle-auth:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+  background-color: var(--nb-subtle-bg);
 }
 
 /* Ensure mobile page content clears the fixed bottom floating dock */

@@ -79,6 +79,16 @@
           <i class="bi bi-bell"></i>
         </button>
 
+        <!-- Neo-Brutalist Dark Mode Toggle -->
+        <button
+          (click)="toggleTheme()"
+          class="nav-icon-btn"
+          [title]="themeService.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+          type="button"
+        >
+          <i class="bi" [ngClass]="themeService.isDarkMode ? 'bi-sun-fill text-warning' : 'bi-moon-stars-fill'"></i>
+        </button>
+
         <!-- Divider -->
         <div class="nav-divider"></div>
 
@@ -126,11 +136,21 @@
               <span>Explore Students</span>
             </a>
 
+            <!-- Dropdown Dark Mode Option -->
+            <button
+              (click)="toggleTheme()"
+              class="dropdown-item-nb w-100 text-start border-0"
+              type="button"
+            >
+              <i class="bi me-2" [ngClass]="themeService.isDarkMode ? 'bi-sun-fill text-warning' : 'bi-moon-stars-fill'"></i>
+              <span>{{ themeService.isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+            </button>
+
             <div class="border-top border-dark border-opacity-10 my-1"></div>
 
             <button
               (click)="onLogout()"
-              class="dropdown-item-nb dropdown-item-danger w-100 text-start border-0 bg-transparent"
+              class="dropdown-item-nb dropdown-item-danger w-100 text-start border-0"
               type="button"
             >
               <i class="bi bi-box-arrow-right me-2"></i>

@@ -17,13 +17,14 @@
   height: 24px;
   border-radius: 4px;
   background-color: var(--nb-yellow);
-  border: 1.5px solid var(--nb-black);
+  border: 1.5px solid var(--nb-border-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 0.75rem;
   font-family: var(--nb-font-display);
+  color: #121214;
 }
 
 .user-avatar-md {
@@ -32,19 +33,21 @@
   border-radius: 8px;
   background-color: var(--nb-yellow);
   border: var(--nb-border);
-  box-shadow: 2px 2px 0px var(--nb-black);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 1rem;
   font-family: var(--nb-font-display);
+  color: #121214;
 }
 
 .post-input-mockup {
   border: var(--nb-border-sm);
   border-radius: 6px;
-  background-color: #faf7f2;
+  background-color: var(--nb-input-bg);
+  color: var(--nb-text-muted);
   cursor: text;
   font-size: 0.9rem;
 }
@@ -60,6 +63,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1.75rem;
+  color: #121214;
 }
 
 .feed-subtext {

@@ -10,26 +10,27 @@
 
 /* Floating Island Container */
 .navbar-island {
-  background-color: #ffffff;
-  border: 2.5px solid #121214;
+  background-color: var(--nb-card-bg);
+  border: var(--nb-border);
   border-radius: 18px;
-  box-shadow: 5px 5px 0px #121214;
+  box-shadow: var(--nb-shadow);
   padding: 8px 18px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Logo Box & Brand */
 .brand-link {
-  color: #121214;
+  color: var(--nb-black);
   flex-shrink: 0;
 }
 
 .logo-box {
   width: 36px;
   height: 36px;
-  background-color: var(--nb-yellow, #ffe600);
-  border: 2px solid #121214;
+  background-color: var(--nb-yellow);
+  border: var(--nb-border-sm);
   border-radius: 9px;
-  box-shadow: 2px 2px 0px #121214;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,7 +50,7 @@
   font-weight: 800;
   font-size: 1.35rem;
   letter-spacing: -0.5px;
-  color: #121214;
+  color: var(--nb-black);
   white-space: nowrap;
 }
 
@@ -57,8 +58,8 @@
 .nav-divider {
   width: 1.5px;
   height: 28px;
-  background-color: #121214;
-  opacity: 0.15;
+  background-color: var(--nb-border-color);
+  opacity: 0.25;
   margin: 0 4px;
   flex-shrink: 0;
 }
@@ -66,46 +67,49 @@
 /* Navigation Pills (Desktop & Tablet) */
 .nav-pill {
   font-family: var(--nb-font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.92rem;
-  color: #121214;
+  letter-spacing: -0.2px;
+  color: var(--nb-black);
   padding: 6px 14px;
   border-radius: 10px;
   border: 2px solid transparent;
+  box-shadow: 2px 2px 0px transparent;
   display: inline-flex;
   align-items: center;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   white-space: nowrap;
 }
 
 .nav-pill:hover {
-  background-color: #f4f4f5;
-  color: #121214;
+  background-color: var(--nb-subtle-bg);
+  color: var(--nb-black);
 }
 
 .nav-pill-active {
-  background-color: var(--nb-yellow, #ffe600) !important;
-  border: 2px solid #121214 !important;
-  box-shadow: 2.5px 2.5px 0px #121214 !important;
-  font-weight: 700 !important;
+  background-color: var(--nb-yellow) !important;
+  border: 2px solid var(--nb-border-color) !important;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color) !important;
   color: #121214 !important;
 }
 
 /* Search Input Pill */
 .search-pill-form {
-  border: 2px solid #121214;
+  border: var(--nb-border-sm);
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: var(--nb-input-bg);
   padding: 4px 10px;
   flex-shrink: 0;
+  transition: all 0.15s ease;
 }
 
 .search-pill-form:focus-within {
-  box-shadow: 2px 2px 0px #121214;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  border-color: var(--nb-border-color);
 }
 
 .search-icon {
-  color: #71717a;
+  color: var(--nb-text-muted);
   font-size: 0.95rem;
 }
 
@@ -116,49 +120,50 @@
   font-family: var(--nb-font-body);
   font-size: 0.88rem;
   font-weight: 500;
-  color: #121214;
+  color: var(--nb-black);
   width: 180px;
   padding: 2px 6px;
 }
 
 .search-pill-input::placeholder {
-  color: #a1a1aa;
+  color: var(--nb-text-muted);
 }
 
 .kbd-shortcut {
   font-family: var(--nb-font-display);
   font-size: 0.72rem;
   font-weight: 700;
-  color: #71717a;
-  background-color: #f4f4f5;
-  border: 1px solid #d4d4d8;
+  color: var(--nb-text-muted);
+  background-color: var(--nb-subtle-bg);
+  border: 1px solid var(--nb-border-color);
   border-radius: 6px;
   padding: 2px 6px;
   user-select: none;
 }
 
-/* Icon Buttons (Notification Bell, Mobile Search) */
+/* Icon Buttons (Notification Bell, Theme Toggle, Mobile Search) */
 .nav-icon-btn {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  border: 2px solid #121214;
-  background-color: #ffffff;
-  box-shadow: 2px 2px 0px #121214;
+  border: var(--nb-border-sm);
+  background-color: var(--nb-card-bg);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.05rem;
-  color: #121214;
+  color: var(--nb-black);
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
 }
 
 .nav-icon-btn:hover {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #121214;
-  background-color: #f4f4f5;
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+  background-color: var(--nb-subtle-bg);
+  color: var(--nb-black);
 }
 
 /* User Profile Chip */
@@ -172,19 +177,20 @@
   padding: 2px 4px;
   cursor: pointer;
   border-radius: 10px;
+  transition: background-color 0.15s ease;
 }
 
 .user-chip-btn:hover {
-  background-color: #f4f4f5;
+  background-color: var(--nb-subtle-bg);
 }
 
 .user-avatar-sq {
   width: 36px;
   height: 36px;
-  background-color: var(--nb-yellow, #ffe600);
-  border: 2px solid #121214;
+  background-color: var(--nb-yellow);
+  border: var(--nb-border-sm);
   border-radius: 8px;
-  box-shadow: 2px 2px 0px #121214;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,7 +209,7 @@
   font-family: var(--nb-font-display);
   font-weight: 700;
   font-size: 0.88rem;
-  color: #121214;
+  color: var(--nb-black);
   max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -212,6 +218,7 @@
 
 .chevron-icon {
   font-size: 0.72rem;
+  color: var(--nb-black);
   transition: transform 0.2s ease;
 }
 
@@ -220,8 +227,8 @@
 }
 
 .badge-role-talent {
-  background-color: var(--nb-mint, #05df72);
-  border: 1.5px solid #121214;
+  background-color: var(--nb-mint);
+  border: 1.5px solid var(--nb-border-color);
   border-radius: 6px;
   font-family: var(--nb-font-display);
   font-size: 0.65rem;
@@ -238,7 +245,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  min-width: 200px;
+  min-width: 210px;
   max-width: calc(100vw - 32px);
   z-index: 1050;
 }
@@ -250,20 +257,29 @@
   font-family: var(--nb-font-display);
   font-weight: 600;
   font-size: 0.88rem;
-  color: #121214;
+  color: var(--nb-black);
+  background: transparent;
   border-radius: 6px;
   transition: all 0.12s ease;
   cursor: pointer;
 }
 
 .dropdown-item-nb:hover {
-  background-color: var(--nb-yellow, #ffe600);
-  color: #121214;
+  background-color: var(--nb-yellow) !important;
+  color: #121214 !important;
   transform: translateX(2px);
+}
+
+.dropdown-item-nb:hover i {
+  color: #121214 !important;
 }
 
 .dropdown-item-danger:hover {
   background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.dropdown-item-danger:hover i {
   color: #dc2626 !important;
 }
 
@@ -277,12 +293,13 @@
   right: 12px;
   margin: 0 auto;
   max-width: 440px;
-  background-color: #ffffff;
-  border: 2.5px solid #121214;
+  background-color: var(--nb-card-bg);
+  border: var(--nb-border);
   border-radius: 16px;
-  box-shadow: 4px 4px 0px #121214;
+  box-shadow: 4px 4px 0px var(--nb-shadow-color);
   padding: 6px 8px;
   z-index: 1040;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .dock-item {
@@ -292,7 +309,7 @@
   justify-content: center;
   padding: 5px 12px;
   border-radius: 10px;
-  color: #71717a;
+  color: var(--nb-text-muted);
   font-family: var(--nb-font-display);
   transition: all 0.15s ease;
   border: 2px solid transparent;
@@ -301,14 +318,14 @@
 }
 
 .dock-item:hover {
-  color: #121214;
-  background-color: #f4f4f5;
+  color: var(--nb-black);
+  background-color: var(--nb-subtle-bg);
 }
 
 .dock-item-active {
-  background-color: var(--nb-yellow, #ffe600) !important;
-  border: 2px solid #121214 !important;
-  box-shadow: 2px 2px 0px #121214 !important;
+  background-color: var(--nb-yellow) !important;
+  border: 2px solid var(--nb-border-color) !important;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color) !important;
   color: #121214 !important;
   transform: translateY(-2px);
 }
@@ -359,7 +376,7 @@
   .navbar-island {
     padding: 6px 10px;
     border-radius: 14px;
-    box-shadow: 3.5px 3.5px 0px #121214;
+    box-shadow: 3.5px 3.5px 0px var(--nb-shadow-color);
   }
 
   .logo-box {

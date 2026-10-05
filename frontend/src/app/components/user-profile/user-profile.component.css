@@ -23,50 +23,7 @@
   font-weight: 800;
   font-size: 1.85rem;
   font-family: var(--nb-font-display);
-  color: var(--nb-black);
-}
-
-/* Stat Cards */
-.stat-card {
-  border: var(--nb-border-sm);
-  border-radius: 8px;
-  box-shadow: 2px 2px 0px var(--nb-black);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-card-yellow {
-  background-color: #fffbeb;
-  border-color: var(--nb-black);
-}
-
-.stat-card-coral {
-  background-color: #fff1f2;
-  border-color: var(--nb-black);
-}
-
-.stat-card-mint {
-  background-color: #f0fdf4;
-  border-color: var(--nb-black);
-}
-
-.stat-number {
-  font-family: var(--nb-font-display);
-  font-weight: 800;
-  font-size: 1.25rem;
-  color: var(--nb-black);
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-family: var(--nb-font-display);
-  font-weight: 700;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--nb-text-muted);
+  color: #121214;
 }
 
 /* Tab Navigation Buttons */
@@ -77,17 +34,17 @@
   color: var(--nb-text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
-  border-bottom: 3px solid transparent !important;
+  border-bottom: 3.5px solid transparent !important;
 }
 
 .tab-btn-nb:hover {
-  background-color: #f4f4f5 !important;
+  background-color: var(--nb-subtle-bg) !important;
   color: var(--nb-black);
 }
 
 .tab-btn-nb.tab-active {
-  color: var(--nb-black);
-  background-color: #ffffff !important;
+  color: var(--nb-black) !important;
+  background-color: var(--nb-card-bg) !important;
   border-bottom: 3.5px solid var(--nb-yellow) !important;
 }
 
@@ -96,9 +53,9 @@
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background-color: #f4f4f5;
+  background-color: var(--nb-subtle-bg);
   border: var(--nb-border-sm);
-  box-shadow: 3px 3px 0px var(--nb-black);
+  box-shadow: 3px 3px 0px var(--nb-shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,8 +69,8 @@
 
 /* About Items */
 .about-item {
-  background-color: #fbfbfb;
+  background-color: var(--nb-subtle-bg);
   border: var(--nb-border-sm);
   border-radius: 8px;
-  box-shadow: 2px 2px 0px rgba(18, 18, 20, 0.08);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
 }
