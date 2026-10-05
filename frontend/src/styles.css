@@ -31,6 +31,33 @@
   --nb-font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
 }
 
+/* Permanent stable scrollbar gutter to eliminate layout shift between routes */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  scrollbar-color: #d4d4d8 var(--nb-bg);
+}
+
+/* Neo-Brutalist Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nb-bg, #faf7f2);
+  border-left: 1.5px solid var(--nb-black, #121214);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border: 1.5px solid var(--nb-black, #121214);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nb-yellow, #ffe600);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -265,4 +292,11 @@ h1, h2, h3, h4, h5, h6, .font-display {
   background-color: #dcfce7;
   color: #14532d;
   border-color: var(--nb-black);
+}
+
+/* Ensure mobile page content clears the fixed bottom floating dock */
+@media (max-width: 767.98px) {
+  body {
+    padding-bottom: 84px !important;
+  }
 }

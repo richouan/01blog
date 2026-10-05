@@ -1,6 +1,6 @@
 .search-container {
-  min-height: calc(100vh - 72px);
-  background-color: var(--nb-bg-cream, #faf7f2);
+  min-height: calc(100vh - 80px);
+  background: transparent;
 }
 
 .search-input-group {
@@ -38,7 +38,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-family: var(--font-display);
+  font-family: var(--nb-font-display);
   font-size: 1.25rem;
   box-shadow: 2px 2px 0px var(--nb-black, #121214);
 }

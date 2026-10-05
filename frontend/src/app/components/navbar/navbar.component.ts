@@ -1,20 +1,22 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CurrentUser } from '../../models/auth.models';
 
-// Responsive Neo-Brutalist navigation bar for authenticated users
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   currentUser: CurrentUser | null = null;
+  searchQuery = '';
+  isUserDropdownOpen = false;
   private sub = new Subscription();
 
   constructor(
@@ -32,26 +34,64 @@ export class NavbarComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Listen to route changes so navbar only appears once redirect finishes
+    // Listen to route changes
     this.sub.add(
       this.router.events
         .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
         .subscribe(() => {
+          this.isUserDropdownOpen = false;
           this.cdr.detectChanges();
         })
     );
   }
 
-  // Returns true while still on login or register screen
+  // Focus search input on Ctrl+K / Cmd+K
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardShortcut(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      const input = document.getElementById('navSearchInput') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }
+  }
+
+  // Close dropdown when clicking outside
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.user-dropdown-wrapper')) {
+      this.isUserDropdownOpen = false;
+    }
+  }
+
+  onSearchSubmit(): void {
+    const q = this.searchQuery.trim();
+    if (q) {
+      this.router.navigate(['/search'], { queryParams: { q } });
+      this.searchQuery = '';
+    } else {
+      this.router.navigate(['/search']);
+    }
+  }
+
+  toggleUserDropdown(): void {
+    this.isUserDropdownOpen = !this.isUserDropdownOpen;
+  }
+
   isAuthPage(): boolean {
     return this.router.url.startsWith('/login') || this.router.url.startsWith('/register');
+  }
+
+  onLogout(): void {
+    this.isUserDropdownOpen = false;
+    this.authService.logout();
   }
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
   }
-
-  onLogout(): void {
-    this.authService.logout();
-  }
 }
+

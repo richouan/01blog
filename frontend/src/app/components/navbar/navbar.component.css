@@ -1,72 +1,428 @@
-.navbar-nb {
-  background-color: #ffffff;
-  border-bottom: var(--nb-border);
-  box-shadow: 0 3px 0px rgba(18, 18, 20, 0.05);
+.navbar-wrapper {
+  padding: 12px 0 6px 0;
   z-index: 1030;
+  background: transparent;
 }
 
-.nav-item-nb {
-  font-family: var(--nb-font-display);
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--nb-black);
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1.5px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  transition: all 0.15s ease;
+.max-w-navbar {
+  max-width: 1240px;
 }
 
-.nav-item-nb:hover {
-  background-color: #f4f4f5;
-  color: var(--nb-black);
+/* Floating Island Container */
+.navbar-island {
+  background-color: #ffffff;
+  border: 2.5px solid #121214;
+  border-radius: 18px;
+  box-shadow: 5px 5px 0px #121214;
+  padding: 8px 18px;
 }
 
-.nav-item-active {
-  background-color: var(--nb-yellow) !important;
-  border: var(--nb-border-sm) !important;
-  box-shadow: 2px 2px 0px var(--nb-black) !important;
-  color: var(--nb-black) !important;
+/* Logo Box & Brand */
+.brand-link {
+  color: #121214;
+  flex-shrink: 0;
 }
 
-.user-avatar-sm {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background-color: var(--nb-yellow);
-  border: 1.5px solid var(--nb-black);
-  display: inline-flex;
+.logo-box {
+  width: 36px;
+  height: 36px;
+  background-color: var(--nb-yellow, #ffe600);
+  border: 2px solid #121214;
+  border-radius: 9px;
+  box-shadow: 2px 2px 0px #121214;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.logo-text {
   font-family: var(--nb-font-display);
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: #121214;
+  line-height: 1;
 }
 
-.user-name-label {
-  max-width: 140px;
+.brand-text {
+  font-family: var(--nb-font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.5px;
+  color: #121214;
+  white-space: nowrap;
 }
 
-.user-profile-chip {
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1.5px solid transparent;
+/* Vertical Divider */
+.nav-divider {
+  width: 1.5px;
+  height: 28px;
+  background-color: #121214;
+  opacity: 0.15;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Navigation Pills (Desktop & Tablet) */
+.nav-pill {
+  font-family: var(--nb-font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #121214;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
   transition: all 0.15s ease;
-  color: var(--nb-black);
+  white-space: nowrap;
 }
 
-.user-profile-chip:hover {
+.nav-pill:hover {
   background-color: #f4f4f5;
-  border-color: var(--nb-black);
-  transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0px var(--nb-black);
-  color: var(--nb-black);
+  color: #121214;
 }
 
-@media (max-width: 576px) {
-  .user-name-label {
-    max-width: 90px;
+.nav-pill-active {
+  background-color: var(--nb-yellow, #ffe600) !important;
+  border: 2px solid #121214 !important;
+  box-shadow: 2.5px 2.5px 0px #121214 !important;
+  font-weight: 700 !important;
+  color: #121214 !important;
+}
+
+/* Search Input Pill */
+.search-pill-form {
+  border: 2px solid #121214;
+  border-radius: 12px;
+  background-color: #ffffff;
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+
+.search-pill-form:focus-within {
+  box-shadow: 2px 2px 0px #121214;
+}
+
+.search-icon {
+  color: #71717a;
+  font-size: 0.95rem;
+}
+
+.search-pill-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--nb-font-body);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #121214;
+  width: 180px;
+  padding: 2px 6px;
+}
+
+.search-pill-input::placeholder {
+  color: #a1a1aa;
+}
+
+.kbd-shortcut {
+  font-family: var(--nb-font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #71717a;
+  background-color: #f4f4f5;
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  padding: 2px 6px;
+  user-select: none;
+}
+
+/* Icon Buttons (Notification Bell, Mobile Search) */
+.nav-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 2px solid #121214;
+  background-color: #ffffff;
+  box-shadow: 2px 2px 0px #121214;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  color: #121214;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.nav-icon-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #121214;
+  background-color: #f4f4f5;
+}
+
+/* User Profile Chip */
+.user-dropdown-wrapper {
+  flex-shrink: 0;
+}
+
+.user-chip-btn {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.user-chip-btn:hover {
+  background-color: #f4f4f5;
+}
+
+.user-avatar-sq {
+  width: 36px;
+  height: 36px;
+  background-color: var(--nb-yellow, #ffe600);
+  border: 2px solid #121214;
+  border-radius: 8px;
+  box-shadow: 2px 2px 0px #121214;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--nb-font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #121214;
+  flex-shrink: 0;
+}
+
+.user-name-line {
+  line-height: 1.1;
+}
+
+.user-handle {
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #121214;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron-icon {
+  font-size: 0.72rem;
+  transition: transform 0.2s ease;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.badge-role-talent {
+  background-color: var(--nb-mint, #05df72);
+  border: 1.5px solid #121214;
+  border-radius: 6px;
+  font-family: var(--nb-font-display);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  color: #121214;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* User Dropdown Menu */
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 200px;
+  max-width: calc(100vw - 32px);
+  z-index: 1050;
+}
+
+.dropdown-item-nb {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-family: var(--nb-font-display);
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #121214;
+  border-radius: 6px;
+  transition: all 0.12s ease;
+  cursor: pointer;
+}
+
+.dropdown-item-nb:hover {
+  background-color: var(--nb-yellow, #ffe600);
+  color: #121214;
+  transform: translateX(2px);
+}
+
+.dropdown-item-danger:hover {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+/* ========================================================
+   Mobile Bottom Floating Dock (Screens < 768px)
+   ======================================================== */
+.mobile-bottom-dock {
+  position: fixed;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  left: 12px;
+  right: 12px;
+  margin: 0 auto;
+  max-width: 440px;
+  background-color: #ffffff;
+  border: 2.5px solid #121214;
+  border-radius: 16px;
+  box-shadow: 4px 4px 0px #121214;
+  padding: 6px 8px;
+  z-index: 1040;
+}
+
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 10px;
+  color: #71717a;
+  font-family: var(--nb-font-display);
+  transition: all 0.15s ease;
+  border: 2px solid transparent;
+  text-decoration: none;
+  min-width: 58px;
+}
+
+.dock-item:hover {
+  color: #121214;
+  background-color: #f4f4f5;
+}
+
+.dock-item-active {
+  background-color: var(--nb-yellow, #ffe600) !important;
+  border: 2px solid #121214 !important;
+  box-shadow: 2px 2px 0px #121214 !important;
+  color: #121214 !important;
+  transform: translateY(-2px);
+}
+
+.dock-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.dock-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* ========================================================
+   Responsive Breakpoints & Tweaks
+   ======================================================== */
+
+/* Tablet & Smaller Laptops (768px - 1199.98px) */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .navbar-island {
+    padding: 7px 14px;
+  }
+  .nav-pill {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+  }
+  .brand-text {
+    font-size: 1.2rem;
+  }
+  .user-handle {
+    max-width: 80px;
+  }
+  .search-pill-input {
+    width: 130px;
   }
 }
 
+/* Mobile Screens (< 768px) */
+@media (max-width: 767.98px) {
+  .navbar-wrapper {
+    padding: 8px 0 4px 0;
+  }
+
+  .navbar-island {
+    padding: 6px 10px;
+    border-radius: 14px;
+    box-shadow: 3.5px 3.5px 0px #121214;
+  }
+
+  .logo-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+
+  .brand-text {
+    font-size: 1.15rem;
+  }
+
+  .nav-icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+  }
+
+  .user-avatar-sq {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+
+  .nav-divider {
+    height: 22px;
+    margin: 0 2px;
+  }
+}
+
+/* Extra-Narrow Mobile Devices (< 380px) */
+@media (max-width: 380px) {
+  .brand-text {
+    font-size: 1.05rem;
+  }
+
+  .navbar-island {
+    padding: 5px 8px;
+  }
+
+  .mobile-bottom-dock {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 4px 4px;
+  }
+
+  .dock-item {
+    padding: 4px 8px;
+    min-width: 50px;
+  }
+
+  .dock-label {
+    font-size: 0.62rem;
+  }
+
+  .dock-icon {
+    font-size: 1.1rem;
+  }
+}
