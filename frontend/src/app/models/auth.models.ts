@@ -28,5 +28,9 @@ export interface UserProfile {
   email: string;
   role: string;
   createdAt: string;
+  followersCount: number;
+  followingCount: number;
+  isFollowing?: boolean;
 }
+
 

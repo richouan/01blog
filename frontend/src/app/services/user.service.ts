@@ -21,4 +21,13 @@ export class UserService {
   getUserProfile(username: string): Observable<UserProfile> {
     return this.http.get<UserProfile>(`${this.apiUrl}/${username}`);
   }
+
+  followUser(username: string): Observable<{ message: string; following: boolean }> {
+    return this.http.post<{ message: string; following: boolean }>(`${this.apiUrl}/${username}/follow`, {});
+  }
+
+  unfollowUser(username: string): Observable<{ message: string; following: boolean }> {
+    return this.http.post<{ message: string; following: boolean }>(`${this.apiUrl}/${username}/unfollow`, {});
+  }
 }
+

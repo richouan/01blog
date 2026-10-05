@@ -19,6 +19,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   profile: UserProfile | null = null;
   isOwnProfile = true;
   isFollowing = false;
+  isTogglingFollow = false;
   isLoading = true;
   errorMessage = '';
   activeTab: 'posts' | 'about' = 'posts';
@@ -83,6 +84,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         this.userService.getUserProfile(targetUsername).subscribe({
           next: (data) => {
             this.profile = data;
+            this.isFollowing = !!data.isFollowing;
             this.isLoading = false;
             this.cdr.detectChanges();
           },
@@ -96,16 +98,55 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Follow / Subscribe action toggle (ready for Day 4 social backend integration)
+  // Follow / Subscribe action toggle connected to backend API
   onToggleFollow(): void {
-    this.isFollowing = !this.isFollowing;
-    this.actionMessage = this.isFollowing
-      ? `Subscribed to @${this.profile?.username}'s block!`
-      : `Unsubscribed from @${this.profile?.username}.`;
-    setTimeout(() => {
-      this.actionMessage = '';
-      this.cdr.detectChanges();
-    }, 3000);
+    if (!this.profile?.username || this.isTogglingFollow) return;
+    this.isTogglingFollow = true;
+    const targetUsername = this.profile.username;
+
+    if (!this.isFollowing) {
+      this.userService.followUser(targetUsername).subscribe({
+        next: () => {
+          this.isFollowing = true;
+          if (this.profile) {
+            this.profile.followersCount = (this.profile.followersCount || 0) + 1;
+          }
+          this.actionMessage = `Subscribed to @${targetUsername}'s block!`;
+          this.isTogglingFollow = false;
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.actionMessage = '';
+            this.cdr.detectChanges();
+          }, 3000);
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || 'Could not subscribe to user.';
+          this.isTogglingFollow = false;
+          this.cdr.detectChanges();
+        }
+      });
+    } else {
+      this.userService.unfollowUser(targetUsername).subscribe({
+        next: () => {
+          this.isFollowing = false;
+          if (this.profile && this.profile.followersCount > 0) {
+            this.profile.followersCount -= 1;
+          }
+          this.actionMessage = `Unsubscribed from @${targetUsername}.`;
+          this.isTogglingFollow = false;
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.actionMessage = '';
+            this.cdr.detectChanges();
+          }, 3000);
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || 'Could not unsubscribe from user.';
+          this.isTogglingFollow = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
   // Switch between Posts and About tabs

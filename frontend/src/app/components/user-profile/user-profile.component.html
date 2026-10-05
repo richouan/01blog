@@ -80,10 +80,12 @@
                 <ng-container *ngIf="!isOwnProfile">
                   <button
                     (click)="onToggleFollow()"
+                    [disabled]="isTogglingFollow"
                     class="btn-nb-primary py-1 px-3 fs-6"
                     [class.btn-nb-secondary]="isFollowing"
                   >
-                    <i class="bi" [ngClass]="isFollowing ? 'bi-person-check-fill text-success' : 'bi-person-plus-fill'"></i>
+                    <i *ngIf="isTogglingFollow" class="spinner-border spinner-border-sm me-1"></i>
+                    <i *ngIf="!isTogglingFollow" class="bi" [ngClass]="isFollowing ? 'bi-person-check-fill text-success' : 'bi-person-plus-fill'"></i>
                     <span class="ms-1">{{ isFollowing ? 'Subscribed' : 'Subscribe' }}</span>
                   </button>
                   <button
@@ -111,13 +113,13 @@
               </div>
               <div class="col-4">
                 <div class="stat-card stat-card-coral text-center p-2">
-                  <span class="stat-number">{{ isFollowing ? '1' : '0' }}</span>
+                  <span class="stat-number">{{ profile?.followersCount ?? 0 }}</span>
                   <span class="stat-label">Followers</span>
                 </div>
               </div>
               <div class="col-4">
                 <div class="stat-card stat-card-mint text-center p-2">
-                  <span class="stat-number">0</span>
+                  <span class="stat-number">{{ profile?.followingCount ?? 0 }}</span>
                   <span class="stat-label">Following</span>
                 </div>
               </div>

@@ -3,7 +3,6 @@ package com.zone01.blog.dto;
 import com.zone01.blog.entity.UserRole;
 import java.time.LocalDateTime;
 
-// DTO representing user profile data returned to frontend
 public class UserProfileResponse {
 
     private Long id;
@@ -11,15 +10,22 @@ public class UserProfileResponse {
     private String email;
     private UserRole role;
     private LocalDateTime createdAt;
+    private int followersCount;
+    private int followingCount;
+    private boolean isFollowing;
 
     public UserProfileResponse() {}
 
-    public UserProfileResponse(Long id, String username, String email, UserRole role, LocalDateTime createdAt) {
+    public UserProfileResponse(Long id, String username, String email, UserRole role, 
+                              LocalDateTime createdAt, int followersCount, int followingCount, boolean isFollowing) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.role = role;
         this.createdAt = createdAt;
+        this.followersCount = followersCount;
+        this.followingCount = followingCount;
+        this.isFollowing = isFollowing;
     }
 
     public Long getId() {
@@ -61,4 +67,29 @@ public class UserProfileResponse {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public int getFollowersCount() {
+        return followersCount;
+    }
+
+    public void setFollowersCount(int followersCount) {
+        this.followersCount = followersCount;
+    }
+
+    public int getFollowingCount() {
+        return followingCount;
+    }
+
+    public void setFollowingCount(int followingCount) {
+        this.followingCount = followingCount;
+    }
+
+    public boolean isFollowing() {
+        return isFollowing;
+    }
+
+    public void setFollowing(boolean following) {
+        isFollowing = following;
+    }
 }
+
