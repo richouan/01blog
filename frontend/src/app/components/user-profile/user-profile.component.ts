@@ -84,7 +84,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         this.userService.getUserProfile(targetUsername).subscribe({
           next: (data) => {
             this.profile = data;
-            this.isFollowing = !!data.isFollowing;
+            this.isFollowing = !!(data.isFollowing ?? data.following);
             this.isLoading = false;
             this.cdr.detectChanges();
           },

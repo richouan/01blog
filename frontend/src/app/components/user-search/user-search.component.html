@@ -1,0 +1,147 @@
+<div class="search-container py-3 py-md-4">
+  <div class="container px-3 px-sm-4">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8">
+
+        <!-- Search Header Card -->
+        <div class="card-nb mb-3 mb-md-4">
+          <div class="card-nb-header">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-compass-fill fs-5 text-warning"></i>
+              <h1 class="h5 mb-0 fw-bold font-display">Discover Students & Blocks</h1>
+            </div>
+          </div>
+
+          <div class="card-nb-body p-3 p-sm-4">
+            <form (ngSubmit)="onSearchSubmit()">
+              <div class="search-input-group">
+                <i class="bi bi-search search-icon"></i>
+                <input
+                  type="text"
+                  class="form-control-nb search-field ps-5"
+                  placeholder="Search students by username (e.g. richouan, someone)..."
+                  [(ngModel)]="searchQuery"
+                  (ngModelChange)="onQueryChange($event)"
+                  name="searchQuery"
+                  autocomplete="off"
+                  autofocus
+                />
+                <button
+                  type="submit"
+                  class="btn-nb-primary search-submit-btn py-1 px-3"
+                  [disabled]="isLoading || !searchQuery.trim()"
+                >
+                  <i *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></i>
+                  <span>Search</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="alert-nb alert-nb-danger mb-3">
+          <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- Results Section -->
+        <div *ngIf="hasSearched">
+          <!-- Result Counter Banner -->
+          <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+            <span class="small fw-bold text-muted text-uppercase font-display">
+              Found {{ results.length }} {{ results.length === 1 ? 'student' : 'students' }}
+            </span>
+            <span *ngIf="isLoading" class="small text-muted">
+              <i class="spinner-border spinner-border-sm me-1"></i>Searching...
+            </span>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!isLoading && results.length === 0" class="card-nb text-center py-5 px-3">
+            <div class="empty-icon mx-auto mb-3">
+              <i class="bi bi-search text-muted"></i>
+            </div>
+            <h2 class="h5 fw-bold font-display mb-1">No students found</h2>
+            <p class="text-muted small mb-0 max-w-400 mx-auto">
+              No registered user matched "<strong>{{ searchQuery }}</strong>". Try searching for a different handle or part of a name.
+            </p>
+          </div>
+
+          <!-- Student Cards List -->
+          <div class="d-flex flex-column gap-3" *ngIf="results.length > 0">
+            <div *ngFor="let user of results" class="card-nb student-result-card p-3">
+              <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
+                
+                <!-- Left: Avatar & Info -->
+                <div class="d-flex align-items-center gap-3">
+                  <div class="user-avatar flex-shrink-0">
+                    {{ user.username.charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                      <a [routerLink]="['/profile', user.username]" class="fw-bold font-display text-dark text-decoration-none fs-5 hover-underline">
+                        {{ user.username }}
+                      </a>
+                      <span class="badge-nb badge-nb-mint">
+                        {{ user.role === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
+                      </span>
+                      <span *ngIf="isCurrentUser(user.username)" class="badge-nb badge-nb-yellow">
+                        You
+                      </span>
+                    </div>
+
+                    <div class="small text-muted d-flex align-items-center gap-2 flex-wrap">
+                      <span class="fw-bold text-muted">&#64;{{ user.username }}</span>
+                      <span>•</span>
+                      <span><i class="bi bi-people-fill me-1"></i>{{ user.followersCount }} followers</span>
+                      <span>•</span>
+                      <span>{{ user.followingCount }} following</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Action Buttons -->
+                <div class="d-flex align-items-center gap-2 align-self-end align-self-sm-center flex-wrap">
+                  <a
+                    [routerLink]="['/profile', user.username]"
+                    class="btn-nb-secondary py-1 px-3 fs-6 text-decoration-none"
+                  >
+                    <i class="bi bi-box-arrow-up-right me-1"></i>
+                    <span>Block</span>
+                  </a>
+
+                  <!-- Subscribe button for other users -->
+                  <button
+                    *ngIf="!isCurrentUser(user.username)"
+                    (click)="toggleFollow(user)"
+                    [disabled]="togglingUsernames.has(user.username)"
+                    class="btn-nb-primary py-1 px-3 fs-6"
+                    [class.btn-nb-secondary]="user.isFollowing"
+                  >
+                    <i *ngIf="togglingUsernames.has(user.username)" class="spinner-border spinner-border-sm me-1"></i>
+                    <i *ngIf="!togglingUsernames.has(user.username)" class="bi" [ngClass]="user.isFollowing ? 'bi-person-check-fill text-success' : 'bi-person-plus-fill'"></i>
+                    <span class="ms-1">{{ user.isFollowing ? 'Subscribed' : 'Subscribe' }}</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Initial Explore State (before searching) -->
+        <div *ngIf="!hasSearched" class="card-nb text-center py-5 px-3">
+          <div class="empty-icon mx-auto mb-3">
+            <i class="bi bi-people-fill text-primary"></i>
+          </div>
+          <h2 class="h5 fw-bold font-display mb-1">Find Your Peers on 01Blog</h2>
+          <p class="text-muted small mb-0 max-w-450 mx-auto">
+            Search for fellow students to subscribe to their block, explore their learning updates, and grow your network.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

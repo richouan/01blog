@@ -1,5 +1,6 @@
 package com.zone01.blog.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zone01.blog.entity.UserRole;
 import java.time.LocalDateTime;
 
@@ -12,7 +13,10 @@ public class UserProfileResponse {
     private LocalDateTime createdAt;
     private int followersCount;
     private int followingCount;
+
+    @JsonProperty("isFollowing")
     private boolean isFollowing;
+
 
     public UserProfileResponse() {}
 

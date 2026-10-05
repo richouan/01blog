@@ -6,6 +6,10 @@ import com.zone01.blog.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class UserService {
 
@@ -28,7 +32,8 @@ public class UserService {
         if (currentViewerUsername != null && !currentViewerUsername.equals(targetUsername)) {
             User currentViewer = userRepository.findByUsername(currentViewerUsername).orElse(null);
             if (currentViewer != null) {
-                isFollowing = currentViewer.getFollowing().contains(user);
+                isFollowing = currentViewer.getFollowing().stream()
+                        .anyMatch(u -> java.util.Objects.equals(u.getId(), user.getId()));
             }
         }
 
@@ -42,6 +47,37 @@ public class UserService {
                 followingCount,
                 isFollowing
         );
+    }
+
+    // Search users by partial username
+    @Transactional(readOnly = true)
+    public List<UserProfileResponse> searchUsers(String query, String currentViewerUsername) {
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<User> users = userRepository.findByUsernameContainingIgnoreCase(query.trim());
+        User currentViewer = currentViewerUsername != null 
+                ? userRepository.findByUsername(currentViewerUsername).orElse(null) 
+                : null;
+
+        return users.stream().map(user -> {
+            boolean isFollowing = false;
+            if (currentViewer != null && !currentViewer.getId().equals(user.getId())) {
+                isFollowing = currentViewer.getFollowing().stream()
+                        .anyMatch(u -> java.util.Objects.equals(u.getId(), user.getId()));
+            }
+            return new UserProfileResponse(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.getCreatedAt(),
+                    user.getFollowers().size(),
+                    user.getFollowing().size(),
+                    isFollowing
+            );
+        }).collect(Collectors.toList());
     }
 
     @Transactional

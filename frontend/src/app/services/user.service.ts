@@ -29,5 +29,13 @@ export class UserService {
   unfollowUser(username: string): Observable<{ message: string; following: boolean }> {
     return this.http.post<{ message: string; following: boolean }>(`${this.apiUrl}/${username}/unfollow`, {});
   }
+
+  // Search users by partial username
+  searchUsers(query: string): Observable<UserProfile[]> {
+    return this.http.get<UserProfile[]>(`${this.apiUrl}/search`, {
+      params: { q: query }
+    });
+  }
 }
+
 

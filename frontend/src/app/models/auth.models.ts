@@ -31,6 +31,8 @@ export interface UserProfile {
   followersCount: number;
   followingCount: number;
   isFollowing?: boolean;
+  following?: boolean;
 }
+
 
 

@@ -20,4 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Check if an email is already taken (used during Registration)
     boolean existsByEmail(String email);
+
+    // Search users by partial username match ignoring case
+    java.util.List<User> findByUsernameContainingIgnoreCase(String username);
 }
+

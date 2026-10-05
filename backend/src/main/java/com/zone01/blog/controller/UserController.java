@@ -36,6 +36,18 @@ public class UserController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<java.util.List<UserProfileResponse>> searchUsers(
+            @RequestParam(name = "q", defaultValue = "") String query,
+            Authentication authentication
+    ) {
+        String currentViewer = (authentication != null && authentication.isAuthenticated())
+                ? authentication.getName()
+                : null;
+        java.util.List<UserProfileResponse> results = userService.searchUsers(query, currentViewer);
+        return ResponseEntity.ok(results);
+    }
+
     @GetMapping("/{username}")
     public ResponseEntity<?> getUserProfile(@PathVariable String username, Authentication authentication) {
         try {
