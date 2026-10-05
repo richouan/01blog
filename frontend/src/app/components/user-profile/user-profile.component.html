@@ -1,0 +1,155 @@
+<div class="profile-container py-3 py-md-4">
+  <div class="container px-3 px-sm-4">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8">
+
+        <!-- Profile Header Card (Neo-Brutalist Block Banner) -->
+        <div class="card-nb mb-3 mb-md-4">
+          <!-- Colorful Neo-Brutalist Top Cover Strip -->
+          <div class="profile-cover-strip"></div>
+
+          <div class="card-nb-body p-3 p-sm-4">
+            <div class="d-flex flex-column flex-sm-row align-items-start gap-3 justify-content-between">
+              
+              <!-- Avatar & User Info -->
+              <div class="d-flex align-items-center gap-3">
+                <div class="user-avatar-lg flex-shrink-0">
+                  {{ currentUser?.username?.charAt(0)?.toUpperCase() || 'U' }}
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <h1 class="h4 mb-0 fw-bold font-display text-dark">
+                      {{ currentUser?.username }}
+                    </h1>
+                    <span class="badge-nb badge-nb-mint">
+                      {{ currentUser?.role === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
+                    </span>
+                  </div>
+                  <span class="text-muted fw-bold font-display small">
+                    @{{ currentUser?.username }}
+                  </span>
+                  <div class="small text-muted mt-1">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>Zone01 Student
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="d-flex gap-2 align-self-stretch align-self-sm-auto justify-content-end">
+                <button
+                  (click)="copyProfileLink()"
+                  class="btn-nb-secondary py-1 px-3 fs-6"
+                  title="Copy Profile Link"
+                >
+                  <i class="bi" [ngClass]="copiedLink ? 'bi-check-lg text-success' : 'bi-share'"></i>
+                  <span class="ms-1">{{ copiedLink ? 'Copied!' : 'Share' }}</span>
+                </button>
+                <a routerLink="/" class="btn-nb-primary py-1 px-3 fs-6 text-decoration-none">
+                  <i class="bi bi-newspaper"></i>
+                  <span class="ms-1">Feed</span>
+                </a>
+              </div>
+
+            </div>
+
+            <!-- Stats Bar (Posts / Followers / Following) -->
+            <div class="row g-2 g-sm-3 mt-3 pt-3 border-top border-dark border-opacity-10">
+              <div class="col-4">
+                <div class="stat-card stat-card-yellow text-center p-2">
+                  <span class="stat-number">0</span>
+                  <span class="stat-label">Posts</span>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="stat-card stat-card-coral text-center p-2">
+                  <span class="stat-number">0</span>
+                  <span class="stat-label">Followers</span>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="stat-card stat-card-mint text-center p-2">
+                  <span class="stat-number">0</span>
+                  <span class="stat-label">Following</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Block Content Tabs -->
+        <div class="card-nb">
+          <!-- Tab Navigation Header -->
+          <div class="card-nb-header p-0">
+            <div class="d-flex w-100">
+              <button
+                (click)="setActiveTab('posts')"
+                [class.tab-active]="activeTab === 'posts'"
+                class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent"
+              >
+                <i class="bi bi-collection-fill me-1"></i>
+                <span>Posts (0)</span>
+              </button>
+              <button
+                (click)="setActiveTab('about')"
+                [class.tab-active]="activeTab === 'about'"
+                class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent"
+              >
+                <i class="bi bi-info-circle-fill me-1"></i>
+                <span>About Block</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-nb-body p-3 p-sm-4">
+
+            <!-- Tab 1: Posts Stream (Empty state placeholder for Day 3) -->
+            <div *ngIf="activeTab === 'posts'" class="text-center py-4 py-sm-5">
+              <div class="empty-block-icon mx-auto mb-3">
+                <i class="bi bi-pencil-square"></i>
+              </div>
+              <h2 class="h5 fw-bold font-display mb-2">No posts on this block yet</h2>
+              <p class="text-muted small mx-auto mb-3 max-w-450">
+                Your personal block is ready! In Day 3, you will be able to create, edit, and publish rich posts with images and videos right here.
+              </p>
+              <a routerLink="/" class="btn-nb-primary py-1 px-3 fs-6 text-decoration-none">
+                <i class="bi bi-arrow-left me-1"></i> Return to Feed
+              </a>
+            </div>
+
+            <!-- Tab 2: About / Student Metadata -->
+            <div *ngIf="activeTab === 'about'" class="py-2">
+              <h2 class="h6 fw-bold font-display text-uppercase mb-3 text-muted">
+                Student Details
+              </h2>
+              <div class="list-group list-group-flush gap-2">
+                <div class="about-item p-3 d-flex justify-content-between align-items-center">
+                  <span class="text-muted small fw-bold font-display">Username Handle</span>
+                  <span class="fw-bold font-display text-dark">&#64;{{ currentUser?.username }}</span>
+                </div>
+                <div class="about-item p-3 d-flex justify-content-between align-items-center">
+                  <span class="text-muted small fw-bold font-display">Account Role</span>
+                  <span class="badge-nb badge-nb-mint">
+                    {{ currentUser?.role === 'ROLE_ADMIN' ? 'Administrator' : 'Standard Student (Talent)' }}
+                  </span>
+                </div>
+                <div class="about-item p-3 d-flex justify-content-between align-items-center">
+                  <span class="text-muted small fw-bold font-display">Security Status</span>
+                  <span class="badge-nb badge-nb-yellow">
+                    <i class="bi bi-shield-check me-1"></i>JWT Authenticated
+                  </span>
+                </div>
+                <div class="about-item p-3 d-flex justify-content-between align-items-center">
+                  <span class="text-muted small fw-bold font-display">Campus Location</span>
+                  <span class="fw-bold font-display text-dark">Zone01 Platform</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

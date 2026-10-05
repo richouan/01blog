@@ -26,16 +26,20 @@
             routerLinkActive="nav-item-active"
             class="nav-item-nb text-decoration-none"
           >
-            <i class="bi bi-person-badge"></i>
-            <span class="d-none d-sm-inline ms-1">My Block</span>
+            <i class="bi bi-person-circle"></i>
+            <span class="d-none d-sm-inline ms-1">My Profile</span>
           </a>
         </nav>
       </div>
 
       <!-- Right: User Info & Actions -->
       <div class="d-flex align-items-center gap-2 gap-sm-3">
-        <!-- User Avatar & Tag -->
-        <div class="d-flex align-items-center gap-2">
+        <!-- User Avatar & Tag (Clickable to /profile) -->
+        <a
+          routerLink="/profile"
+          class="user-profile-chip text-decoration-none d-flex align-items-center gap-2"
+          title="View My Profile"
+        >
           <span class="user-avatar-sm">
             {{ currentUser.username.charAt(0).toUpperCase() }}
           </span>
@@ -45,7 +49,7 @@
           <span class="badge-nb badge-nb-mint d-none d-md-inline-block">
             {{ currentUser.role === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
           </span>
-        </div>
+        </a>
 
         <!-- Sign Out Button -->
         <button (click)="onLogout()" class="btn-nb-secondary py-1 px-2 px-sm-3" title="Sign Out">

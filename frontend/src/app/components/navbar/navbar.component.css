@@ -48,8 +48,25 @@
   max-width: 140px;
 }
 
+.user-profile-chip {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1.5px solid transparent;
+  transition: all 0.15s ease;
+  color: var(--nb-black);
+}
+
+.user-profile-chip:hover {
+  background-color: #f4f4f5;
+  border-color: var(--nb-black);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0px var(--nb-black);
+  color: var(--nb-black);
+}
+
 @media (max-width: 576px) {
   .user-name-label {
     max-width: 90px;
   }
 }
+

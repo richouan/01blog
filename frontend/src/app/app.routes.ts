@@ -2,11 +2,13 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { RegisterComponent } from './components/register/register.component';
 import { HomeComponent } from './components/home/home.component';
+import { UserProfileComponent } from './components/user-profile/user-profile.component';
 import { authGuard, guestGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  // Home feed protected by AuthGuard
+  // Home feed
   { path: '', component: HomeComponent, canActivate: [authGuard] },
+  { path: 'profile', component: UserProfileComponent, canActivate: [authGuard] },
   // Guest-only routes (redirects logged-in users to '/')
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
