@@ -2,6 +2,7 @@ package com.zone01.blog.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
@@ -31,8 +32,8 @@ public class Post {
 
     // Default constructor required by JPA
     public Post() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     // Convenience constructor to create a new post
@@ -40,8 +41,8 @@ public class Post {
         this.textContent = textContent;
         this.mediaUrl = mediaUrl;
         this.author = author;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     // Getters and Setters

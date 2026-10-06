@@ -1,5 +1,6 @@
 package com.zone01.blog.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.zone01.blog.entity.Post;
 import java.time.LocalDateTime;
 
@@ -10,7 +11,11 @@ public class PostResponse {
     private String mediaUrl;
     private Long authorId;
     private String authorUsername;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime updatedAt;
 
     public PostResponse() {}

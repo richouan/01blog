@@ -1,0 +1,225 @@
+<div class="post-feed-container">
+
+  <!-- =========================================================
+       LOADING SKELETON CARDS
+       ========================================================= -->
+  <div *ngIf="loading" class="skeleton-stream">
+    <div *ngFor="let s of [1, 2]" class="card-nb post-card p-3">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="skeleton-avatar"></div>
+          <div class="skeleton-line skeleton-name"></div>
+        </div>
+        <div class="skeleton-line skeleton-pill"></div>
+      </div>
+      <div class="skeleton-line skeleton-text w-100 mb-2"></div>
+      <div class="skeleton-line skeleton-text w-75 mb-2"></div>
+      <div class="skeleton-media mb-1"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       EMPTY FEED STATE
+       ========================================================= -->
+  <div *ngIf="!loading && posts.length === 0" class="card-nb empty-feed-card text-center py-4 px-3 mb-3">
+    <div class="empty-feed-badge mx-auto mb-2">
+      <i class="bi bi-chat-square-code"></i>
+    </div>
+    <h3 class="h6 fw-bold font-display mb-1">{{ emptyTitle }}</h3>
+    <p class="text-muted small mx-auto mb-3 max-w-empty-desc">
+      {{ emptyMessage }}
+    </p>
+    <button
+      type="button"
+      (click)="onCreateClick()"
+      class="btn-nb-primary py-1 px-3 small d-inline-flex align-items-center gap-2"
+    >
+      <i class="bi bi-plus-lg fw-bold"></i>
+      <span>Create First Post</span>
+    </button>
+  </div>
+
+  <!-- =========================================================
+       STREAM POST CARDS LIST (80% Width Centered - Screenshot Match)
+       ========================================================= -->
+  <div *ngIf="!loading && displayPosts.length > 0" class="stream-posts-list">
+    <article
+      *ngFor="let post of displayPosts; let i = index"
+      class="card-nb post-card"
+      [attr.aria-labelledby]="'post-header-' + post.id"
+    >
+      <div class="post-card-inner">
+
+        <!-- Top Header Row: Avatar & Meta (Left) | Tag & 3-Dots (Right) -->
+        <header class="post-header-compact d-flex align-items-center justify-content-between gap-2 mb-2">
+          
+          <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+            <!-- Author Avatar Square -->
+            <a
+              [routerLink]="['/profile', post.authorUsername]"
+              class="post-avatar-link flex-shrink-0"
+              [title]="'View @' + post.authorUsername + '\'s profile'"
+            >
+              <div
+                class="post-avatar-box font-display"
+                [style.background-color]="post.avatarColor"
+              >
+                {{ post.initials }}
+              </div>
+            </a>
+
+            <!-- Author Handle & Relative Timestamp -->
+            <div class="d-flex align-items-center gap-1 flex-wrap post-author-line" [id]="'post-header-' + post.id">
+              <a
+                [routerLink]="['/profile', post.authorUsername]"
+                class="post-author-handle font-display fw-bold"
+              >
+                @{{ post.authorUsername }}
+              </a>
+              <span class="post-dot-sep">·</span>
+              <span class="post-timestamp">{{ post.relativeTime }}</span>
+            </div>
+          </div>
+
+          <!-- Right Side: Tag Badge & 3-Dots Action -->
+          <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <!-- Tag Pill (Screenshot Style) -->
+            <span *ngIf="post.tags.length > 0" class="badge-tag-pill">
+              {{ post.tags[0] }}
+            </span>
+
+            <!-- 3-Dots Options Button -->
+            <button
+              type="button"
+              (click)="copyPostLink(post)"
+              class="btn-dots-nb"
+              [title]="copiedPostId === post.id ? 'Copied link!' : 'Post options'"
+            >
+              <i class="bi" [ngClass]="copiedPostId === post.id ? 'bi-check2 text-mint fw-bold' : 'bi-three-dots-vertical'"></i>
+            </button>
+          </div>
+
+        </header>
+
+        <!-- Prominent Post Title (Screenshot Style - Full Width Below Avatar) -->
+        <h3 *ngIf="post.title" class="post-title font-display fw-bold mb-2">
+          {{ post.title }}
+        </h3>
+
+        <!-- Post Body Content -->
+        <div class="post-body-content">
+          
+          <!-- Extra Hashtags Row if more than 1 tag -->
+          <div *ngIf="post.tags.length > 1" class="post-tags-row d-flex flex-wrap gap-1 mb-2">
+            <span *ngFor="let tag of post.tags.slice(1)" class="badge-tag-pill-subtle">
+              {{ tag }}
+            </span>
+          </div>
+
+          <!-- Segments (Text paragraphs & Terminal Code Blocks) -->
+          <div class="post-segments-flow">
+            <ng-container *ngFor="let seg of post.segments; let segIdx = index">
+              
+              <!-- Paragraph Text -->
+              <p *ngIf="seg.type === 'text'" class="post-body-text mb-2">
+                {{ seg.content }}
+              </p>
+
+              <!-- Compact Terminal Code Snippet Block -->
+              <div *ngIf="seg.type === 'code'" class="post-code-window my-2">
+                <div class="code-window-topbar d-flex align-items-center justify-content-between px-2 py-1">
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="code-dot dot-red"></span>
+                    <span class="code-dot dot-yellow"></span>
+                    <span class="code-dot dot-green"></span>
+                    <span class="code-lang-tag ms-1">{{ seg.language?.toUpperCase() || 'CODE' }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="copyCode(seg.content, post.id + '-' + segIdx)"
+                    class="btn-code-copy"
+                    title="Copy snippet"
+                  >
+                    <i class="bi" [ngClass]="copiedCodeIndex === (post.id + '-' + segIdx) ? 'bi-check2 text-mint' : 'bi-clipboard'"></i>
+                    <span class="ms-1">{{ copiedCodeIndex === (post.id + '-' + segIdx) ? 'Copied' : 'Copy' }}</span>
+                  </button>
+                </div>
+                <pre class="code-pre m-0"><code>{{ seg.content }}</code></pre>
+              </div>
+
+            </ng-container>
+          </div>
+
+          <!-- Compact Media Attachment (Image or Video) -->
+          <div *ngIf="post.mediaUrl" class="post-media-frame mt-2">
+            <!-- Image Attachment -->
+            <ng-container *ngIf="!isVideo(post.mediaUrl)">
+              <a [href]="getMediaUrl(post.mediaUrl)" target="_blank" rel="noopener noreferrer" class="d-block text-center">
+                <img
+                  [src]="getMediaUrl(post.mediaUrl)"
+                  alt="Post attachment"
+                  loading="lazy"
+                  class="post-attachment-img img-fluid"
+                />
+              </a>
+            </ng-container>
+
+            <!-- Video Attachment -->
+            <ng-container *ngIf="isVideo(post.mediaUrl)">
+              <video
+                [src]="getMediaUrl(post.mediaUrl)"
+                controls
+                preload="metadata"
+                class="post-attachment-video w-100"
+              ></video>
+            </ng-container>
+          </div>
+
+        </div>
+
+        <!-- Compact Action Footer: Heart, Comment on Left | Bookmark on Right (NO Line Separator) -->
+        <footer class="post-compact-footer d-flex align-items-center justify-content-between mt-2 pt-1">
+          <div class="d-flex align-items-center gap-3">
+            
+            <!-- Like Action -->
+            <button
+              type="button"
+              (click)="toggleLike(post)"
+              class="post-compact-action"
+              [class.liked]="isLiked(post.id)"
+              title="Like"
+            >
+              <i class="bi" [ngClass]="isLiked(post.id) ? 'bi-heart-fill text-coral' : 'bi-heart'"></i>
+              <span class="action-count">{{ getLikesCount(post) }}</span>
+            </button>
+
+            <!-- Comment Action -->
+            <button
+              type="button"
+              (click)="onCommentClick(post)"
+              class="post-compact-action"
+              title="Comment"
+            >
+              <i class="bi bi-chat"></i>
+              <span class="action-count">{{ getCommentsCount(post) }}</span>
+            </button>
+
+          </div>
+
+          <!-- Bookmark Action on Right -->
+          <button
+            type="button"
+            (click)="toggleBookmark(post)"
+            class="post-compact-action btn-bookmark"
+            [class.bookmarked]="isBookmarked(post.id)"
+            title="Bookmark"
+          >
+            <i class="bi" [ngClass]="isBookmarked(post.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'"></i>
+          </button>
+        </footer>
+
+      </div>
+    </article>
+  </div>
+
+</div>

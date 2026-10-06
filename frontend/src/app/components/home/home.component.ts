@@ -1,17 +1,19 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
+import { PostService } from '../../services/post.service';
 import { CurrentUser, UserProfile } from '../../models/auth.models';
 import { Post } from '../../models/post.models';
 import { PostCreateComponent } from '../post-create/post-create.component';
+import { PostListComponent } from '../post-list/post-list.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostCreateComponent],
+  imports: [CommonModule, RouterLink, PostCreateComponent, PostListComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -21,13 +23,17 @@ export class HomeComponent implements OnInit, OnDestroy {
   currentUser: CurrentUser | null = null;
   userProfile: UserProfile | null = null;
 
-  activeFeedTab: 'for-you' | 'following' | 'latest' = 'for-you';
+  posts: Post[] = [];
+  isLoadingPosts: boolean = false;
+  activeFeedTab: 'following' | 'latest' = 'following';
 
   private sub = new Subscription();
 
   constructor(
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private postService: PostService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -39,6 +45,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         }
       })
     );
+    this.loadPosts();
   }
 
   loadCurrentUserProfile(): void {
@@ -52,6 +59,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     );
   }
 
+  loadPosts(): void {
+    this.isLoadingPosts = true;
+    const request$ = this.activeFeedTab === 'following'
+      ? this.postService.getFeedPosts()
+      : this.postService.getAllPosts();
+
+    this.sub.add(
+      request$.subscribe({
+        next: (fetchedPosts) => {
+          this.posts = fetchedPosts;
+          this.isLoadingPosts = false;
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error('Could not load stream posts', err);
+          this.isLoadingPosts = false;
+          this.cdr.markForCheck();
+        }
+      })
+    );
+  }
+
   // Triggered by sidebar "Create post +" CTA button
   triggerCreatePost(): void {
     if (this.postCreateComponent) {
@@ -61,11 +90,15 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // Handle post emission from PostCreateComponent
   onPostCreated(createdPost: Post): void {
-    console.log('Post published successfully:', createdPost);
+    // Prepend newly created post with new array reference to trigger child setter
+    this.posts = [createdPost, ...this.posts];
+    this.isLoadingPosts = false;
+    this.cdr.markForCheck();
   }
 
-  setFeedTab(tab: 'for-you' | 'following' | 'latest'): void {
+  setFeedTab(tab: 'following' | 'latest'): void {
     this.activeFeedTab = tab;
+    this.loadPosts();
   }
 
   onLogout(): void {

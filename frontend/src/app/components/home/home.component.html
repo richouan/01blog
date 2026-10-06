@@ -30,17 +30,6 @@
                 <span class="font-display fw-bold">Explore</span>
               </a>
 
-              <button
-                type="button"
-                (click)="setFeedTab('following')"
-                class="sidebar-nav-item border-0 bg-transparent text-start w-100"
-                [class.active]="activeFeedTab === 'following'"
-                title="Posts from Students You Follow"
-              >
-                <i class="bi bi-people me-2 fs-5"></i>
-                <span class="font-display fw-bold">Following</span>
-              </button>
-
               <a
                 routerLink="/profile"
                 class="sidebar-nav-item"
@@ -110,30 +99,24 @@
       <main class="home-main-col">
         
         <!-- Post Create Component (Compact) -->
-        <app-post-create
-          [currentUser]="currentUser"
-          (postCreated)="onPostCreated($event)"
-        ></app-post-create>
+        <div class="mb-4">
+          <app-post-create
+            [currentUser]="currentUser"
+            (postCreated)="onPostCreated($event)"
+          ></app-post-create>
+        </div>
 
-        <!-- Feed Subheader Tabs (For you | Following | Latest) -->
-        <div class="d-flex justify-content-between align-items-center mb-3 px-1 flex-wrap gap-2">
+        <!-- Feed Subheader Tabs (My Feed | Global Stream) -->
+        <div class="feed-tabs-header-row d-flex justify-content-between align-items-center mb-4 px-1 flex-wrap gap-3">
           
           <div class="feed-tabs-bar d-flex gap-3">
-            <button
-              type="button"
-              (click)="setFeedTab('for-you')"
-              class="feed-tab-btn"
-              [class.active-tab]="activeFeedTab === 'for-you'"
-            >
-              For you
-            </button>
             <button
               type="button"
               (click)="setFeedTab('following')"
               class="feed-tab-btn"
               [class.active-tab]="activeFeedTab === 'following'"
             >
-              Following
+              My Feed
             </button>
             <button
               type="button"
@@ -141,7 +124,7 @@
               class="feed-tab-btn"
               [class.active-tab]="activeFeedTab === 'latest'"
             >
-              Latest
+              Global Stream
             </button>
           </div>
 
@@ -155,33 +138,14 @@
 
         </div>
 
-        <!-- Stream Feed Container / Empty State Card -->
-        <div class="card-nb mb-4">
-          <div class="card-nb-header py-2 px-3 px-sm-4">
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-collection-fill text-primary"></i>
-              <span class="fw-bold font-display small text-uppercase">
-                {{ activeFeedTab === 'following' ? 'Subscribed Stream' : (activeFeedTab === 'latest' ? 'Global Stream' : 'Stream Feed') }}
-              </span>
-            </div>
-            <span class="badge-nb badge-nb-mint">Active Session</span>
-          </div>
-
-          <div class="card-nb-body text-center py-4 py-sm-5 px-3">
-            <div class="empty-feed-icon mx-auto mb-3">
-              <i class="bi bi-newspaper"></i>
-            </div>
-            <h2 class="h5 fw-bold font-display mb-2">No posts in your feed yet</h2>
-            <p class="text-muted small mx-auto mb-3 feed-subtext">
-              Welcome to 01Blog, <span class="fw-bold text-dark">@{{ currentUser?.username }}</span>. Posts published by you and students you subscribe to will appear here in chronological order.
-            </p>
-            <div class="d-inline-flex flex-wrap justify-content-center gap-2">
-              <span class="badge-nb badge-nb-yellow">0 Posts</span>
-              <span class="badge-nb badge-nb-coral">{{ userProfile?.followersCount ?? 0 }} Followers</span>
-              <span class="badge-nb badge-nb-mint">{{ userProfile?.followingCount ?? 0 }} Following</span>
-            </div>
-          </div>
-        </div>
+        <!-- Stream Feed List Component -->
+        <app-post-list
+          [posts]="posts"
+          [loading]="isLoadingPosts"
+          [emptyTitle]="activeFeedTab === 'following' ? 'No posts from followed students yet' : 'No posts in the stream yet'"
+          [emptyMessage]="activeFeedTab === 'following' ? 'When you or students you subscribe to publish posts, they will appear here. You can also explore the Global Stream!' : 'Be the first developer to share a code snippet, question, or thought!'"
+          (triggerCreate)="triggerCreatePost()"
+        ></app-post-list>
 
       </main>
 
