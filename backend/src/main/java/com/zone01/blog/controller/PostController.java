@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -42,6 +43,37 @@ public class PostController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error creating post: " + e.getMessage()));
+        }
+    }
+
+    // Get all global public posts (latest first)
+    @GetMapping
+    public ResponseEntity<List<PostResponse>> getAllPosts() {
+        return ResponseEntity.ok(postService.getAllPosts());
+    }
+
+    @GetMapping("/user/{username}")
+    public ResponseEntity<?> getUserPosts(@PathVariable("username") String username) {
+        try {
+            return ResponseEntity.ok(postService.getUserPosts(username));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/feed")
+    public ResponseEntity<?> getFeed(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "You must be logged in to view your feed."));
+        }
+
+        try {
+            return ResponseEntity.ok(postService.getFeedPosts(authentication.getName()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
         }
     }
 }
