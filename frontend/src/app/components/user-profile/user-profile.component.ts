@@ -4,23 +4,28 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
+import { PostService } from '../../services/post.service';
 import { CurrentUser, UserProfile } from '../../models/auth.models';
+import { Post } from '../../models/post.models';
+import { PostListComponent } from '../post-list/post-list.component';
 
 // UserProfileComponent displays personal or other students' Profile pages
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PostListComponent],
   templateUrl: './user-profile.component.html',
   styleUrl: './user-profile.component.css'
 })
 export class UserProfileComponent implements OnInit, OnDestroy {
   currentUser: CurrentUser | null = null;
   profile: UserProfile | null = null;
+  userPosts: Post[] = [];
   isOwnProfile = true;
   isFollowing = false;
   isTogglingFollow = false;
   isLoading = true;
+  isLoadingPosts = false;
   errorMessage = '';
   activeTab: 'posts' | 'about' = 'posts';
   copiedLink = false;
@@ -30,6 +35,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private userService: UserService,
+    private postService: PostService,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) {}
@@ -52,14 +58,16 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     );
   }
 
-  // Load profile data from backend based on route parameter
+  // Load profile data and posts from backend based on route parameter
   loadProfile(targetUsername?: string | null): void {
     this.isLoading = true;
     this.errorMessage = '';
     this.actionMessage = '';
+    this.userPosts = [];
     this.cdr.detectChanges();
 
     const loggedInUsername = this.authService.getCurrentUser()?.username;
+    const usernameToFetch = targetUsername || loggedInUsername;
 
     // Check if viewing own profile or another student's profile
     if (!targetUsername || targetUsername === loggedInUsername) {
@@ -96,6 +104,30 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         })
       );
     }
+
+    if (usernameToFetch) {
+      this.loadUserPosts(usernameToFetch);
+    }
+  }
+
+  // Fetch timeline posts published by this specific user
+  loadUserPosts(username: string): void {
+    this.isLoadingPosts = true;
+    this.sub.add(
+      this.postService.getUserPosts(username).subscribe({
+        next: (posts) => {
+          this.userPosts = posts || [];
+          this.isLoadingPosts = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Could not load user posts', err);
+          this.userPosts = [];
+          this.isLoadingPosts = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   // Follow / Subscribe action toggle connected to backend API
@@ -149,6 +181,23 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Handle post deletion from child PostListComponent
+  onPostDeleted(deletedId: number): void {
+    this.userPosts = this.userPosts.filter(p => p.id !== deletedId);
+    this.cdr.detectChanges();
+  }
+
+  // Handle post edit from child PostListComponent
+  onPostUpdated(updated: Post): void {
+    const idx = this.userPosts.findIndex(p => p.id === updated.id);
+    if (idx !== -1) {
+      const copy = [...this.userPosts];
+      copy[idx] = updated;
+      this.userPosts = copy;
+      this.cdr.detectChanges();
+    }
+  }
+
   // Switch between Posts and About tabs
   setActiveTab(tab: 'posts' | 'about'): void {
     this.activeTab = tab;
@@ -187,4 +236,3 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 }
-

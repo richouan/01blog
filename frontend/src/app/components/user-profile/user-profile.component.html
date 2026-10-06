@@ -107,7 +107,7 @@
             <div class="row g-2 g-sm-3 mt-3 pt-3 border-top border-dark border-opacity-10">
               <div class="col-4">
                 <div class="stat-card stat-card-yellow text-center p-2">
-                  <span class="stat-number">0</span>
+                  <span class="stat-number">{{ userPosts.length }}</span>
                   <span class="stat-label">Posts</span>
                 </div>
               </div>
@@ -139,7 +139,7 @@
                 class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent"
               >
                 <i class="bi bi-collection-fill me-1"></i>
-                <span>Posts (0)</span>
+                <span>Posts ({{ userPosts.length }})</span>
               </button>
               <button
                 (click)="setActiveTab('about')"
@@ -154,20 +154,16 @@
 
           <div class="card-nb-body p-3 p-sm-4">
 
-            <!-- Tab 1: Posts Stream (Empty state placeholder for Day 3) -->
-            <div *ngIf="activeTab === 'posts'" class="text-center py-4 py-sm-5">
-              <div class="empty-block-icon mx-auto mb-3">
-                <i class="bi bi-pencil-square"></i>
-              </div>
-              <h2 class="h5 fw-bold font-display mb-2">
-                {{ isOwnProfile ? 'No posts on your profile yet' : 'No posts published yet by @' + profile?.username }}
-              </h2>
-              <p class="text-muted small mx-auto mb-3 max-w-450">
-                {{ isOwnProfile ? 'Your personal profile is ready! In Day 3, you will be able to create, edit, and publish rich posts with images and videos right here.' : 'When this student publishes updates or articles, they will appear here.' }}
-              </p>
-              <a routerLink="/" class="btn-nb-primary py-1 px-3 fs-6 text-decoration-none">
-                <i class="bi bi-arrow-left me-1"></i> Return to Feed
-              </a>
+            <!-- Tab 1: Posts Stream -->
+            <div *ngIf="activeTab === 'posts'" class="pt-2">
+              <app-post-list
+                [posts]="userPosts"
+                [loading]="isLoadingPosts"
+                [emptyTitle]="isOwnProfile ? 'No posts on your profile yet' : 'No posts published yet by @' + profile?.username"
+                [emptyMessage]="isOwnProfile ? 'Share your projects, ideas, or questions with the community!' : 'When this student publishes posts, they will appear here.'"
+                (postDeleted)="onPostDeleted($event)"
+                (postUpdated)="onPostUpdated($event)"
+              ></app-post-list>
             </div>
 
             <!-- Tab 2: About / Student Metadata -->
