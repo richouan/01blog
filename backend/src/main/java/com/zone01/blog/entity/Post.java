@@ -13,6 +13,9 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "title")
+    private String title;
+
     @Column(name = "text_content", columnDefinition = "TEXT")
     private String textContent;
 
@@ -36,8 +39,18 @@ public class Post {
         this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
-    // Convenience constructor to create a new post
+    // Convenience constructor
     public Post(String textContent, String mediaUrl, User author) {
+        this.title = "Untitled Post";
+        this.textContent = textContent;
+        this.mediaUrl = mediaUrl;
+        this.author = author;
+        this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
+    }
+
+    public Post(String title, String textContent, String mediaUrl, User author) {
+        this.title = title;
         this.textContent = textContent;
         this.mediaUrl = mediaUrl;
         this.author = author;
@@ -52,6 +65,14 @@ public class Post {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getTextContent() {

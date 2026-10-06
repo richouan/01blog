@@ -16,72 +16,70 @@ export class PostCreateComponent {
   @Input() currentUser: CurrentUser | null = null;
   @Output() postCreated = new EventEmitter<Post>();
 
+  title: string = '';
   textContent: string = '';
   selectedFile: File | null = null;
-  imagePreview: string | null = null;
+  mediaPreview: string | null = null;
+  isMediaVideo: boolean = false;
   fileName: string = '';
   fileSizeFormatted: string = '';
 
   isExpanded: boolean = false;
   isDragging: boolean = false;
   isSubmitting: boolean = false;
-  showCodeSnippet: boolean = false;
-  codeLanguage: string = 'java';
-  codeSnippet: string = '';
   errorMessage: string = '';
   successMessage: string = '';
 
   constructor(private postService: PostService) {}
 
-  popularTags: string[] = ['#zone01', '#java', '#angular', '#algo', '#snippet', '#help'];
-
-  // Handle image file selection via file picker
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       this.processFile(input.files[0]);
     }
-    input.value = ''; // Reset input so same file can be re-selected if deleted
+    input.value = '';
   }
 
-  // Validate and generate data URL preview
   processFile(file: File): void {
     this.errorMessage = '';
 
-    if (!file.type.startsWith('image/')) {
-      this.errorMessage = 'Please select a valid image file (PNG, JPG, WEBP, GIF).';
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.webm');
+
+    if (!isImage && !isVideo) {
+      this.errorMessage = 'Please select a valid image (PNG, JPG, WEBP, GIF) or video (MP4, WEBM).';
       return;
     }
 
-    // 10MB file size limit
-    if (file.size > 10 * 1024 * 1024) {
-      this.errorMessage = 'Image size exceeds the 10MB limit.';
+    // Limit check: 30MB
+    if (file.size > 30 * 1024 * 1024) {
+      this.errorMessage = 'Media file size exceeds the 30MB limit.';
       return;
     }
 
     this.selectedFile = file;
     this.fileName = file.name;
+    this.isMediaVideo = isVideo;
     this.fileSizeFormatted = file.size > 1024 * 1024
       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
       : `${Math.round(file.size / 1024)} KB`;
 
     const reader = new FileReader();
     reader.onload = () => {
-      this.imagePreview = reader.result as string;
+      this.mediaPreview = reader.result as string;
       this.isExpanded = true;
     };
     reader.readAsDataURL(file);
   }
 
-  // Remove selected image
-  removeImage(): void {
+  removeMedia(): void {
     this.selectedFile = null;
-    this.imagePreview = null;
+    this.mediaPreview = null;
+    this.isMediaVideo = false;
     this.fileName = '';
     this.fileSizeFormatted = '';
   }
 
-  // Drag and drop handlers
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -104,48 +102,15 @@ export class PostCreateComponent {
     }
   }
 
-  // Toggle code snippet builder
-  toggleCodeSnippet(): void {
-    this.showCodeSnippet = !this.showCodeSnippet;
-    if (this.showCodeSnippet) {
-      this.isExpanded = true;
-    }
-  }
-
-  // Insert formatted code block into post body
-  insertCodeBlock(): void {
-    if (!this.codeSnippet.trim()) return;
-
-    const block = `\n\`\`\`${this.codeLanguage}\n${this.codeSnippet.trim()}\n\`\`\`\n`;
-    this.textContent = (this.textContent + block).trim();
-    this.codeSnippet = '';
-    this.showCodeSnippet = false;
-  }
-
-  // Append clicked hashtag
-  addTag(tag: string): void {
-    if (!this.textContent.includes(tag)) {
-      this.textContent = this.textContent ? `${this.textContent.trim()} ${tag}` : tag;
-      this.isExpanded = true;
-    }
-  }
-
   get canPost(): boolean {
-    return this.textContent.trim().length > 0 || this.selectedFile !== null;
+    const hasTitle = this.title.trim().length > 0;
+    const hasContentOrMedia = this.textContent.trim().length > 0 || this.selectedFile !== null;
+    return hasTitle && hasContentOrMedia;
   }
 
-  // Video button click handler
-  onVideoClick(): void {
-    this.isExpanded = true;
-    if (!this.textContent.includes('🎥')) {
-      this.textContent = (this.textContent + ' 🎥 [Video: paste URL here]').trim();
-    }
-  }
-
-  // External trigger to focus post creation from sidebar CTA
   focusInput(): void {
     this.isExpanded = true;
-    const el = document.querySelector('.post-textarea') as HTMLTextAreaElement;
+    const el = document.querySelector('.post-title-input') as HTMLInputElement;
     if (el) {
       el.focus();
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -159,23 +124,22 @@ export class PostCreateComponent {
     this.errorMessage = '';
     this.successMessage = '';
 
+    const titleToSend = this.title.trim();
     const textToSend = this.textContent.trim() || undefined;
     const fileToSend = this.selectedFile || undefined;
 
-    this.postService.createPost(textToSend, fileToSend).subscribe({
+    this.postService.createPost(titleToSend, textToSend, fileToSend).subscribe({
       next: (createdPost) => {
         this.isSubmitting = false;
         this.successMessage = 'Post published successfully!';
         this.postCreated.emit(createdPost);
 
         // Reset form after submission
+        this.title = '';
         this.textContent = '';
-        this.removeImage();
-        this.codeSnippet = '';
-        this.showCodeSnippet = false;
+        this.removeMedia();
         this.isExpanded = false;
 
-        // Auto-clear success message after 3 seconds
         setTimeout(() => {
           this.successMessage = '';
         }, 3000);

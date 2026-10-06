@@ -25,7 +25,7 @@
     gap: 1.25rem;
   }
 
-  /* Slimmer Left Sidebar Column (Just a little less width) */
+  /* Slimmer Left Sidebar Column */
   .home-sidebar-col {
     width: 205px;
     flex: 0 0 205px;

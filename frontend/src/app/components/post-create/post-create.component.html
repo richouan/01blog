@@ -3,7 +3,7 @@
   <!-- Drag & Drop Overlay -->
   <div *ngIf="isDragging" class="drag-drop-overlay d-flex flex-column align-items-center justify-content-center">
     <i class="bi bi-cloud-arrow-up-fill display-4 text-dark mb-2"></i>
-    <span class="fw-bold font-display fs-5 text-dark">Drop image to attach to post</span>
+    <span class="fw-bold font-display fs-5 text-dark">Drop media (image/video) to attach</span>
   </div>
 
   <div class="card-nb-body p-2 p-sm-3">
@@ -16,153 +16,87 @@
 
       <div class="flex-grow-1">
         
-        <!-- Post Input / Textarea -->
+        <!-- Post Title Input (Required) -->
+        <input
+          type="text"
+          [(ngModel)]="title"
+          (focus)="isExpanded = true"
+          placeholder="Post title..."
+          maxlength="120"
+          class="post-title-input w-100 mb-2"
+        />
+
+        <!-- Post Content Textarea -->
         <textarea
           #postTextArea
           [(ngModel)]="textContent"
           (focus)="isExpanded = true"
-          [rows]="isExpanded || imagePreview || showCodeSnippet ? 3 : 1"
-          placeholder="What are you learning today?"
-          maxlength="1000"
+          [rows]="isExpanded || mediaPreview ? 3 : 2"
+          placeholder="What are you working on or learning?..."
+          maxlength="2000"
           class="post-textarea w-100"
         ></textarea>
 
         <!-- Validation / Error Alert -->
-        <div *ngIf="errorMessage" class="alert-nb alert-nb-danger py-1 px-2 mt-1 mb-0 small d-flex align-items-center gap-2">
+        <div *ngIf="errorMessage" class="alert-nb alert-nb-danger py-1 px-2 mt-2 mb-0 small d-flex align-items-center gap-2">
           <i class="bi bi-exclamation-triangle-fill"></i>
           <span>{{ errorMessage }}</span>
         </div>
 
         <!-- Success Alert -->
-        <div *ngIf="successMessage" class="alert-nb alert-nb-success py-1 px-2 mt-1 mb-0 small d-flex align-items-center gap-2">
+        <div *ngIf="successMessage" class="alert-nb alert-nb-success py-1 px-2 mt-2 mb-0 small d-flex align-items-center gap-2">
           <i class="bi bi-check-circle-fill"></i>
           <span>{{ successMessage }}</span>
         </div>
 
-        <!-- Code Snippet Builder Drawer (Compact) -->
-        <div *ngIf="showCodeSnippet" class="code-snippet-box mt-2">
-          <div class="code-snippet-header d-flex align-items-center justify-content-between px-2 py-1">
-            <div class="d-flex align-items-center gap-2">
-              <span class="code-dot dot-red"></span>
-              <span class="code-dot dot-yellow"></span>
-              <span class="code-dot dot-green"></span>
-              <span class="text-light small fw-bold font-display ms-1">CODE:</span>
-              <select [(ngModel)]="codeLanguage" class="code-lang-select ms-1">
-                <option value="java">Java</option>
-                <option value="typescript">TypeScript</option>
-                <option value="javascript">JavaScript</option>
-                <option value="go">Go</option>
-                <option value="sql">SQL</option>
-                <option value="python">Python</option>
-                <option value="html">HTML/CSS</option>
-                <option value="bash">Bash</option>
-              </select>
-            </div>
-            <button type="button" (click)="toggleCodeSnippet()" class="btn-close-code" title="Close code editor">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-          <textarea
-            [(ngModel)]="codeSnippet"
-            rows="3"
-            placeholder="// Paste or write your code snippet here..."
-            class="code-textarea w-100"
-          ></textarea>
-          <div class="code-snippet-footer px-2 py-1 d-flex justify-content-between align-items-center">
-            <span class="text-secondary small font-monospace" style="font-size: 0.72rem;">Syntax fences</span>
-            <button
-              type="button"
-              (click)="insertCodeBlock()"
-              [disabled]="!codeSnippet.trim()"
-              class="badge-nb badge-nb-mint border-0 py-1 px-2"
-              style="cursor: pointer; font-size: 0.75rem;"
-            >
-              <i class="bi bi-plus-lg me-1"></i> Insert Code
-            </button>
-          </div>
-        </div>
-
-        <!-- Attached Image Preview Card (Compact) -->
-        <div *ngIf="imagePreview" class="image-preview-card mt-2">
+        <!-- Attached Media Preview Card (Image or Video) -->
+        <div *ngIf="mediaPreview" class="image-preview-card mt-2">
           <div class="image-preview-header d-flex justify-content-between align-items-center px-2 py-1">
             <div class="d-flex align-items-center gap-2 text-truncate">
-              <i class="bi bi-image text-dark"></i>
+              <i class="bi" [ngClass]="isMediaVideo ? 'bi-camera-video text-dark' : 'bi-image text-dark'"></i>
               <span class="small fw-bold text-truncate text-dark" style="max-width: 220px;">{{ fileName }}</span>
               <span class="badge-nb badge-nb-yellow py-0 px-2" style="font-size: 0.7rem;">{{ fileSizeFormatted }}</span>
             </div>
-            <button type="button" (click)="removeImage()" class="btn-remove-preview" title="Remove attached image">
+            <button type="button" (click)="removeMedia()" class="btn-remove-preview" title="Remove attached media">
               <i class="bi bi-trash3-fill me-1"></i> Remove
             </button>
           </div>
           <div class="image-preview-img-container text-center p-2">
-            <img [src]="imagePreview" alt="Upload preview" class="preview-img">
+            <img *ngIf="!isMediaVideo" [src]="mediaPreview" alt="Upload preview" class="preview-img">
+            <video *ngIf="isMediaVideo" [src]="mediaPreview" controls class="w-100 rounded" style="max-height: 240px;"></video>
           </div>
         </div>
 
-        <!-- Quick Tags Pills (Compact) -->
-        <div *ngIf="isExpanded" class="tags-container mt-1 pt-1 d-flex flex-wrap gap-1 align-items-center">
-          <span class="text-muted small fw-bold font-display me-1" style="font-size: 0.72rem;">
-            <i class="bi bi-hash"></i> Quick tags:
-          </span>
-          <button
-            type="button"
-            *ngFor="let tag of popularTags"
-            (click)="addTag(tag)"
-            class="tag-pill"
-          >{{ tag }}</button>
-        </div>
-
-        <!-- Bottom Action Bar (Ultra-Compact: NO mt-3) -->
-        <div class="post-action-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <!-- Bottom Action Bar (Ultra-Compact) -->
+        <div class="post-action-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
           
-          <div class="d-flex gap-2 align-items-center flex-wrap">
-            <!-- Hidden Native File Input -->
+          <div class="d-flex gap-2 align-items-center">
+            <!-- Hidden Native File Input (accepts images & videos) -->
             <input
               #fileInput
               type="file"
               (change)="onFileSelected($event)"
-              accept="image/png, image/jpeg, image/gif, image/webp"
+              accept="image/png, image/jpeg, image/gif, image/webp, video/mp4, video/webm"
               class="d-none"
             >
 
-            <!-- Image Button -->
+            <!-- Unified Media Button (Image + Video) -->
             <button
               type="button"
               (click)="fileInput.click()"
-              class="btn-tool-pill btn-tool-image"
-              [class.active-pill]="imagePreview"
-              title="Attach an image"
+              class="btn-tool-pill btn-tool-media"
+              [class.active-pill]="mediaPreview"
+              title="Attach image or video"
             >
-              <i class="bi bi-image me-1"></i> Image
-              <span *ngIf="imagePreview" class="badge-check-dot ms-1"><i class="bi bi-check2"></i></span>
-            </button>
-
-            <!-- Video / Media Button -->
-            <button
-              type="button"
-              (click)="onVideoClick()"
-              class="btn-tool-pill btn-tool-video"
-              title="Attach media or video link"
-            >
-              <i class="bi bi-camera-video me-1"></i> Video
-            </button>
-
-            <!-- Code Button -->
-            <button
-              type="button"
-              (click)="toggleCodeSnippet()"
-              class="btn-tool-pill btn-tool-code"
-              [class.active-pill]="showCodeSnippet"
-              title="Add a code snippet"
-            >
-              <i class="bi bi-code-slash me-1"></i> Code
+              <i class="bi bi-paperclip me-1"></i> Media
+              <span *ngIf="mediaPreview" class="badge-check-dot ms-1"><i class="bi bi-check2"></i></span>
             </button>
           </div>
 
           <!-- Right Side: Char count & Post Button with arrow -->
           <div class="d-flex align-items-center gap-2">
             <span *ngIf="textContent.length > 0" class="text-muted small font-display fw-bold" style="font-size: 0.72rem;">
-              {{ textContent.length }}/1000
+              {{ textContent.length }}/2000
             </span>
             <button
               type="button"

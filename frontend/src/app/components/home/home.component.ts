@@ -90,10 +90,25 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // Handle post emission from PostCreateComponent
   onPostCreated(createdPost: Post): void {
-    // Prepend newly created post with new array reference to trigger child setter
+    // Prepend newly created post with new array reference
     this.posts = [createdPost, ...this.posts];
     this.isLoadingPosts = false;
     this.cdr.markForCheck();
+  }
+
+  onPostDeleted(deletedId: number): void {
+    this.posts = this.posts.filter(p => p.id !== deletedId);
+    this.cdr.markForCheck();
+  }
+
+  onPostUpdated(updatedPost: Post): void {
+    const idx = this.posts.findIndex(p => p.id === updatedPost.id);
+    if (idx !== -1) {
+      const copy = [...this.posts];
+      copy[idx] = updatedPost;
+      this.posts = copy;
+      this.cdr.markForCheck();
+    }
   }
 
   setFeedTab(tab: 'following' | 'latest'): void {

@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.zone01.blog.entity.UserRole;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,7 +31,12 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponse createPost(String textContent, MultipartFile file, String authorUsername) {
+    public PostResponse createPost(String title, String textContent, MultipartFile file, String authorUsername) {
+        String trimmedTitle = (title != null) ? title.trim() : null;
+        if (trimmedTitle == null || trimmedTitle.isEmpty()) {
+            throw new IllegalArgumentException("Post title is required.");
+        }
+
         String trimmedText = (textContent != null) ? textContent.trim() : null;
         boolean hasText = trimmedText != null && !trimmedText.isEmpty();
         boolean hasFile = file != null && !file.isEmpty();
@@ -42,10 +50,78 @@ public class PostService {
 
         String mediaUrl = fileStorageService.storeFile(file);
 
-        Post post = new Post(hasText ? trimmedText : null, mediaUrl, author);
+        Post post = new Post(trimmedTitle, hasText ? trimmedText : null, mediaUrl, author);
         Post savedPost = postRepository.save(post);
 
         return PostResponse.fromEntity(savedPost);
+    }
+
+    // Update post with author/admin access control and media management
+    @Transactional
+    public PostResponse updatePost(Long postId, String title, String textContent, MultipartFile file, boolean removeMedia, String requestingUsername) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
+
+        User requestingUser = userRepository.findByUsername(requestingUsername)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + requestingUsername));
+
+        boolean isAuthor = post.getAuthor().getUsername().equals(requestingUsername);
+        boolean isAdmin = requestingUser.getRole() == UserRole.ROLE_ADMIN;
+
+        if (!isAuthor && !isAdmin) {
+            throw new SecurityException("You do not have permission to edit this post.");
+        }
+
+        String trimmedTitle = (title != null) ? title.trim() : null;
+        if (trimmedTitle != null && !trimmedTitle.isEmpty()) {
+            post.setTitle(trimmedTitle);
+        }
+
+        String trimmedText = (textContent != null) ? textContent.trim() : null;
+        boolean hasText = trimmedText != null && !trimmedText.isEmpty();
+
+        // Handle media updates
+        if (file != null && !file.isEmpty()) {
+            fileStorageService.deleteFile(post.getMediaUrl());
+            String newMediaUrl = fileStorageService.storeFile(file);
+            post.setMediaUrl(newMediaUrl);
+        } else if (removeMedia) {
+            fileStorageService.deleteFile(post.getMediaUrl());
+            post.setMediaUrl(null);
+        }
+
+        // Validate that post is not left completely empty
+        if (!hasText && (post.getMediaUrl() == null || post.getMediaUrl().isBlank())) {
+            throw new IllegalArgumentException("Post cannot be completely empty.");
+        }
+
+        post.setTextContent(hasText ? trimmedText : null);
+        post.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
+
+        Post updatedPost = postRepository.save(post);
+        return PostResponse.fromEntity(updatedPost);
+    }
+
+    // Delete post with author/admin access control and media cleanup
+    @Transactional
+    public void deletePost(Long postId, String requestingUsername) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
+
+        User requestingUser = userRepository.findByUsername(requestingUsername)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + requestingUsername));
+
+        boolean isAuthor = post.getAuthor().getUsername().equals(requestingUsername);
+        boolean isAdmin = requestingUser.getRole() == UserRole.ROLE_ADMIN;
+
+        if (!isAuthor && !isAdmin) {
+            throw new SecurityException("You do not have permission to delete this post.");
+        }
+
+        // Clean up uploaded media file from disk
+        fileStorageService.deleteFile(post.getMediaUrl());
+
+        postRepository.delete(post);
     }
 
     @Transactional(readOnly = true)

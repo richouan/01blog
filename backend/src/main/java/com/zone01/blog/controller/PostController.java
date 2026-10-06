@@ -24,6 +24,7 @@ public class PostController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createPost(
+            @RequestParam(name = "title", required = true) String title,
             @RequestParam(name = "textContent", required = false) String textContent,
             @RequestParam(name = "file", required = false) MultipartFile file,
             Authentication authentication
@@ -35,7 +36,7 @@ public class PostController {
 
         try {
             String authorUsername = authentication.getName();
-            PostResponse createdPost = postService.createPost(textContent, file, authorUsername);
+            PostResponse createdPost = postService.createPost(title, textContent, file, authorUsername);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -74,6 +75,62 @@ public class PostController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Update existing post (author or admin)
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updatePost(
+            @PathVariable("id") Long id,
+            @RequestParam(name = "title", required = false) String title,
+            @RequestParam(name = "textContent", required = false) String textContent,
+            @RequestParam(name = "file", required = false) MultipartFile file,
+            @RequestParam(name = "removeMedia", required = false, defaultValue = "false") boolean removeMedia,
+            Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "You must be logged in to edit a post."));
+        }
+
+        try {
+            PostResponse updated = postService.updatePost(id, title, textContent, file, removeMedia, authentication.getName());
+            return ResponseEntity.ok(updated);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error updating post: " + e.getMessage()));
+        }
+    }
+
+    // Delete post (author or admin)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletePost(
+            @PathVariable("id") Long id,
+            Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "You must be logged in to delete a post."));
+        }
+
+        try {
+            postService.deletePost(id, authentication.getName());
+            return ResponseEntity.ok(Map.of("message", "Post deleted successfully", "id", id));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error deleting post: " + e.getMessage()));
         }
     }
 }

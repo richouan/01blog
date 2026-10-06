@@ -1,7 +1,12 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { Post } from '../../models/post.models';
+import { CurrentUser } from '../../models/auth.models';
+import { AuthService } from '../../services/auth.service';
+import { PostService } from '../../services/post.service';
 
 export interface ContentSegment {
   type: 'text' | 'code';
@@ -13,19 +18,17 @@ export interface DisplayPost extends Post {
   avatarColor: string;
   initials: string;
   relativeTime: string;
-  tags: string[];
   segments: ContentSegment[];
-  title?: string | null;
 }
 
 @Component({
   selector: 'app-post-list',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './post-list.component.html',
   styleUrl: './post-list.component.css'
 })
-export class PostListComponent {
+export class PostListComponent implements OnInit, OnDestroy {
   private _posts: Post[] = [];
   displayPosts: DisplayPost[] = [];
 
@@ -46,35 +49,72 @@ export class PostListComponent {
   @Output() postLiked = new EventEmitter<Post>();
   @Output() postCommentClicked = new EventEmitter<Post>();
   @Output() triggerCreate = new EventEmitter<void>();
+  @Output() postUpdated = new EventEmitter<Post>();
+  @Output() postDeleted = new EventEmitter<number>();
+
+  currentUser: CurrentUser | null = null;
+  private authSub?: Subscription;
 
   copiedPostId: number | null = null;
   copiedCodeIndex: string | null = null;
 
-  // Local like & bookmark state for immediate tactile feedback
   likedPostIds = new Set<number>();
   bookmarkedPostIds = new Set<number>();
 
-  // Process posts into pre-computed display objects once to avoid change detection loops
+  // Dropdown menu state
+  activeDropdownPostId: number | null = null;
+
+  // Edit Modal State
+  editingPost: DisplayPost | null = null;
+  editTitle: string = '';
+  editTextContent: string = '';
+  editSelectedFile: File | null = null;
+  editFilePreview: string | null = null;
+  editRemoveMedia: boolean = false;
+  isSubmittingEdit: boolean = false;
+  editErrorMessage: string | null = null;
+
+  // Delete Modal State
+  deletingPost: DisplayPost | null = null;
+  isSubmittingDelete: boolean = false;
+  deleteErrorMessage: string | null = null;
+
+  constructor(
+    private postService: PostService,
+    private authService: AuthService
+  ) {}
+
+  ngOnInit(): void {
+    this.currentUser = this.authService.getCurrentUser();
+    this.authSub = this.authService.currentUser$.subscribe(u => {
+      this.currentUser = u;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.authSub?.unsubscribe();
+  }
+
+  isOwnerOrAdmin(post: Post): boolean {
+    if (!this.currentUser) return false;
+    return post.authorUsername === this.currentUser.username || this.currentUser.role === 'ROLE_ADMIN';
+  }
+
   private processPosts(): void {
     this.displayPosts = this._posts.map(post => {
-      const extracted = this.extractTitleAndBody(post.textContent);
       return {
         ...post,
-        title: extracted.title,
         avatarColor: this.getAvatarColor(post.authorUsername),
         initials: this.getInitials(post.authorUsername),
         relativeTime: this.getRelativeTime(post.createdAt),
-        tags: this.extractTags(post.textContent),
-        segments: this.parsePostSegments(extracted.body || post.textContent)
+        segments: this.parsePostSegments(post.textContent)
       };
     });
   }
 
-  // Format relative timestamp in human-readable terms
   getRelativeTime(dateString?: string): string {
     if (!dateString) return 'Just now';
 
-    // Normalize ISO date: treat as UTC if no offset specified
     let normalized = dateString;
     if (!normalized.endsWith('Z') && !normalized.includes('+')) {
       normalized = `${normalized}Z`;
@@ -84,12 +124,10 @@ export class PostListComponent {
     const now = new Date();
     let diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    // If posted within the last 60 seconds (or small client/server clock skew)
     if (diffInSeconds < 60 && diffInSeconds >= -60) {
       return 'Just now';
     }
 
-    // Handle clock skew where server was ahead
     if (diffInSeconds < -60) {
       diffInSeconds = Math.abs(diffInSeconds);
     }
@@ -104,7 +142,6 @@ export class PostListComponent {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  // Consistent deterministic avatar color from username
   getAvatarColor(username: string): string {
     const colors = ['#ffdb58', '#2ec4b6', '#ff6b6b', '#a78bfa', '#38bdf8', '#fb923c'];
     if (!username) return colors[0];
@@ -115,13 +152,11 @@ export class PostListComponent {
     return colors[Math.abs(hash) % colors.length];
   }
 
-  // Two initials for user avatar badge
   getInitials(username: string): string {
     if (!username) return '??';
     return username.substring(0, Math.min(2, username.length)).toUpperCase();
   }
 
-  // Safe media URL resolver targeting backend static upload handler
   getMediaUrl(url?: string | null): string {
     if (!url) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -137,7 +172,6 @@ export class PostListComponent {
     return lower.endsWith('.mp4') || lower.endsWith('.webm');
   }
 
-  // Parse text into regular text and markdown-style code blocks
   parsePostSegments(text?: string | null): ContentSegment[] {
     if (!text) return [];
     const segments: ContentSegment[] = [];
@@ -167,80 +201,11 @@ export class PostListComponent {
       }
     }
 
-    // Fallback if no code blocks found
     if (segments.length === 0 && text.trim()) {
       segments.push({ type: 'text', content: text.trim() });
     }
 
     return segments;
-  }
-
-  // Extract title and body if user wrote a markdown header, newline separation, or first sentence
-  extractTitleAndBody(text?: string | null): { title: string; body: string } {
-    if (!text || !text.trim()) {
-      return { title: 'Dev Log Update', body: '' };
-    }
-    const trimmed = text.trim();
-
-    // 1. Explicit markdown header: # My Title
-    if (trimmed.startsWith('# ')) {
-      const nl = trimmed.indexOf('\n');
-      if (nl > -1) {
-        return {
-          title: trimmed.substring(2, nl).trim(),
-          body: trimmed.substring(nl + 1).trim()
-        };
-      }
-      return { title: trimmed.substring(2).trim(), body: '' };
-    }
-
-    // 2. Any newline (single or double) within first 90 characters
-    const nl = trimmed.indexOf('\n');
-    if (nl > 0 && nl <= 90) {
-      const firstLine = trimmed.substring(0, nl).trim();
-      if (!firstLine.startsWith('```')) {
-        return {
-          title: firstLine,
-          body: trimmed.substring(nl + 1).trim()
-        };
-      }
-    }
-
-    // 3. First sentence ending with punctuation within first 80 chars
-    const sentenceEnd = trimmed.search(/[.!?](\s|$)/);
-    if (sentenceEnd > 0 && sentenceEnd <= 80) {
-      return {
-        title: trimmed.substring(0, sentenceEnd).trim(),
-        body: trimmed.substring(sentenceEnd + 1).trim()
-      };
-    }
-
-    // 4. Short post text (<= 60 chars) acts directly as the title
-    if (trimmed.length <= 60 && !trimmed.startsWith('```')) {
-      return {
-        title: trimmed,
-        body: ''
-      };
-    }
-
-    // 5. Fallback for longer unformatted text: prominent excerpt header
-    if (!trimmed.startsWith('```')) {
-      const spaceIdx = trimmed.lastIndexOf(' ', 50);
-      const cut = spaceIdx > 20 ? spaceIdx : 50;
-      return {
-        title: trimmed.substring(0, cut).trim() + '...',
-        body: trimmed
-      };
-    }
-
-    return { title: 'Code Snippet', body: trimmed };
-  }
-
-  // Extract hashtags from post content
-  extractTags(text?: string | null): string[] {
-    if (!text) return [];
-    const matches = text.match(/#[a-zA-Z0-9_-]+/g);
-    return matches ? Array.from(new Set(matches)).slice(0, 4) : [];
   }
 
   toggleLike(post: Post): void {
@@ -281,16 +246,6 @@ export class PostListComponent {
     this.postCommentClicked.emit(post);
   }
 
-  copyPostLink(post: Post): void {
-    const url = `${window.location.origin}/post/${post.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      this.copiedPostId = post.id;
-      setTimeout(() => {
-        this.copiedPostId = null;
-      }, 2000);
-    });
-  }
-
   copyCode(code: string, id: string): void {
     navigator.clipboard.writeText(code).then(() => {
       this.copiedCodeIndex = id;
@@ -302,5 +257,150 @@ export class PostListComponent {
 
   onCreateClick(): void {
     this.triggerCreate.emit();
+  }
+
+  // --- DROPDOWN CONTROLS ---
+
+  toggleDropdown(postId: number, event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.activeDropdownPostId === postId) {
+      this.activeDropdownPostId = null;
+    } else {
+      this.activeDropdownPostId = postId;
+    }
+  }
+
+  closeDropdown(): void {
+    this.activeDropdownPostId = null;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeDropdown();
+  }
+
+  // --- EDIT POST MODAL CONTROLS ---
+
+  openEditModal(post: DisplayPost, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.closeDropdown();
+    this.editingPost = post;
+    this.editTitle = post.title || '';
+    this.editTextContent = post.textContent || '';
+    this.editSelectedFile = null;
+    this.editFilePreview = null;
+    this.editRemoveMedia = false;
+    this.editErrorMessage = null;
+    this.isSubmittingEdit = false;
+  }
+
+  closeEditModal(): void {
+    this.editingPost = null;
+    this.editSelectedFile = null;
+    this.editFilePreview = null;
+    this.editErrorMessage = null;
+    this.isSubmittingEdit = false;
+  }
+
+  onEditFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.editSelectedFile = input.files[0];
+      this.editRemoveMedia = false;
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.editFilePreview = reader.result as string;
+      };
+      reader.readAsDataURL(this.editSelectedFile);
+    }
+  }
+
+  markRemoveMedia(): void {
+    this.editRemoveMedia = true;
+    this.editSelectedFile = null;
+    this.editFilePreview = null;
+  }
+
+  savePostEdit(): void {
+    if (!this.editingPost) return;
+
+    const trimmedTitle = this.editTitle.trim();
+    if (!trimmedTitle) {
+      this.editErrorMessage = 'Post title is required.';
+      return;
+    }
+
+    const trimmedText = this.editTextContent.trim();
+    const hasExistingMedia = this.editingPost.mediaUrl && !this.editRemoveMedia;
+    const hasNewMedia = !!this.editSelectedFile;
+
+    if (!trimmedText && !hasExistingMedia && !hasNewMedia) {
+      this.editErrorMessage = 'Post must contain either text content or an attachment.';
+      return;
+    }
+
+    this.isSubmittingEdit = true;
+    this.editErrorMessage = null;
+
+    this.postService.updatePost(
+      this.editingPost.id,
+      trimmedTitle,
+      trimmedText,
+      this.editSelectedFile || undefined,
+      this.editRemoveMedia
+    ).subscribe({
+      next: (updatedPost) => {
+        this.isSubmittingEdit = false;
+        const idx = this._posts.findIndex(p => p.id === updatedPost.id);
+        if (idx !== -1) {
+          this._posts[idx] = updatedPost;
+        }
+        this.processPosts();
+        this.postUpdated.emit(updatedPost);
+        this.closeEditModal();
+      },
+      error: (err) => {
+        this.isSubmittingEdit = false;
+        this.editErrorMessage = err.error?.message || 'Failed to update post. Please try again.';
+      }
+    });
+  }
+
+  // --- DELETE POST MODAL CONTROLS ---
+
+  openDeleteModal(post: DisplayPost, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.closeDropdown();
+    this.deletingPost = post;
+    this.isSubmittingDelete = false;
+    this.deleteErrorMessage = null;
+  }
+
+  closeDeleteModal(): void {
+    this.deletingPost = null;
+    this.deleteErrorMessage = null;
+    this.isSubmittingDelete = false;
+  }
+
+  confirmDelete(): void {
+    if (!this.deletingPost) return;
+
+    const idToDelete = this.deletingPost.id;
+    this.isSubmittingDelete = true;
+    this.deleteErrorMessage = null;
+
+    this.postService.deletePost(idToDelete).subscribe({
+      next: () => {
+        this.isSubmittingDelete = false;
+        this._posts = this._posts.filter(p => p.id !== idToDelete);
+        this.processPosts();
+        this.postDeleted.emit(idToDelete);
+        this.closeDeleteModal();
+      },
+      error: (err) => {
+        this.isSubmittingDelete = false;
+        this.deleteErrorMessage = err.error?.message || 'Failed to delete post. Please try again.';
+      }
+    });
   }
 }

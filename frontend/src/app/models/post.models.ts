@@ -1,5 +1,6 @@
 export interface Post {
   id: number;
+  title: string;
   textContent?: string | null;
   mediaUrl?: string | null;
   authorId: number;

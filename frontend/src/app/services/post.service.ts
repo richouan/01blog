@@ -11,9 +11,9 @@ export class PostService {
 
   constructor(private http: HttpClient) {}
 
-  // Create a new post with multipart/form-data
-  createPost(textContent?: string, file?: File): Observable<Post> {
+  createPost(title: string, textContent?: string, file?: File): Observable<Post> {
     const formData = new FormData();
+    formData.append('title', title.trim());
     if (textContent && textContent.trim()) {
       formData.append('textContent', textContent.trim());
     }
@@ -31,8 +31,26 @@ export class PostService {
     return this.http.get<Post[]>(`${this.apiUrl}/user/${username}`);
   }
 
-  // Get feed (posts from followed students + self)
   getFeedPosts(): Observable<Post[]> {
     return this.http.get<Post[]>(`${this.apiUrl}/feed`);
+  }
+
+  updatePost(id: number, title?: string, textContent?: string, file?: File, removeMedia: boolean = false): Observable<Post> {
+    const formData = new FormData();
+    if (title !== undefined && title !== null) {
+      formData.append('title', title.trim());
+    }
+    if (textContent !== undefined && textContent !== null) {
+      formData.append('textContent', textContent.trim());
+    }
+    if (file) {
+      formData.append('file', file);
+    }
+    formData.append('removeMedia', String(removeMedia));
+    return this.http.put<Post>(`${this.apiUrl}/${id}`, formData);
+  }
+
+  deletePost(id: number): Observable<{ message: string; id: number }> {
+    return this.http.delete<{ message: string; id: number }>(`${this.apiUrl}/${id}`);
   }
 }

@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class PostResponse {
 
     private Long id;
+    private String title;
     private String textContent;
     private String mediaUrl;
     private Long authorId;
@@ -20,9 +21,10 @@ public class PostResponse {
 
     public PostResponse() {}
 
-    public PostResponse(Long id, String textContent, String mediaUrl, Long authorId, 
+    public PostResponse(Long id, String title, String textContent, String mediaUrl, Long authorId, 
                         String authorUsername, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
+        this.title = title;
         this.textContent = textContent;
         this.mediaUrl = mediaUrl;
         this.authorId = authorId;
@@ -35,6 +37,7 @@ public class PostResponse {
     public static PostResponse fromEntity(Post post) {
         return new PostResponse(
                 post.getId(),
+                post.getTitle(),
                 post.getTextContent(),
                 post.getMediaUrl(),
                 post.getAuthor().getId(),
@@ -50,6 +53,14 @@ public class PostResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getTextContent() {

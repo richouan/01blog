@@ -40,7 +40,7 @@
   </div>
 
   <!-- =========================================================
-       STREAM POST CARDS LIST (80% Width Centered - Screenshot Match)
+       STREAM POST CARDS LIST (90% Width Centered - Screenshot Match)
        ========================================================= -->
   <div *ngIf="!loading && displayPosts.length > 0" class="stream-posts-list">
     <article
@@ -81,22 +81,45 @@
             </div>
           </div>
 
-          <!-- Right Side: Tag Badge & 3-Dots Action -->
-          <div class="d-flex align-items-center gap-2 flex-shrink-0">
-            <!-- Tag Pill (Screenshot Style) -->
-            <span *ngIf="post.tags.length > 0" class="badge-tag-pill">
-              {{ post.tags[0] }}
-            </span>
-
-            <!-- 3-Dots Options Button -->
+          <!-- Right Side: 3-Dots (for Author/Admin) -->
+          <div class="d-flex align-items-center gap-2 flex-shrink-0 position-relative">
+            <!-- 3-Dots Options Button: ONLY visible if author or admin -->
             <button
+              *ngIf="isOwnerOrAdmin(post)"
               type="button"
-              (click)="copyPostLink(post)"
+              (click)="toggleDropdown(post.id, $event)"
               class="btn-dots-nb"
-              [title]="copiedPostId === post.id ? 'Copied link!' : 'Post options'"
+              [class.active-dots]="activeDropdownPostId === post.id"
+              title="Post options"
+              [attr.aria-expanded]="activeDropdownPostId === post.id"
             >
-              <i class="bi" [ngClass]="copiedPostId === post.id ? 'bi-check2 text-mint fw-bold' : 'bi-three-dots-vertical'"></i>
+              <i class="bi bi-three-dots-vertical"></i>
             </button>
+
+            <!-- Neo-Brutalist Options Dropdown Menu (Edit & Delete only) -->
+            <div
+              *ngIf="activeDropdownPostId === post.id && isOwnerOrAdmin(post)"
+              class="post-options-dropdown"
+              (click)="$event.stopPropagation()"
+            >
+              <button
+                type="button"
+                (click)="openEditModal(post, $event)"
+                class="dropdown-item-nb"
+              >
+                <i class="bi bi-pencil-square text-primary"></i>
+                <span>Edit post</span>
+              </button>
+
+              <button
+                type="button"
+                (click)="openDeleteModal(post, $event)"
+                class="dropdown-item-nb text-danger"
+              >
+                <i class="bi bi-trash3-fill"></i>
+                <span>Delete post</span>
+              </button>
+            </div>
           </div>
 
         </header>
@@ -108,13 +131,6 @@
 
         <!-- Post Body Content -->
         <div class="post-body-content">
-          
-          <!-- Extra Hashtags Row if more than 1 tag -->
-          <div *ngIf="post.tags.length > 1" class="post-tags-row d-flex flex-wrap gap-1 mb-2">
-            <span *ngFor="let tag of post.tags.slice(1)" class="badge-tag-pill-subtle">
-              {{ tag }}
-            </span>
-          </div>
 
           <!-- Segments (Text paragraphs & Terminal Code Blocks) -->
           <div class="post-segments-flow">
@@ -220,6 +236,137 @@
 
       </div>
     </article>
+  </div>
+
+  <!-- =========================================================
+       EDIT POST MODAL (Neo-Brutalist)
+       ========================================================= -->
+  <div *ngIf="editingPost" class="modal-backdrop-nb" (click)="closeEditModal()">
+    <div class="modal-dialog-nb" (click)="$event.stopPropagation()">
+      
+      <div class="modal-header-nb d-flex align-items-center justify-content-between p-3 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-pencil-square fs-5 text-warning"></i>
+          <h5 class="m-0 font-display fw-bold text-dark">Edit Post</h5>
+        </div>
+        <button type="button" (click)="closeEditModal()" class="btn-close-nb" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body-nb p-3">
+        <!-- Error Alert -->
+        <div *ngIf="editErrorMessage" class="alert-nb alert-nb-danger py-2 px-3 mb-3 small d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>{{ editErrorMessage }}</span>
+        </div>
+
+        <!-- Post Title Input -->
+        <label class="font-display fw-bold small text-muted mb-1 d-block">POST TITLE</label>
+        <input
+          type="text"
+          [(ngModel)]="editTitle"
+          placeholder="Update post title..."
+          maxlength="120"
+          class="post-title-input-modal w-100 mb-2"
+        />
+
+        <!-- Post Content Textarea -->
+        <label class="font-display fw-bold small text-muted mb-1 d-block">POST CONTENT</label>
+        <textarea
+          [(ngModel)]="editTextContent"
+          rows="4"
+          placeholder="Update your post content..."
+          maxlength="2000"
+          class="post-textarea-modal w-100 mb-2"
+        ></textarea>
+
+        <!-- Current Media Preview & Options -->
+        <div *ngIf="editingPost.mediaUrl && !editRemoveMedia" class="edit-media-box p-2 border rounded mb-2">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="small fw-bold font-display text-muted">Current Attachment</span>
+            <button type="button" (click)="markRemoveMedia()" class="btn-nb-secondary py-1 px-2 small text-danger">
+              <i class="bi bi-trash3 me-1"></i>
+              <span>Remove attachment</span>
+            </button>
+          </div>
+          <img *ngIf="!isVideo(editingPost.mediaUrl)" [src]="getMediaUrl(editingPost.mediaUrl)" alt="Attachment" class="img-fluid rounded" style="max-height: 140px; object-fit: cover;" />
+          <video *ngIf="isVideo(editingPost.mediaUrl)" [src]="getMediaUrl(editingPost.mediaUrl)" controls class="w-100 rounded" style="max-height: 140px;"></video>
+        </div>
+
+        <!-- Replace / Add Attachment -->
+        <div class="mt-2">
+          <label class="font-display fw-bold small text-muted mb-1 d-block">
+            {{ (editingPost.mediaUrl && !editRemoveMedia) ? 'REPLACE ATTACHMENT (OPTIONAL)' : 'ADD ATTACHMENT (OPTIONAL)' }}
+          </label>
+          <input
+            type="file"
+            (change)="onEditFileChange($event)"
+            accept="image/png,image/jpeg,image/webp,video/mp4"
+            class="form-control form-control-sm"
+          />
+          <div *ngIf="editFilePreview" class="mt-2 text-center">
+            <img [src]="editFilePreview" alt="New preview" class="img-fluid rounded border" style="max-height: 120px;" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer-nb d-flex align-items-center justify-content-end gap-2 p-3 border-top">
+        <button type="button" (click)="closeEditModal()" class="btn-nb-secondary py-2 px-3" [disabled]="isSubmittingEdit">
+          Cancel
+        </button>
+        <button type="button" (click)="savePostEdit()" class="btn-nb-primary py-2 px-4 d-inline-flex align-items-center gap-2" [disabled]="isSubmittingEdit">
+          <span *ngIf="isSubmittingEdit" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!isSubmittingEdit" class="bi bi-check2 fw-bold"></i>
+          <span>{{ isSubmittingEdit ? 'Saving...' : 'Save Changes' }}</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================
+       DELETE CONFIRMATION MODAL (Neo-Brutalist)
+       ========================================================= -->
+  <div *ngIf="deletingPost" class="modal-backdrop-nb" (click)="closeDeleteModal()">
+    <div class="modal-dialog-nb modal-dialog-sm" (click)="$event.stopPropagation()">
+      
+      <div class="modal-header-nb d-flex align-items-center justify-content-between p-3 border-bottom">
+        <div class="d-flex align-items-center gap-2 text-danger">
+          <i class="bi bi-trash3-fill fs-5"></i>
+          <h5 class="m-0 font-display fw-bold text-dark">Delete Post</h5>
+        </div>
+        <button type="button" (click)="closeDeleteModal()" class="btn-close-nb" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body-nb p-3">
+        <div *ngIf="deleteErrorMessage" class="alert-nb alert-nb-danger py-2 px-3 mb-3 small d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>{{ deleteErrorMessage }}</span>
+        </div>
+
+        <p class="m-0 mb-2 text-dark">
+          Are you sure you want to delete this post?
+        </p>
+        <p class="small text-muted m-0">
+          This action is permanent and will remove the post, code snippets, and attachments from the 01Blog feed.
+        </p>
+      </div>
+
+      <div class="modal-footer-nb d-flex align-items-center justify-content-end gap-2 p-3 border-top">
+        <button type="button" (click)="closeDeleteModal()" class="btn-nb-secondary py-2 px-3" [disabled]="isSubmittingDelete">
+          Cancel
+        </button>
+        <button type="button" (click)="confirmDelete()" class="btn-nb-danger py-2 px-4 d-inline-flex align-items-center gap-2" [disabled]="isSubmittingDelete">
+          <span *ngIf="isSubmittingDelete" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!isSubmittingDelete" class="bi bi-trash3-fill"></i>
+          <span>{{ isSubmittingDelete ? 'Deleting...' : 'Delete Post' }}</span>
+        </button>
+      </div>
+
+    </div>
   </div>
 
 </div>

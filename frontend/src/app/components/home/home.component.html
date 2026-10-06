@@ -128,14 +128,6 @@
             </button>
           </div>
 
-          <!-- Type Filter Badge -->
-          <div class="dropdown">
-            <button class="btn-nb-secondary py-1 px-2 fs-6 text-dark" style="font-size: 0.8rem;">
-              <span>All types</span>
-              <i class="bi bi-chevron-down ms-1"></i>
-            </button>
-          </div>
-
         </div>
 
         <!-- Stream Feed List Component -->
@@ -145,6 +137,8 @@
           [emptyTitle]="activeFeedTab === 'following' ? 'No posts from followed students yet' : 'No posts in the stream yet'"
           [emptyMessage]="activeFeedTab === 'following' ? 'When you or students you subscribe to publish posts, they will appear here. You can also explore the Global Stream!' : 'Be the first developer to share a code snippet, question, or thought!'"
           (triggerCreate)="triggerCreatePost()"
+          (postDeleted)="onPostDeleted($event)"
+          (postUpdated)="onPostUpdated($event)"
         ></app-post-list>
 
       </main>
