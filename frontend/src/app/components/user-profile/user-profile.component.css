@@ -2,10 +2,10 @@
   min-height: calc(100vh - 65px);
 }
 
-/* Colorful Neo-Brutalist Top Cover Strip */
+/* Neo-Brutalist Top Cover Strip */
 .profile-cover-strip {
-  height: 16px;
-  background: linear-gradient(90deg, var(--nb-yellow) 0%, var(--nb-coral) 50%, var(--nb-mint) 100%);
+  height: 14px;
+  background-color: var(--nb-yellow);
   border-bottom: var(--nb-border-sm);
 }
 

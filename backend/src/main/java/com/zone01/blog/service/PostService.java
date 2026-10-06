@@ -1,0 +1,44 @@
+package com.zone01.blog.service;
+
+import com.zone01.blog.dto.PostResponse;
+import com.zone01.blog.entity.Post;
+import com.zone01.blog.entity.User;
+import com.zone01.blog.repository.PostRepository;
+import com.zone01.blog.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+public class PostService {
+
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
+
+    public PostService(PostRepository postRepository, UserRepository userRepository, FileStorageService fileStorageService) {
+        this.postRepository = postRepository;
+        this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
+    }
+
+    @Transactional
+    public PostResponse createPost(String textContent, MultipartFile file, String authorUsername) {
+        boolean hasText = textContent != null && !textContent.trim().isEmpty();
+        boolean hasFile = file != null && !file.isEmpty();
+
+        if (!hasText && !hasFile) {
+            throw new IllegalArgumentException("Post must contain text content or an uploaded media file.");
+        }
+
+        User author = userRepository.findByUsername(authorUsername)
+                .orElseThrow(() -> new IllegalArgumentException("Author not found: " + authorUsername));
+
+        String mediaUrl = fileStorageService.storeFile(file);
+
+        Post post = new Post(hasText ? textContent.trim() : null, mediaUrl, author);
+        Post savedPost = postRepository.save(post);
+
+        return PostResponse.fromEntity(savedPost);
+    }
+}
