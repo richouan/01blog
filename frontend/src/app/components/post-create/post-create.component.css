@@ -1,0 +1,282 @@
+/* =========================================================
+   Post Create Component - Ultra-Compact Neo-Brutalist Card
+   ========================================================= */
+
+.create-post-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.create-post-card.drag-over {
+  border-color: var(--nb-yellow) !important;
+  box-shadow: 0 0 0 4px var(--nb-yellow) !important;
+}
+
+/* Compact User Avatar Box */
+.user-avatar-md {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: var(--nb-yellow);
+  border: var(--nb-border-sm);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  font-family: var(--nb-font-display);
+  color: #121214;
+}
+
+/* Compact Textarea Input */
+.post-textarea {
+  border: var(--nb-border-sm);
+  border-radius: 6px;
+  background-color: var(--nb-input-bg);
+  color: var(--nb-black);
+  padding: 8px 12px;
+  font-family: var(--nb-font-body);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  min-height: 40px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, height 0.15s ease;
+}
+
+.post-textarea::placeholder {
+  color: var(--nb-text-muted);
+}
+
+.post-textarea:focus {
+  border-color: var(--nb-black);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+}
+
+/* Compact Action Toolbar (NO mt-3) */
+.post-action-toolbar {
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+}
+
+/* Drag & Drop Visual Overlay */
+.drag-drop-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 230, 0, 0.95);
+  border: 3px dashed #121214;
+  border-radius: 12px;
+  z-index: 20;
+  pointer-events: none;
+  animation: pulse-overlay 1s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-overlay {
+  0% { transform: scale(0.995); }
+  100% { transform: scale(1.002); }
+}
+
+/* Action Toolbar Buttons */
+.btn-tool-pill {
+  border: var(--nb-border-sm);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  box-shadow: 1.5px 1.5px 0px var(--nb-shadow-color);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--nb-card-bg);
+  color: var(--nb-black);
+}
+
+.btn-tool-pill:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 0.5px 0.5px 0px var(--nb-shadow-color);
+}
+
+.btn-tool-pill:active {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 0px 0px 0px var(--nb-shadow-color);
+}
+
+.btn-tool-image {
+  background-color: var(--nb-card-bg);
+}
+
+.btn-tool-image.active-pill {
+  background-color: var(--nb-yellow);
+}
+
+.btn-tool-video {
+  border-color: var(--nb-coral);
+  color: var(--nb-coral);
+  background-color: var(--nb-card-bg);
+}
+
+.btn-tool-video:hover {
+  background-color: #fff1f2;
+}
+
+.btn-tool-code {
+  background-color: var(--nb-card-bg);
+}
+
+.btn-tool-code.active-pill {
+  background-color: var(--nb-subtle-bg);
+  outline: 2px solid var(--nb-black);
+}
+
+/* Compact Image Preview Container */
+.image-preview-card {
+  border: var(--nb-border-sm);
+  border-radius: 8px;
+  background-color: var(--nb-subtle-bg);
+  box-shadow: var(--nb-shadow-sm);
+  overflow: hidden;
+}
+
+.image-preview-header {
+  background-color: var(--nb-card-bg);
+  border-bottom: var(--nb-border-sm);
+}
+
+.image-preview-img-container {
+  padding: 8px;
+  background: repeating-conic-gradient(rgba(0,0,0,0.03) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+}
+
+.preview-img {
+  max-height: 240px;
+  max-width: 100%;
+  border-radius: 6px;
+  border: var(--nb-border-sm);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  object-fit: contain;
+}
+
+.btn-remove-preview {
+  background-color: var(--nb-coral);
+  color: #ffffff;
+  border: var(--nb-border-sm);
+  border-radius: 5px;
+  box-shadow: 1.5px 1.5px 0px var(--nb-shadow-color);
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.btn-remove-preview:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 0.5px 0.5px 0px var(--nb-shadow-color);
+  background-color: #e11d48;
+}
+
+/* Compact Code Snippet Box */
+.code-snippet-box {
+  border: var(--nb-border-sm);
+  border-radius: 8px;
+  box-shadow: var(--nb-shadow-sm);
+  background-color: #121217;
+  overflow: hidden;
+}
+
+.code-snippet-header {
+  background-color: #1e1e24;
+  border-bottom: 1.5px solid #2e2e38;
+}
+
+.code-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-red { background-color: #ff5f56; }
+.dot-yellow { background-color: #ffbd2e; }
+.dot-green { background-color: #27c93f; }
+
+.code-lang-select {
+  background-color: #121217;
+  color: #f4f4f6;
+  border: 1.5px solid #3e3e4a;
+  border-radius: 4px;
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 1px 4px;
+  outline: none;
+}
+
+.btn-close-code {
+  background: transparent;
+  border: none;
+  color: #9e9ea8;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.btn-close-code:hover {
+  color: #ffffff;
+  background-color: rgba(255,255,255,0.1);
+}
+
+.code-textarea {
+  background-color: #0d0d11;
+  color: #7ee787;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.82rem;
+  padding: 8px 12px;
+  border: none;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  line-height: 1.35;
+}
+
+.code-snippet-footer {
+  background-color: #1a1a20;
+  border-top: 1.5px solid #2e2e38;
+}
+
+/* Quick Tags */
+.tags-container {
+  animation: fadeIn 0.15s ease-in;
+}
+
+.tag-pill {
+  background-color: var(--nb-card-bg);
+  color: var(--nb-black);
+  border: 1.5px solid var(--nb-border-color);
+  border-radius: 5px;
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  cursor: pointer;
+  box-shadow: 1.5px 1.5px 0px var(--nb-shadow-color);
+  transition: all 0.1s ease;
+}
+
+.tag-pill:hover {
+  background-color: var(--nb-yellow);
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -29,7 +29,8 @@ public class PostService {
 
     @Transactional
     public PostResponse createPost(String textContent, MultipartFile file, String authorUsername) {
-        boolean hasText = textContent != null && !textContent.trim().isEmpty();
+        String trimmedText = (textContent != null) ? textContent.trim() : null;
+        boolean hasText = trimmedText != null && !trimmedText.isEmpty();
         boolean hasFile = file != null && !file.isEmpty();
 
         if (!hasText && !hasFile) {
@@ -41,7 +42,7 @@ public class PostService {
 
         String mediaUrl = fileStorageService.storeFile(file);
 
-        Post post = new Post(hasText ? textContent.trim() : null, mediaUrl, author);
+        Post post = new Post(hasText ? trimmedText : null, mediaUrl, author);
         Post savedPost = postRepository.save(post);
 
         return PostResponse.fromEntity(savedPost);

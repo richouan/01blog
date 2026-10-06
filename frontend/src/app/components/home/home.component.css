@@ -1,57 +1,132 @@
+/* =========================================================
+   Home Component - Neo-Brutalist 2-Column Dashboard
+   ========================================================= */
+
 .home-wrapper {
-  min-height: 100vh;
+  min-height: calc(100vh - 75px);
 }
 
-.user-name-label {
-  max-width: 140px;
+.max-w-navbar {
+  max-width: 1240px;
 }
 
-@media (max-width: 576px) {
-  .user-name-label {
-    max-width: 90px;
+/* 2-Column Responsive Layout */
+.home-layout-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .home-layout-row {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  /* Slimmer Left Sidebar Column (Just a little less width) */
+  .home-sidebar-col {
+    width: 205px;
+    flex: 0 0 205px;
+  }
+
+  /* Main Feed Column fills the exact remaining width to the navbar's right edge */
+  .home-main-col {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 100%;
   }
 }
 
+@media (min-width: 1200px) {
+  .home-sidebar-col {
+    width: 220px;
+    flex: 0 0 220px;
+  }
+}
+
+/* Sticky Left Sidebar (Aligns with top navbar) */
+.sticky-sidebar {
+  position: sticky;
+  top: 86px;
+  max-height: calc(100vh - 100px);
+}
+
+/* Left Sidebar Navigation Items */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--nb-black);
+  font-weight: 700;
+  font-size: 0.92rem;
+  transition: all 0.15s ease;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+}
+
+.sidebar-nav-item:hover {
+  background-color: var(--nb-subtle-bg);
+  transform: translateX(2px);
+  color: var(--nb-black);
+}
+
+.sidebar-nav-item.active {
+  background-color: var(--nb-yellow);
+  color: #121214;
+  border: var(--nb-border-sm);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+}
+
+/* User Avatars */
 .user-avatar-sm {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
   background-color: var(--nb-yellow);
   border: 1.5px solid var(--nb-border-color);
+  box-shadow: 1.5px 1.5px 0px var(--nb-shadow-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-family: var(--nb-font-display);
   color: #121214;
 }
 
-.user-avatar-md {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  background-color: var(--nb-yellow);
-  border: var(--nb-border);
-  box-shadow: 2px 2px 0px var(--nb-shadow-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 1rem;
-  font-family: var(--nb-font-display);
-  color: #121214;
+/* Feed Tabs Bar */
+.feed-tabs-bar {
+  border-bottom: 2px solid transparent;
 }
 
-.post-input-mockup {
-  border: var(--nb-border-sm);
-  border-radius: 6px;
-  background-color: var(--nb-input-bg);
+.feed-tab-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
   color: var(--nb-text-muted);
-  cursor: text;
-  font-size: 0.9rem;
+  padding: 6px 4px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s ease;
 }
 
+.feed-tab-btn:hover {
+  color: var(--nb-black);
+}
+
+.feed-tab-btn.active-tab {
+  color: var(--nb-black);
+  border-bottom: 3.5px solid var(--nb-yellow);
+  font-weight: 800;
+}
+
+/* Empty Feed Display */
 .empty-feed-icon {
   width: 56px;
   height: 56px;

@@ -1,41 +1,168 @@
 <div class="home-wrapper py-3 py-md-4">
-  <div class="container px-3 px-sm-4">
+  <div class="container-fluid px-2 px-sm-3 px-md-4 max-w-navbar">
     
-    <!-- Main Feed Column (Centered & Responsive) -->
-    <div class="row justify-content-center">
-      <div class="col-12 col-md-10 col-lg-8">
+    <div class="home-layout-row">
+      
+      <!-- =========================================================
+           LEFT COLUMN: Navigation & Profile (Hidden on Mobile <768px)
+           ========================================================= -->
+      <aside class="home-sidebar-col d-none d-md-block">
+        <div class="sticky-sidebar left-sidebar d-flex flex-column gap-3">
+          
+          <!-- Nav Menu Card -->
+          <div class="card-nb p-2">
+            <nav class="nav flex-column gap-1">
+              <a
+                routerLink="/"
+                class="sidebar-nav-item active"
+                title="Feed Home"
+              >
+                <i class="bi bi-house-door-fill me-2 fs-5"></i>
+                <span class="font-display fw-bold">Home</span>
+              </a>
 
-        <!-- Feed Placeholder / Post Input Mockup for Day 3 -->
-        <div class="card-nb mb-3 mb-md-4">
-          <div class="card-nb-body p-3 p-sm-4">
-            <div class="d-flex gap-2 gap-sm-3 align-items-start">
-              <span class="user-avatar-md flex-shrink-0">
-                {{ currentUser?.username?.charAt(0)?.toUpperCase() || 'U' }}
+              <a
+                routerLink="/search"
+                class="sidebar-nav-item"
+                title="Discover Students & Posts"
+              >
+                <i class="bi bi-compass me-2 fs-5"></i>
+                <span class="font-display fw-bold">Explore</span>
+              </a>
+
+              <button
+                type="button"
+                (click)="setFeedTab('following')"
+                class="sidebar-nav-item border-0 bg-transparent text-start w-100"
+                [class.active]="activeFeedTab === 'following'"
+                title="Posts from Students You Follow"
+              >
+                <i class="bi bi-people me-2 fs-5"></i>
+                <span class="font-display fw-bold">Following</span>
+              </button>
+
+              <a
+                routerLink="/profile"
+                class="sidebar-nav-item"
+                title="My Personal Profile & Timeline"
+              >
+                <i class="bi bi-person me-2 fs-5"></i>
+                <span class="font-display fw-bold">My Profile</span>
+              </a>
+            </nav>
+
+            <!-- Prominent Create Post CTA Button -->
+            <button
+              type="button"
+              (click)="triggerCreatePost()"
+              class="btn-nb-primary w-100 mt-2 py-2 d-flex align-items-center justify-content-center gap-2"
+            >
+              <i class="bi bi-pencil-square"></i>
+              <span>Create post +</span>
+            </button>
+          </div>
+
+          <!-- Current Student Mini-Card -->
+          <div class="card-nb p-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="user-avatar-sm flex-shrink-0">
+                {{ currentUser?.username?.charAt(0)?.toUpperCase() || 'R' }}
               </span>
-              <div class="flex-grow-1">
-                <div class="post-input-mockup p-2 px-3 text-muted">
-                  Share a project update, question, or snippet...
-                </div>
-                <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-dark border-opacity-10">
-                  <div class="d-flex gap-2 text-muted small">
-                    <span class="badge-nb badge-nb-yellow"><i class="bi bi-image me-1"></i> Media</span>
-                    <span class="badge-nb badge-nb-coral"><i class="bi bi-code-slash me-1"></i> Code</span>
-                  </div>
-                  <button class="btn-nb-primary py-1 px-3 fs-6" disabled>
-                    <span>Post</span>
-                  </button>
-                </div>
+              <div class="text-truncate">
+                <a routerLink="/profile" class="fw-bold font-display text-dark text-decoration-none text-truncate d-block small">
+                  @{{ currentUser?.username }}
+                </a>
+                <span class="badge-nb badge-nb-mint py-0 px-1" style="font-size: 0.68rem;">
+                  {{ currentUser?.role === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Follower counts summary -->
+            <div class="row g-1 text-center pt-2 border-top border-dark border-opacity-10">
+              <div class="col-6">
+                <div class="small fw-bold font-display text-dark">{{ userProfile?.followersCount ?? 0 }}</div>
+                <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Followers</div>
+              </div>
+              <div class="col-6">
+                <div class="small fw-bold font-display text-dark">{{ userProfile?.followingCount ?? 0 }}</div>
+                <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Following</div>
               </div>
             </div>
           </div>
+
+          <!-- Mini Platform Footer -->
+          <div class="card-nb p-2 px-3 d-flex justify-content-between align-items-center">
+            <div>
+              <span class="fw-bold font-display text-dark small">01Blog.</span>
+            </div>
+            <div class="text-muted small font-display fw-bold" style="font-size: 0.7rem;">
+              Share. Learn. <span class="text-warning text-decoration-underline">Grow.</span>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- =========================================================
+           RIGHT COLUMN: Post Creator & Stream Feed (Flex Remainder)
+           ========================================================= -->
+      <main class="home-main-col">
+        
+        <!-- Post Create Component (Compact) -->
+        <app-post-create
+          [currentUser]="currentUser"
+          (postCreated)="onPostCreated($event)"
+        ></app-post-create>
+
+        <!-- Feed Subheader Tabs (For you | Following | Latest) -->
+        <div class="d-flex justify-content-between align-items-center mb-3 px-1 flex-wrap gap-2">
+          
+          <div class="feed-tabs-bar d-flex gap-3">
+            <button
+              type="button"
+              (click)="setFeedTab('for-you')"
+              class="feed-tab-btn"
+              [class.active-tab]="activeFeedTab === 'for-you'"
+            >
+              For you
+            </button>
+            <button
+              type="button"
+              (click)="setFeedTab('following')"
+              class="feed-tab-btn"
+              [class.active-tab]="activeFeedTab === 'following'"
+            >
+              Following
+            </button>
+            <button
+              type="button"
+              (click)="setFeedTab('latest')"
+              class="feed-tab-btn"
+              [class.active-tab]="activeFeedTab === 'latest'"
+            >
+              Latest
+            </button>
+          </div>
+
+          <!-- Type Filter Badge -->
+          <div class="dropdown">
+            <button class="btn-nb-secondary py-1 px-2 fs-6 text-dark" style="font-size: 0.8rem;">
+              <span>All types</span>
+              <i class="bi bi-chevron-down ms-1"></i>
+            </button>
+          </div>
+
         </div>
 
-        <!-- Feed Empty State / Ready Stream -->
-        <div class="card-nb">
+        <!-- Stream Feed Container / Empty State Card -->
+        <div class="card-nb mb-4">
           <div class="card-nb-header py-2 px-3 px-sm-4">
             <div class="d-flex align-items-center gap-2">
               <i class="bi bi-collection-fill text-primary"></i>
-              <span class="fw-bold font-display small text-uppercase">Stream Feed</span>
+              <span class="fw-bold font-display small text-uppercase">
+                {{ activeFeedTab === 'following' ? 'Subscribed Stream' : (activeFeedTab === 'latest' ? 'Global Stream' : 'Stream Feed') }}
+              </span>
             </div>
             <span class="badge-nb badge-nb-mint">Active Session</span>
           </div>
@@ -50,13 +177,14 @@
             </p>
             <div class="d-inline-flex flex-wrap justify-content-center gap-2">
               <span class="badge-nb badge-nb-yellow">0 Posts</span>
-              <span class="badge-nb badge-nb-coral">0 Followers</span>
-              <span class="badge-nb badge-nb-mint">0 Following</span>
+              <span class="badge-nb badge-nb-coral">{{ userProfile?.followersCount ?? 0 }} Followers</span>
+              <span class="badge-nb badge-nb-mint">{{ userProfile?.followingCount ?? 0 }} Following</span>
             </div>
           </div>
         </div>
 
-      </div>
+      </main>
+
     </div>
 
   </div>
