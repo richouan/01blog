@@ -2,6 +2,8 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CurrentUser } from '../../models/auth.models';
+import { Post } from '../../models/post.models';
+import { PostService } from '../../services/post.service';
 
 @Component({
   selector: 'app-post-create',
@@ -12,7 +14,7 @@ import { CurrentUser } from '../../models/auth.models';
 })
 export class PostCreateComponent {
   @Input() currentUser: CurrentUser | null = null;
-  @Output() postCreated = new EventEmitter<{ textContent: string; file: File | null }>();
+  @Output() postCreated = new EventEmitter<Post>();
 
   textContent: string = '';
   selectedFile: File | null = null;
@@ -22,10 +24,14 @@ export class PostCreateComponent {
 
   isExpanded: boolean = false;
   isDragging: boolean = false;
+  isSubmitting: boolean = false;
   showCodeSnippet: boolean = false;
   codeLanguage: string = 'java';
   codeSnippet: string = '';
   errorMessage: string = '';
+  successMessage: string = '';
+
+  constructor(private postService: PostService) {}
 
   popularTags: string[] = ['#zone01', '#java', '#angular', '#algo', '#snippet', '#help'];
 
@@ -147,18 +153,37 @@ export class PostCreateComponent {
   }
 
   onSubmit(): void {
-    if (!this.canPost) return;
+    if (!this.canPost || this.isSubmitting) return;
 
-    this.postCreated.emit({
-      textContent: this.textContent.trim(),
-      file: this.selectedFile
+    this.isSubmitting = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const textToSend = this.textContent.trim() || undefined;
+    const fileToSend = this.selectedFile || undefined;
+
+    this.postService.createPost(textToSend, fileToSend).subscribe({
+      next: (createdPost) => {
+        this.isSubmitting = false;
+        this.successMessage = 'Post published successfully!';
+        this.postCreated.emit(createdPost);
+
+        // Reset form after submission
+        this.textContent = '';
+        this.removeImage();
+        this.codeSnippet = '';
+        this.showCodeSnippet = false;
+        this.isExpanded = false;
+
+        // Auto-clear success message after 3 seconds
+        setTimeout(() => {
+          this.successMessage = '';
+        }, 3000);
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        this.errorMessage = err.error?.message || 'Failed to publish post. Please try again.';
+      }
     });
-
-    // Reset form after submission
-    this.textContent = '';
-    this.removeImage();
-    this.codeSnippet = '';
-    this.showCodeSnippet = false;
-    this.isExpanded = false;
   }
 }

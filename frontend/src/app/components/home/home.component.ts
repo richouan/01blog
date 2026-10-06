@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { CurrentUser, UserProfile } from '../../models/auth.models';
+import { Post } from '../../models/post.models';
 import { PostCreateComponent } from '../post-create/post-create.component';
 
 @Component({
@@ -59,8 +60,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // Handle post emission from PostCreateComponent
-  onPostCreated(postData: { textContent: string; file: File | null }): void {
-    console.log('Post ready for publishing:', postData);
+  onPostCreated(createdPost: Post): void {
+    console.log('Post published successfully:', createdPost);
   }
 
   setFeedTab(tab: 'for-you' | 'following' | 'latest'): void {

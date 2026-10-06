@@ -76,9 +76,18 @@
 
 .sidebar-nav-item.active {
   background-color: var(--nb-yellow);
-  color: #121214;
+  color: #121214 !important;
   border: var(--nb-border-sm);
   box-shadow: 2px 2px 0px var(--nb-shadow-color);
+}
+
+.sidebar-nav-item.active .font-display,
+.sidebar-nav-item.active i,
+.sidebar-nav-item.active span {
+  color: #121214 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* User Avatars */

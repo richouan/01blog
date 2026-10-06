@@ -33,6 +33,12 @@
           <span>{{ errorMessage }}</span>
         </div>
 
+        <!-- Success Alert -->
+        <div *ngIf="successMessage" class="alert-nb alert-nb-success py-1 px-2 mt-1 mb-0 small d-flex align-items-center gap-2">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>{{ successMessage }}</span>
+        </div>
+
         <!-- Code Snippet Builder Drawer (Compact) -->
         <div *ngIf="showCodeSnippet" class="code-snippet-box mt-2">
           <div class="code-snippet-header d-flex align-items-center justify-content-between px-2 py-1">
@@ -107,7 +113,7 @@
         </div>
 
         <!-- Bottom Action Bar (Ultra-Compact: NO mt-3) -->
-        <div class="post-action-toolbar d-flex justify-content-between align-items-center border-top border-dark border-opacity-10 flex-wrap gap-2">
+        <div class="post-action-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2">
           
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <!-- Hidden Native File Input -->
@@ -160,12 +166,13 @@
             </span>
             <button
               type="button"
-              [disabled]="!canPost"
+              [disabled]="!canPost || isSubmitting"
               (click)="onSubmit()"
               class="btn-nb-primary py-1 px-3 fs-6 d-inline-flex align-items-center gap-1"
             >
-              <span>Post</span>
-              <i class="bi bi-arrow-right fw-bold"></i>
+              <i *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></i>
+              <span>{{ isSubmitting ? 'Posting...' : 'Post' }}</span>
+              <i *ngIf="!isSubmitting" class="bi bi-arrow-right fw-bold"></i>
             </button>
           </div>
 

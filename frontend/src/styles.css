@@ -402,6 +402,38 @@ h1, h2, h3, h4, h5, h6, .font-display {
   color: var(--nb-black) !important;
 }
 
+/* Contrast Protection: Enforce ink-black text on all yellow surfaces in both light and dark mode */
+.btn-nb-primary,
+.btn-nb-primary *,
+.btn-nb-primary .font-display,
+.badge-nb-yellow,
+.badge-nb-yellow *,
+.badge-nb-yellow .font-display,
+.sidebar-nav-item.active,
+.sidebar-nav-item.active *,
+.sidebar-nav-item.active .font-display,
+.nav-pill-active,
+.nav-pill-active *,
+.nav-pill-active .font-display,
+.user-avatar-sq,
+.user-avatar-md,
+.user-avatar-sm,
+.logo-box,
+[data-theme="dark"] .btn-nb-primary,
+[data-theme="dark"] .btn-nb-primary *,
+[data-theme="dark"] .btn-nb-primary .font-display,
+[data-theme="dark"] .badge-nb-yellow,
+[data-theme="dark"] .badge-nb-yellow *,
+[data-theme="dark"] .badge-nb-yellow .font-display,
+[data-theme="dark"] .sidebar-nav-item.active,
+[data-theme="dark"] .sidebar-nav-item.active *,
+[data-theme="dark"] .sidebar-nav-item.active .font-display,
+[data-theme="dark"] .nav-pill-active,
+[data-theme="dark"] .nav-pill-active *,
+[data-theme="dark"] .nav-pill-active .font-display {
+  color: #121214 !important;
+}
+
 [data-theme="dark"] .text-muted {
   color: var(--nb-text-muted) !important;
 }
