@@ -50,8 +50,8 @@ public class SecurityConfig {
 
             // Configure endpoint permissions
             .authorizeHttpRequests(auth -> auth
-                // Allow anyone to access registration, login, and static uploads
-                .requestMatchers("/api/auth/**", "/uploads/**").permitAll()
+                // Allow anyone to access registration, login, static uploads, and error dispatcher
+                .requestMatchers("/api/auth/**", "/uploads/**", "/error").permitAll()
                 // All other endpoints require the user to be logged in
                 .anyRequest().authenticated()
             )

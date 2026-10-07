@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -81,7 +81,8 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   constructor(
     private postService: PostService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -227,6 +228,7 @@ export class PostListComponent implements OnInit, OnDestroy {
       post.liked = true;
       post.likesCount = prevCount + 1;
     }
+    this.cdr.markForCheck();
 
     this.postService.toggleLike(post.id).subscribe({
       next: (res) => {
@@ -237,7 +239,15 @@ export class PostListComponent implements OnInit, OnDestroy {
         } else {
           this.likedPostIds.delete(post.id);
         }
+
+        const originalPost = this._posts.find(p => p.id === post.id);
+        if (originalPost) {
+          originalPost.liked = res.liked;
+          originalPost.likesCount = res.likesCount;
+        }
+
         this.postLiked.emit(post);
+        this.cdr.markForCheck();
       },
       error: (err) => {
         // Revert on failure
@@ -248,6 +258,14 @@ export class PostListComponent implements OnInit, OnDestroy {
         }
         post.liked = wasLiked;
         post.likesCount = prevCount;
+
+        const originalPost = this._posts.find(p => p.id === post.id);
+        if (originalPost) {
+          originalPost.liked = wasLiked;
+          originalPost.likesCount = prevCount;
+        }
+
+        this.cdr.markForCheck();
         console.error('Failed to toggle like on backend', err);
       }
     });
