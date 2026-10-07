@@ -74,10 +74,89 @@
           <i class="bi bi-search"></i>
         </a>
 
-        <!-- Notification Bell -->
-        <button class="nav-icon-btn" title="Notifications" type="button" routerLink="/search">
-          <i class="bi bi-bell"></i>
-        </button>
+        <!-- Notification Bell & Dropdown Wrapper -->
+        <div class="notification-dropdown-wrapper position-relative">
+          <button
+            class="nav-icon-btn position-relative"
+            [class.nav-pill-active]="isNotificationDropdownOpen"
+            title="Notifications"
+            type="button"
+            (click)="toggleNotificationDropdown()"
+          >
+            <i class="bi bi-bell"></i>
+            <!-- Unread Badge Counter -->
+            <span *ngIf="unreadCount > 0" class="notification-badge-nb">
+              {{ unreadCount > 9 ? '9+' : unreadCount }}
+            </span>
+          </button>
+
+          <!-- Notifications Dropdown Popover -->
+          <div *ngIf="isNotificationDropdownOpen" class="notification-menu-dropdown card-nb">
+            <!-- Header -->
+            <div class="notification-dropdown-header d-flex align-items-center justify-content-between p-3 border-bottom border-dark border-opacity-10">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold font-display text-dark">Notifications</span>
+                <span *ngIf="unreadCount > 0" class="badge-unread-chip font-display">
+                  {{ unreadCount }} new
+                </span>
+              </div>
+              <button
+                *ngIf="unreadCount > 0"
+                (click)="onMarkAllAsRead()"
+                class="btn-mark-all-read d-flex align-items-center gap-1 font-display"
+                type="button"
+                title="Mark all as read"
+              >
+                <i class="bi bi-check2-all"></i>
+                <span>Mark all read</span>
+              </button>
+            </div>
+
+            <!-- Notification Items List -->
+            <div class="notification-items-scroll">
+              <!-- Loading Skeleton -->
+              <div *ngIf="isLoadingNotifications" class="p-3 text-center text-muted font-display small">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Loading alerts...
+              </div>
+
+              <!-- Empty State -->
+              <div *ngIf="!isLoadingNotifications && notifications.length === 0" class="empty-notifications p-4 text-center">
+                <div class="empty-notif-icon mb-2">
+                  <i class="bi bi-bell-slash"></i>
+                </div>
+                <div class="fw-bold font-display text-dark small">All caught up!</div>
+                <div class="text-muted font-display x-small">No notifications yet. When peers follow you or post, alerts appear here.</div>
+              </div>
+
+              <!-- List of Notifications -->
+              <div
+                *ngFor="let item of notifications"
+                (click)="onNotificationClick(item)"
+                class="notification-item-card d-flex align-items-start gap-3 p-3 border-bottom border-dark border-opacity-10"
+                [class.notification-unread]="!item.isRead"
+              >
+                <!-- Event Icon Box -->
+                <div class="notif-type-icon-box" [ngClass]="item.type === 'NEW_POST' ? 'bg-canary' : 'bg-mint'">
+                  <i class="bi" [ngClass]="item.type === 'NEW_POST' ? 'bi-file-earmark-post-fill' : 'bi-person-plus-fill'"></i>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-grow-1 min-w-0">
+                  <div class="notif-message-text text-dark font-body">
+                    {{ item.message }}
+                  </div>
+                  <div class="notif-time-text text-muted font-display mt-1">
+                    {{ getRelativeTime(item.createdAt) }}
+                  </div>
+                </div>
+
+                <!-- Unread Pip Indicator -->
+                <div *ngIf="!item.isRead" class="unread-pip" title="Unread"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Neo-Brutalist Dark Mode Toggle -->
         <button

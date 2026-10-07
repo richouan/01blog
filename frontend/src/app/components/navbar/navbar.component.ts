@@ -2,10 +2,12 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
-import { Subscription, filter } from 'rxjs';
+import { Subscription, filter, interval } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
+import { NotificationService } from '../../services/notification.service';
 import { CurrentUser } from '../../models/auth.models';
+import { NotificationItem } from '../../models/notification.models';
 
 @Component({
   selector: 'app-navbar',
@@ -18,11 +20,19 @@ export class NavbarComponent implements OnInit, OnDestroy {
   currentUser: CurrentUser | null = null;
   searchQuery = '';
   isUserDropdownOpen = false;
+
+  // Notification center state
+  unreadCount = 0;
+  isNotificationDropdownOpen = false;
+  notifications: NotificationItem[] = [];
+  isLoadingNotifications = false;
+
   private sub = new Subscription();
 
   constructor(
     private authService: AuthService,
     public themeService: ThemeService,
+    private notificationService: NotificationService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
@@ -36,19 +46,108 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.sub.add(
       this.authService.currentUser$.subscribe(user => {
         this.currentUser = user;
+        if (user) {
+          this.refreshUnreadCount();
+        } else {
+          this.notifications = [];
+          this.unreadCount = 0;
+        }
         this.cdr.detectChanges();
       })
     );
 
-    // Listen to route changes
+    // Listen to reactive unread count updates
+    this.sub.add(
+      this.notificationService.unreadCount$.subscribe(count => {
+        this.unreadCount = count;
+        this.cdr.detectChanges();
+      })
+    );
+
+    // Light polling for new notifications every 15 seconds when authenticated
+    this.sub.add(
+      interval(15000).subscribe(() => {
+        if (this.currentUser) {
+          this.refreshUnreadCount();
+        }
+      })
+    );
+
+    // Listen to route changes to close popovers
     this.sub.add(
       this.router.events
         .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
         .subscribe(() => {
           this.isUserDropdownOpen = false;
+          this.isNotificationDropdownOpen = false;
           this.cdr.detectChanges();
         })
     );
+  }
+
+  refreshUnreadCount(): void {
+    this.notificationService.getUnreadCount().subscribe({
+      next: (res) => {
+        this.unreadCount = res.unreadCount;
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+  }
+
+  // Toggle notification dropdown and fetch notifications when opening
+  toggleNotificationDropdown(): void {
+    this.isNotificationDropdownOpen = !this.isNotificationDropdownOpen;
+    if (this.isNotificationDropdownOpen) {
+      this.isUserDropdownOpen = false;
+      this.loadNotifications();
+    }
+  }
+
+  loadNotifications(): void {
+    this.isLoadingNotifications = true;
+    this.notificationService.getNotifications().subscribe({
+      next: (list) => {
+        this.notifications = list || [];
+        this.isLoadingNotifications = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingNotifications = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Acknowledge notification and navigate to relevant target
+  onNotificationClick(item: NotificationItem): void {
+    if (!item.isRead) {
+      this.notificationService.markAsRead(item.id).subscribe({
+        next: () => {
+          item.isRead = true;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+
+    this.isNotificationDropdownOpen = false;
+
+    // Navigate to target student profile
+    if (item.actorUsername) {
+      this.router.navigate(['/profile', item.actorUsername]);
+    }
+  }
+
+  // Mark all unread notifications as read
+  onMarkAllAsRead(): void {
+    if (this.unreadCount === 0) return;
+    this.notificationService.markAllAsRead().subscribe({
+      next: () => {
+        this.notifications.forEach(n => n.isRead = true);
+        this.unreadCount = 0;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // Focus search input on Ctrl+K / Cmd+K
@@ -64,12 +163,15 @@ export class NavbarComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
     if (!target.closest('.user-dropdown-wrapper')) {
       this.isUserDropdownOpen = false;
+    }
+    if (!target.closest('.notification-dropdown-wrapper')) {
+      this.isNotificationDropdownOpen = false;
     }
   }
 
@@ -85,14 +187,36 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   toggleUserDropdown(): void {
     this.isUserDropdownOpen = !this.isUserDropdownOpen;
+    if (this.isUserDropdownOpen) {
+      this.isNotificationDropdownOpen = false;
+    }
   }
 
   isAuthPage(): boolean {
     return this.router.url.startsWith('/login') || this.router.url.startsWith('/register');
   }
 
+  getRelativeTime(dateStr: string): string {
+    if (!dateStr) return '';
+    try {
+      const past = new Date(dateStr).getTime();
+      const now = Date.now();
+      const diffSec = Math.floor((now - past) / 1000);
+      if (diffSec < 60) return 'Just now';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return `${diffHr}h ago`;
+      const diffDays = Math.floor(diffHr / 24);
+      return `${diffDays}d ago`;
+    } catch {
+      return '';
+    }
+  }
+
   onLogout(): void {
     this.isUserDropdownOpen = false;
+    this.isNotificationDropdownOpen = false;
     this.authService.logout();
   }
 
@@ -100,4 +224,5 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 }
+
 
