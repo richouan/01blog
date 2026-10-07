@@ -21,12 +21,13 @@ public class PostResponse {
 
     private long likesCount;
     private boolean liked;
+    private long commentsCount;
 
     public PostResponse() {}
 
     public PostResponse(Long id, String title, String textContent, String mediaUrl, Long authorId, 
                         String authorUsername, LocalDateTime createdAt, LocalDateTime updatedAt,
-                        long likesCount, boolean liked) {
+                        long likesCount, boolean liked, long commentsCount) {
         this.id = id;
         this.title = title;
         this.textContent = textContent;
@@ -37,10 +38,17 @@ public class PostResponse {
         this.updatedAt = updatedAt;
         this.likesCount = likesCount;
         this.liked = liked;
+        this.commentsCount = commentsCount;
+    }
+
+    public PostResponse(Long id, String title, String textContent, String mediaUrl, Long authorId, 
+                        String authorUsername, LocalDateTime createdAt, LocalDateTime updatedAt,
+                        long likesCount, boolean liked) {
+        this(id, title, textContent, mediaUrl, authorId, authorUsername, createdAt, updatedAt, likesCount, liked, 0L);
     }
 
     // Static helpers to map Post entity directly to PostResponse DTO
-    public static PostResponse fromEntity(Post post, long likesCount, boolean liked) {
+    public static PostResponse fromEntity(Post post, long likesCount, boolean liked, long commentsCount) {
         return new PostResponse(
                 post.getId(),
                 post.getTitle(),
@@ -51,16 +59,21 @@ public class PostResponse {
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
                 likesCount,
-                liked
+                liked,
+                commentsCount
         );
     }
 
+    public static PostResponse fromEntity(Post post, long likesCount, boolean liked) {
+        return fromEntity(post, likesCount, liked, 0L);
+    }
+
     public static PostResponse fromEntity(Post post, long likesCount) {
-        return fromEntity(post, likesCount, false);
+        return fromEntity(post, likesCount, false, 0L);
     }
 
     public static PostResponse fromEntity(Post post) {
-        return fromEntity(post, 0L, false);
+        return fromEntity(post, 0L, false, 0L);
     }
 
     public Long getId() {
@@ -141,5 +154,13 @@ public class PostResponse {
 
     public void setLiked(boolean liked) {
         this.liked = liked;
+    }
+
+    public long getCommentsCount() {
+        return commentsCount;
+    }
+
+    public void setCommentsCount(long commentsCount) {
+        this.commentsCount = commentsCount;
     }
 }

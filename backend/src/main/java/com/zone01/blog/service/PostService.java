@@ -4,6 +4,7 @@ import com.zone01.blog.dto.PostResponse;
 import com.zone01.blog.entity.Post;
 import com.zone01.blog.entity.User;
 import com.zone01.blog.entity.UserRole;
+import com.zone01.blog.repository.CommentRepository;
 import com.zone01.blog.repository.LikeRepository;
 import com.zone01.blog.repository.PostRepository;
 import com.zone01.blog.repository.UserRepository;
@@ -25,13 +26,16 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
+    private final CommentRepository commentRepository;
     private final FileStorageService fileStorageService;
 
     public PostService(PostRepository postRepository, UserRepository userRepository, 
-                       LikeRepository likeRepository, FileStorageService fileStorageService) {
+                       LikeRepository likeRepository, CommentRepository commentRepository,
+                       FileStorageService fileStorageService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.likeRepository = likeRepository;
+        this.commentRepository = commentRepository;
         this.fileStorageService = fileStorageService;
     }
 
@@ -58,7 +62,7 @@ public class PostService {
         Post post = new Post(trimmedTitle, hasText ? trimmedText : null, mediaUrl, author);
         Post savedPost = postRepository.save(post);
 
-        return PostResponse.fromEntity(savedPost, 0L, false);
+        return PostResponse.fromEntity(savedPost, 0L, false, 0L);
     }
 
     // Update post with author/admin access control and media management
@@ -106,10 +110,11 @@ public class PostService {
         Post updatedPost = postRepository.save(post);
         long likesCount = likeRepository.countByPost(updatedPost);
         boolean isLiked = likeRepository.existsByUserAndPost(requestingUser, updatedPost);
-        return PostResponse.fromEntity(updatedPost, likesCount, isLiked);
+        long commentsCount = commentRepository.countByPost(updatedPost);
+        return PostResponse.fromEntity(updatedPost, likesCount, isLiked, commentsCount);
     }
 
-    // Delete post with author/admin access control, removing likes and media cleanup
+    // Delete post with author/admin access control, removing likes, comments, and media cleanup
     @Transactional
     public void deletePost(@NonNull Long postId, String requestingUsername) {
         Post post = postRepository.findById(postId)
@@ -125,8 +130,9 @@ public class PostService {
             throw new SecurityException("You do not have permission to delete this post.");
         }
 
-        // Remove all likes for this post
+        // Remove all likes and comments for this post
         likeRepository.deleteAllByPostId(postId);
+        commentRepository.deleteAllByPostId(postId);
 
         // Clean up uploaded media file from disk
         fileStorageService.deleteFile(post.getMediaUrl());
@@ -176,6 +182,7 @@ public class PostService {
     private PostResponse toPostResponse(Post post, User currentUser) {
         long likesCount = likeRepository.countByPost(post);
         boolean liked = (currentUser != null) && likeRepository.existsByUserAndPost(currentUser, post);
-        return PostResponse.fromEntity(post, likesCount, liked);
+        long commentsCount = commentRepository.countByPost(post);
+        return PostResponse.fromEntity(post, likesCount, liked, commentsCount);
     }
 }
