@@ -28,15 +28,18 @@ public class PostService {
     private final LikeRepository likeRepository;
     private final CommentRepository commentRepository;
     private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
 
     public PostService(PostRepository postRepository, UserRepository userRepository, 
                        LikeRepository likeRepository, CommentRepository commentRepository,
-                       FileStorageService fileStorageService) {
+                       FileStorageService fileStorageService,
+                       NotificationService notificationService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.likeRepository = likeRepository;
         this.commentRepository = commentRepository;
         this.fileStorageService = fileStorageService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -61,6 +64,9 @@ public class PostService {
 
         Post post = new Post(trimmedTitle, hasText ? trimmedText : null, mediaUrl, author);
         Post savedPost = postRepository.save(post);
+
+        // Notify all subscribers/followers that a new post was published
+        notificationService.notifyNewPost(savedPost);
 
         return PostResponse.fromEntity(savedPost, 0L, false, 0L);
     }

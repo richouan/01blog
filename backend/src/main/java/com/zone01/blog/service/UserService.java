@@ -14,9 +14,11 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, NotificationService notificationService) {
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     // readOnly keeps session open for lazy-loaded collections (followers/following)
@@ -93,6 +95,9 @@ public class UserService {
 
         currentUser.follow(targetUser);
         userRepository.save(currentUser);
+
+        // Notify the followed student that they have a new follower
+        notificationService.notifyNewFollower(targetUser, currentUser);
     }
 
     @Transactional
