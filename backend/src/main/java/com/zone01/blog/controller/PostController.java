@@ -7,7 +7,6 @@ import com.zone01.blog.service.PostService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,14 +54,20 @@ public class PostController {
     // Get all global public posts (latest first)
     @GetMapping
     public ResponseEntity<List<PostResponse>> getAllPosts(Authentication authentication) {
-        String currentUsername = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
+        String currentUsername = null;
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+            currentUsername = authentication.getName();
+        }
         return ResponseEntity.ok(postService.getAllPosts(currentUsername));
     }
 
     @GetMapping("/user/{username}")
-    public ResponseEntity<?> getUserPosts(@PathVariable("username") @NonNull String username, Authentication authentication) {
+    public ResponseEntity<?> getUserPosts(@PathVariable("username") String username, Authentication authentication) {
         try {
-            String currentUsername = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
+            String currentUsername = null;
+            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+                currentUsername = authentication.getName();
+            }
             return ResponseEntity.ok(postService.getUserPosts(username, currentUsername));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -87,7 +92,7 @@ public class PostController {
 
     // Toggle like/unlike on a post
     @PostMapping("/{id}/like")
-    public ResponseEntity<?> toggleLike(@PathVariable("id") @NonNull Long id, Authentication authentication) {
+    public ResponseEntity<?> toggleLike(@PathVariable("id") Long id, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "You must be logged in to like a post."));
@@ -107,9 +112,12 @@ public class PostController {
 
     // Query like status and total like count for a post
     @GetMapping("/{id}/like")
-    public ResponseEntity<?> getLikeStatus(@PathVariable("id") @NonNull Long id, Authentication authentication) {
+    public ResponseEntity<?> getLikeStatus(@PathVariable("id") Long id, Authentication authentication) {
         try {
-            String username = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
+            String username = null;
+            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+                username = authentication.getName();
+            }
             LikeResponse response = likeService.getLikeStatus(id, username);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -124,7 +132,7 @@ public class PostController {
     // Update existing post (author or admin)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updatePost(
-            @PathVariable("id") @NonNull Long id,
+            @PathVariable("id") Long id,
             @RequestParam(name = "title", required = false) String title,
             @RequestParam(name = "textContent", required = false) String textContent,
             @RequestParam(name = "file", required = false) MultipartFile file,
@@ -154,7 +162,7 @@ public class PostController {
     // Delete post (author or admin)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePost(
-            @PathVariable("id") @NonNull Long id,
+            @PathVariable("id") Long id,
             Authentication authentication
     ) {
         if (authentication == null || !authentication.isAuthenticated()) {

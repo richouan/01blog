@@ -42,10 +42,11 @@ public class LikeService {
         if (existingLike.isPresent()) {
             Like toDelete = Objects.requireNonNull(existingLike.get());
             likeRepository.delete(toDelete);
+            likeRepository.flush();
             isLiked = false;
         } else {
             Like newLike = new Like(user, post);
-            likeRepository.save(newLike);
+            likeRepository.saveAndFlush(newLike);
             isLiked = true;
         }
 
