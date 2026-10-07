@@ -19,10 +19,14 @@ public class PostResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime updatedAt;
 
+    private long likesCount;
+    private boolean liked;
+
     public PostResponse() {}
 
     public PostResponse(Long id, String title, String textContent, String mediaUrl, Long authorId, 
-                        String authorUsername, LocalDateTime createdAt, LocalDateTime updatedAt) {
+                        String authorUsername, LocalDateTime createdAt, LocalDateTime updatedAt,
+                        long likesCount, boolean liked) {
         this.id = id;
         this.title = title;
         this.textContent = textContent;
@@ -31,10 +35,12 @@ public class PostResponse {
         this.authorUsername = authorUsername;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.likesCount = likesCount;
+        this.liked = liked;
     }
 
-    // Static helper to map Post entity directly to PostResponse DTO
-    public static PostResponse fromEntity(Post post) {
+    // Static helpers to map Post entity directly to PostResponse DTO
+    public static PostResponse fromEntity(Post post, long likesCount, boolean liked) {
         return new PostResponse(
                 post.getId(),
                 post.getTitle(),
@@ -43,8 +49,18 @@ public class PostResponse {
                 post.getAuthor().getId(),
                 post.getAuthor().getUsername(),
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                likesCount,
+                liked
         );
+    }
+
+    public static PostResponse fromEntity(Post post, long likesCount) {
+        return fromEntity(post, likesCount, false);
+    }
+
+    public static PostResponse fromEntity(Post post) {
+        return fromEntity(post, 0L, false);
     }
 
     public Long getId() {
@@ -109,5 +125,21 @@ public class PostResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public long getLikesCount() {
+        return likesCount;
+    }
+
+    public void setLikesCount(long likesCount) {
+        this.likesCount = likesCount;
+    }
+
+    public boolean isLiked() {
+        return liked;
+    }
+
+    public void setLiked(boolean liked) {
+        this.liked = liked;
     }
 }

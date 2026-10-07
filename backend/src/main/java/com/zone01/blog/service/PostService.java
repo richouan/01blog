@@ -3,13 +3,15 @@ package com.zone01.blog.service;
 import com.zone01.blog.dto.PostResponse;
 import com.zone01.blog.entity.Post;
 import com.zone01.blog.entity.User;
+import com.zone01.blog.entity.UserRole;
+import com.zone01.blog.repository.LikeRepository;
 import com.zone01.blog.repository.PostRepository;
 import com.zone01.blog.repository.UserRepository;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.zone01.blog.entity.UserRole;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
@@ -22,11 +24,14 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final LikeRepository likeRepository;
     private final FileStorageService fileStorageService;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, FileStorageService fileStorageService) {
+    public PostService(PostRepository postRepository, UserRepository userRepository, 
+                       LikeRepository likeRepository, FileStorageService fileStorageService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.likeRepository = likeRepository;
         this.fileStorageService = fileStorageService;
     }
 
@@ -53,12 +58,12 @@ public class PostService {
         Post post = new Post(trimmedTitle, hasText ? trimmedText : null, mediaUrl, author);
         Post savedPost = postRepository.save(post);
 
-        return PostResponse.fromEntity(savedPost);
+        return PostResponse.fromEntity(savedPost, 0L, false);
     }
 
     // Update post with author/admin access control and media management
     @Transactional
-    public PostResponse updatePost(Long postId, String title, String textContent, MultipartFile file, boolean removeMedia, String requestingUsername) {
+    public PostResponse updatePost(@NonNull Long postId, String title, String textContent, MultipartFile file, boolean removeMedia, String requestingUsername) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
 
@@ -99,12 +104,14 @@ public class PostService {
         post.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
 
         Post updatedPost = postRepository.save(post);
-        return PostResponse.fromEntity(updatedPost);
+        long likesCount = likeRepository.countByPost(updatedPost);
+        boolean isLiked = likeRepository.existsByUserAndPost(requestingUser, updatedPost);
+        return PostResponse.fromEntity(updatedPost, likesCount, isLiked);
     }
 
-    // Delete post with author/admin access control and media cleanup
+    // Delete post with author/admin access control, removing likes and media cleanup
     @Transactional
-    public void deletePost(Long postId, String requestingUsername) {
+    public void deletePost(@NonNull Long postId, String requestingUsername) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
 
@@ -118,6 +125,9 @@ public class PostService {
             throw new SecurityException("You do not have permission to delete this post.");
         }
 
+        // Remove all likes for this post
+        likeRepository.deleteAllByPostId(postId);
+
         // Clean up uploaded media file from disk
         fileStorageService.deleteFile(post.getMediaUrl());
 
@@ -125,17 +135,29 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public List<PostResponse> getAllPosts() {
+    public List<PostResponse> getAllPosts(String currentUsername) {
+        User currentUser = (currentUsername != null) ? userRepository.findByUsername(currentUsername).orElse(null) : null;
         return postRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(PostResponse::fromEntity)
+                .map(post -> toPostResponse(post, currentUser))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostResponse> getAllPosts() {
+        return getAllPosts(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostResponse> getUserPosts(String username, String currentUsername) {
+        User currentUser = (currentUsername != null) ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        return postRepository.findByAuthorUsernameOrderByCreatedAtDesc(username).stream()
+                .map(post -> toPostResponse(post, currentUser))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<PostResponse> getUserPosts(String username) {
-        return postRepository.findByAuthorUsernameOrderByCreatedAtDesc(username).stream()
-                .map(PostResponse::fromEntity)
-                .collect(Collectors.toList());
+        return getUserPosts(username, null);
     }
 
     @Transactional(readOnly = true)
@@ -147,7 +169,13 @@ public class PostService {
         targetAuthors.add(currentUser);
 
         return postRepository.findByAuthorInOrderByCreatedAtDesc(targetAuthors).stream()
-                .map(PostResponse::fromEntity)
+                .map(post -> toPostResponse(post, currentUser))
                 .collect(Collectors.toList());
+    }
+
+    private PostResponse toPostResponse(Post post, User currentUser) {
+        long likesCount = likeRepository.countByPost(post);
+        boolean liked = (currentUser != null) && likeRepository.existsByUserAndPost(currentUser, post);
+        return PostResponse.fromEntity(post, likesCount, liked);
     }
 }
