@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Post } from '../models/post.models';
+import { Post, LikeResponse } from '../models/post.models';
 
 @Injectable({
   providedIn: 'root'
@@ -33,6 +33,14 @@ export class PostService {
 
   getFeedPosts(): Observable<Post[]> {
     return this.http.get<Post[]>(`${this.apiUrl}/feed`);
+  }
+
+  toggleLike(postId: number): Observable<LikeResponse> {
+    return this.http.post<LikeResponse>(`${this.apiUrl}/${postId}/like`, {});
+  }
+
+  getLikeStatus(postId: number): Observable<LikeResponse> {
+    return this.http.get<LikeResponse>(`${this.apiUrl}/${postId}/like`);
   }
 
   updatePost(id: number, title?: string, textContent?: string, file?: File, removeMedia: boolean = false): Observable<Post> {

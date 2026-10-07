@@ -7,4 +7,13 @@ export interface Post {
   authorUsername: string;
   createdAt: string;
   updatedAt?: string | null;
+  likesCount?: number;
+  liked?: boolean;
+  commentsCount?: number;
+}
+
+export interface LikeResponse {
+  postId: number;
+  liked: boolean;
+  likesCount: number;
 }

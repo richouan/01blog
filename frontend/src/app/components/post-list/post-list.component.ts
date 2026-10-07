@@ -102,6 +102,11 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   private processPosts(): void {
     this.displayPosts = this._posts.map(post => {
+      if (post.liked) {
+        this.likedPostIds.add(post.id);
+      } else {
+        this.likedPostIds.delete(post.id);
+      }
       return {
         ...post,
         avatarColor: this.getAvatarColor(post.authorUsername),
@@ -209,12 +214,43 @@ export class PostListComponent implements OnInit, OnDestroy {
   }
 
   toggleLike(post: Post): void {
-    if (this.likedPostIds.has(post.id)) {
+    const wasLiked = this.isLiked(post.id);
+    const prevCount = post.likesCount ?? 0;
+
+    // Optimistic local update for responsive UI
+    if (wasLiked) {
       this.likedPostIds.delete(post.id);
+      post.liked = false;
+      post.likesCount = Math.max(0, prevCount - 1);
     } else {
       this.likedPostIds.add(post.id);
+      post.liked = true;
+      post.likesCount = prevCount + 1;
     }
-    this.postLiked.emit(post);
+
+    this.postService.toggleLike(post.id).subscribe({
+      next: (res) => {
+        post.likesCount = res.likesCount;
+        post.liked = res.liked;
+        if (res.liked) {
+          this.likedPostIds.add(post.id);
+        } else {
+          this.likedPostIds.delete(post.id);
+        }
+        this.postLiked.emit(post);
+      },
+      error: (err) => {
+        // Revert on failure
+        if (wasLiked) {
+          this.likedPostIds.add(post.id);
+        } else {
+          this.likedPostIds.delete(post.id);
+        }
+        post.liked = wasLiked;
+        post.likesCount = prevCount;
+        console.error('Failed to toggle like on backend', err);
+      }
+    });
   }
 
   isLiked(postId: number): boolean {
@@ -234,12 +270,11 @@ export class PostListComponent implements OnInit, OnDestroy {
   }
 
   getLikesCount(post: Post): number {
-    const base = ((post.id * 17) % 35) + 8;
-    return this.likedPostIds.has(post.id) ? base + 1 : base;
+    return post.likesCount ?? 0;
   }
 
   getCommentsCount(post: Post): number {
-    return ((post.id * 7) % 12) + 2;
+    return post.commentsCount ?? 0;
   }
 
   onCommentClick(post: Post): void {
