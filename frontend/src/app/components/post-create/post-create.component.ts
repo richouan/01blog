@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CurrentUser } from '../../models/auth.models';
@@ -30,7 +30,41 @@ export class PostCreateComponent {
   errorMessage: string = '';
   successMessage: string = '';
 
-  constructor(private postService: PostService) {}
+  constructor(
+    private postService: PostService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
+  ) {}
+
+  expandForm(): void {
+    this.isExpanded = true;
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      const el = document.querySelector('.post-title-input') as HTMLInputElement;
+      if (el) {
+        el.focus();
+      }
+    }, 50);
+  }
+
+  focusInput(): void {
+    this.expandForm();
+    setTimeout(() => {
+      const card = document.querySelector('.create-post-card') as HTMLElement;
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 60);
+  }
+
+  cancelCreate(): void {
+    this.title = '';
+    this.textContent = '';
+    this.removeMedia();
+    this.isExpanded = false;
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -48,12 +82,14 @@ export class PostCreateComponent {
 
     if (!isImage && !isVideo) {
       this.errorMessage = 'Please select a valid image (PNG, JPG, WEBP, GIF) or video (MP4, WEBM).';
+      this.cdr.detectChanges();
       return;
     }
 
     // Limit check: 30MB
     if (file.size > 30 * 1024 * 1024) {
       this.errorMessage = 'Media file size exceeds the 30MB limit.';
+      this.cdr.detectChanges();
       return;
     }
 
@@ -64,20 +100,42 @@ export class PostCreateComponent {
       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
       : `${Math.round(file.size / 1024)} KB`;
 
+    // Immediately expand form to show preview
+    this.isExpanded = true;
+
+    // Instant zero-latency synchronous preview via object URL
+    try {
+      if (this.mediaPreview && this.mediaPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(this.mediaPreview);
+      }
+      this.mediaPreview = URL.createObjectURL(file);
+      this.cdr.detectChanges();
+    } catch {
+      // Fallback
+    }
+
+    // Secondary FileReader to guarantee data URI stability
     const reader = new FileReader();
     reader.onload = () => {
-      this.mediaPreview = reader.result as string;
-      this.isExpanded = true;
+      this.ngZone.run(() => {
+        this.mediaPreview = reader.result as string;
+        this.isExpanded = true;
+        this.cdr.detectChanges();
+      });
     };
     reader.readAsDataURL(file);
   }
 
   removeMedia(): void {
+    if (this.mediaPreview && this.mediaPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(this.mediaPreview);
+    }
     this.selectedFile = null;
     this.mediaPreview = null;
     this.isMediaVideo = false;
     this.fileName = '';
     this.fileSizeFormatted = '';
+    this.cdr.detectChanges();
   }
 
   onDragOver(event: DragEvent): void {
@@ -108,15 +166,6 @@ export class PostCreateComponent {
     return hasTitle && hasContentOrMedia;
   }
 
-  focusInput(): void {
-    this.isExpanded = true;
-    const el = document.querySelector('.post-title-input') as HTMLInputElement;
-    if (el) {
-      el.focus();
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
-
   onSubmit(): void {
     if (!this.canPost || this.isSubmitting) return;
 
@@ -139,14 +188,17 @@ export class PostCreateComponent {
         this.textContent = '';
         this.removeMedia();
         this.isExpanded = false;
+        this.cdr.detectChanges();
 
         setTimeout(() => {
           this.successMessage = '';
+          this.cdr.detectChanges();
         }, 3000);
       },
       error: (err) => {
         this.isSubmitting = false;
         this.errorMessage = err.error?.message || 'Failed to publish post. Please try again.';
+        this.cdr.detectChanges();
       }
     });
   }

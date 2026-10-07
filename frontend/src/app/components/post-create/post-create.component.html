@@ -16,100 +16,114 @@
 
       <div class="flex-grow-1">
         
-        <!-- Post Title Input (Required) -->
+        <!-- Post Title Input (Always visible, single simple input when collapsed) -->
         <input
           type="text"
           [(ngModel)]="title"
-          (focus)="isExpanded = true"
+          (focus)="expandForm()"
+          (click)="expandForm()"
           placeholder="Post title..."
           maxlength="120"
-          class="post-title-input w-100 mb-2"
+          class="post-title-input w-100"
+          [class.mb-2]="isExpanded || mediaPreview"
         />
 
-        <!-- Post Content Textarea -->
-        <textarea
-          #postTextArea
-          [(ngModel)]="textContent"
-          (focus)="isExpanded = true"
-          [rows]="isExpanded || mediaPreview ? 3 : 2"
-          placeholder="What are you working on or learning?..."
-          maxlength="2000"
-          class="post-textarea w-100"
-        ></textarea>
+        <!-- Expanded Form: Content Textarea, Media Preview & Action Toolbar -->
+        <div *ngIf="isExpanded || mediaPreview" class="expanded-form-wrapper">
+          <!-- Post Content Textarea -->
+          <textarea
+            #postTextArea
+            [(ngModel)]="textContent"
+            rows="3"
+            placeholder="What are you working on or learning?..."
+            maxlength="2000"
+            class="post-textarea w-100"
+          ></textarea>
 
-        <!-- Validation / Error Alert -->
-        <div *ngIf="errorMessage" class="alert-nb alert-nb-danger py-1 px-2 mt-2 mb-0 small d-flex align-items-center gap-2">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <span>{{ errorMessage }}</span>
-        </div>
+          <!-- Validation / Error Alert -->
+          <div *ngIf="errorMessage" class="alert-nb alert-nb-danger py-1 px-2 mt-2 mb-0 small d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
 
-        <!-- Success Alert -->
-        <div *ngIf="successMessage" class="alert-nb alert-nb-success py-1 px-2 mt-2 mb-0 small d-flex align-items-center gap-2">
-          <i class="bi bi-check-circle-fill"></i>
-          <span>{{ successMessage }}</span>
-        </div>
+          <!-- Success Alert -->
+          <div *ngIf="successMessage" class="alert-nb alert-nb-success py-1 px-2 mt-2 mb-0 small d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>{{ successMessage }}</span>
+          </div>
 
-        <!-- Attached Media Preview Card (Image or Video) -->
-        <div *ngIf="mediaPreview" class="image-preview-card mt-2">
-          <div class="image-preview-header d-flex justify-content-between align-items-center px-2 py-1">
-            <div class="d-flex align-items-center gap-2 text-truncate">
-              <i class="bi" [ngClass]="isMediaVideo ? 'bi-camera-video text-dark' : 'bi-image text-dark'"></i>
-              <span class="small fw-bold text-truncate text-dark" style="max-width: 220px;">{{ fileName }}</span>
-              <span class="badge-nb badge-nb-yellow py-0 px-2" style="font-size: 0.7rem;">{{ fileSizeFormatted }}</span>
+          <!-- Attached Media Preview Card (Image or Video) -->
+          <div *ngIf="mediaPreview" class="image-preview-card mt-2">
+            <div class="image-preview-header d-flex justify-content-between align-items-center px-2 py-1">
+              <div class="d-flex align-items-center gap-2 text-truncate">
+                <i class="bi" [ngClass]="isMediaVideo ? 'bi-camera-video text-dark' : 'bi-image text-dark'"></i>
+                <span class="small fw-bold text-truncate text-dark" style="max-width: 220px;">{{ fileName }}</span>
+                <span class="badge-nb badge-nb-yellow py-0 px-2" style="font-size: 0.7rem;">{{ fileSizeFormatted }}</span>
+              </div>
+              <button type="button" (click)="removeMedia()" class="btn-remove-preview" title="Remove attached media">
+                <i class="bi bi-trash3-fill me-1"></i> Remove
+              </button>
             </div>
-            <button type="button" (click)="removeMedia()" class="btn-remove-preview" title="Remove attached media">
-              <i class="bi bi-trash3-fill me-1"></i> Remove
-            </button>
-          </div>
-          <div class="image-preview-img-container text-center p-2">
-            <img *ngIf="!isMediaVideo" [src]="mediaPreview" alt="Upload preview" class="preview-img">
-            <video *ngIf="isMediaVideo" [src]="mediaPreview" controls class="w-100 rounded" style="max-height: 240px;"></video>
-          </div>
-        </div>
-
-        <!-- Bottom Action Bar (Ultra-Compact) -->
-        <div class="post-action-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
-          
-          <div class="d-flex gap-2 align-items-center">
-            <!-- Hidden Native File Input (accepts images & videos) -->
-            <input
-              #fileInput
-              type="file"
-              (change)="onFileSelected($event)"
-              accept="image/png, image/jpeg, image/gif, image/webp, video/mp4, video/webm"
-              class="d-none"
-            >
-
-            <!-- Unified Media Button (Image + Video) -->
-            <button
-              type="button"
-              (click)="fileInput.click()"
-              class="btn-tool-pill btn-tool-media"
-              [class.active-pill]="mediaPreview"
-              title="Attach image or video"
-            >
-              <i class="bi bi-paperclip me-1"></i> Media
-              <span *ngIf="mediaPreview" class="badge-check-dot ms-1"><i class="bi bi-check2"></i></span>
-            </button>
+            <div class="image-preview-img-container text-center p-2">
+              <img *ngIf="!isMediaVideo" [src]="mediaPreview" alt="Upload preview" class="preview-img">
+              <video *ngIf="isMediaVideo" [src]="mediaPreview" controls class="w-100 rounded" style="max-height: 240px;"></video>
+            </div>
           </div>
 
-          <!-- Right Side: Char count & Post Button with arrow -->
-          <div class="d-flex align-items-center gap-2">
-            <span *ngIf="textContent.length > 0" class="text-muted small font-display fw-bold" style="font-size: 0.72rem;">
-              {{ textContent.length }}/2000
-            </span>
-            <button
-              type="button"
-              [disabled]="!canPost || isSubmitting"
-              (click)="onSubmit()"
-              class="btn-nb-primary py-1 px-3 fs-6 d-inline-flex align-items-center gap-1"
-            >
-              <i *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></i>
-              <span>{{ isSubmitting ? 'Posting...' : 'Post' }}</span>
-              <i *ngIf="!isSubmitting" class="bi bi-arrow-right fw-bold"></i>
-            </button>
-          </div>
+          <!-- Bottom Action Bar (Ultra-Compact) -->
+          <div class="post-action-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
+            
+            <div class="d-flex gap-2 align-items-center">
+              <!-- Hidden Native File Input (accepts images & videos) -->
+              <input
+                #fileInput
+                type="file"
+                (change)="onFileSelected($event)"
+                accept="image/png, image/jpeg, image/gif, image/webp, video/mp4, video/webm"
+                class="d-none"
+              >
 
+              <!-- Unified Media Button (Image + Video) -->
+              <button
+                type="button"
+                (click)="fileInput.click()"
+                class="btn-tool-pill btn-tool-media"
+                [class.active-pill]="mediaPreview"
+                title="Attach image or video"
+              >
+                <i class="bi bi-paperclip me-1"></i> Media
+                <span *ngIf="mediaPreview" class="badge-check-dot ms-1"><i class="bi bi-check2"></i></span>
+              </button>
+            </div>
+
+            <!-- Right Side: Cancel, Char count & Post Button with arrow -->
+            <div class="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                (click)="cancelCreate()"
+                class="btn-tool-pill btn-tool-cancel"
+                title="Cancel creating post"
+              >
+                Cancel
+              </button>
+
+              <span *ngIf="textContent.length > 0" class="text-muted small font-display fw-bold" style="font-size: 0.72rem;">
+                {{ textContent.length }}/2000
+              </span>
+
+              <button
+                type="button"
+                [disabled]="!canPost || isSubmitting"
+                (click)="onSubmit()"
+                class="btn-nb-primary py-1 px-3 fs-6 d-inline-flex align-items-center gap-1"
+              >
+                <i *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></i>
+                <span>{{ isSubmitting ? 'Posting...' : 'Post' }}</span>
+                <i *ngIf="!isSubmitting" class="bi bi-arrow-right fw-bold"></i>
+              </button>
+            </div>
+
+          </div>
         </div>
 
       </div>

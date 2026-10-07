@@ -28,6 +28,11 @@
   color: #121214;
 }
 
+/* Expanded State Container */
+.expanded-form-wrapper {
+  animation: fadeIn 0.18s ease-out;
+}
+
 /* Post Title Input Field */
 .post-title-input {
   border: var(--nb-border-sm);
@@ -142,6 +147,21 @@
 
 .btn-tool-media.active-pill {
   background-color: var(--nb-yellow);
+}
+
+.btn-tool-cancel {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--nb-text-muted) !important;
+  padding: 4px 8px;
+}
+
+.btn-tool-cancel:hover {
+  color: #e11d48 !important;
+  background-color: rgba(255, 107, 107, 0.12) !important;
+  border: var(--nb-border-sm) !important;
+  box-shadow: 1px 1px 0px var(--nb-shadow-color) !important;
 }
 
 /* Compact Image Preview Container */
