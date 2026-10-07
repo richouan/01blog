@@ -17,3 +17,13 @@ export interface LikeResponse {
   liked: boolean;
   likesCount: number;
 }
+
+export interface PostComment {
+  id: number;
+  postId: number;
+  authorId: number;
+  authorUsername: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string | null;
+}

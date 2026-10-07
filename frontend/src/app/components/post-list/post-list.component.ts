@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { Post } from '../../models/post.models';
+import { Post, PostComment } from '../../models/post.models';
 import { CurrentUser } from '../../models/auth.models';
 import { AuthService } from '../../services/auth.service';
 import { PostService } from '../../services/post.service';
+import { CommentService } from '../../services/comment.service';
 
 export interface ContentSegment {
   type: 'text' | 'code';
@@ -61,6 +62,15 @@ export class PostListComponent implements OnInit, OnDestroy {
   likedPostIds = new Set<number>();
   bookmarkedPostIds = new Set<number>();
 
+  // Comments state
+  expandedCommentPostIds = new Set<number>();
+  postComments = new Map<number, PostComment[]>();
+  loadingComments = new Set<number>();
+  commentInputs: { [postId: number]: string } = {};
+  submittingComment = new Set<number>();
+  deletingCommentId: number | null = null;
+  commentError: { [postId: number]: string | null } = {};
+
   // Dropdown menu state
   activeDropdownPostId: number | null = null;
 
@@ -81,6 +91,7 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   constructor(
     private postService: PostService,
+    private commentService: CommentService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -295,8 +306,131 @@ export class PostListComponent implements OnInit, OnDestroy {
     return post.commentsCount ?? 0;
   }
 
-  onCommentClick(post: Post): void {
+  // --- COMMENTS MANAGEMENT ---
+
+  toggleComments(post: Post): void {
+    if (this.expandedCommentPostIds.has(post.id)) {
+      this.expandedCommentPostIds.delete(post.id);
+    } else {
+      this.expandedCommentPostIds.add(post.id);
+      if (!this.postComments.has(post.id)) {
+        this.loadComments(post.id);
+      }
+    }
     this.postCommentClicked.emit(post);
+    this.cdr.markForCheck();
+  }
+
+  onCommentClick(post: Post): void {
+    this.toggleComments(post);
+  }
+
+  isCommentsExpanded(postId: number): boolean {
+    return this.expandedCommentPostIds.has(postId);
+  }
+
+  loadComments(postId: number): void {
+    this.loadingComments.add(postId);
+    this.commentError[postId] = null;
+    this.commentService.getComments(postId).subscribe({
+      next: (comments) => {
+        this.postComments.set(postId, comments);
+        this.loadingComments.delete(postId);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.loadingComments.delete(postId);
+        this.commentError[postId] = 'Failed to load comments.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  getPostComments(postId: number): PostComment[] {
+    return this.postComments.get(postId) || [];
+  }
+
+  isLoadingComments(postId: number): boolean {
+    return this.loadingComments.has(postId);
+  }
+
+  isSubmittingComment(postId: number): boolean {
+    return this.submittingComment.has(postId);
+  }
+
+  submitComment(post: Post): void {
+    if (!this.currentUser) {
+      alert('Please log in to comment.');
+      return;
+    }
+
+    const text = (this.commentInputs[post.id] || '').trim();
+    if (!text) return;
+
+    this.submittingComment.add(post.id);
+    this.commentError[post.id] = null;
+
+    this.commentService.addComment(post.id, text).subscribe({
+      next: (newComment) => {
+        const list = this.postComments.get(post.id) || [];
+        list.push(newComment);
+        this.postComments.set(post.id, list);
+
+        post.commentsCount = (post.commentsCount ?? 0) + 1;
+        const original = this._posts.find(p => p.id === post.id);
+        if (original) original.commentsCount = post.commentsCount;
+
+        this.commentInputs[post.id] = '';
+        this.submittingComment.delete(post.id);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.submittingComment.delete(post.id);
+        this.commentError[post.id] = err.error?.message || 'Failed to submit comment.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  deleteComment(post: Post, commentId: number): void {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+    this.deletingCommentId = commentId;
+
+    this.commentService.deleteComment(post.id, commentId).subscribe({
+      next: () => {
+        const list = this.postComments.get(post.id) || [];
+        const updated = list.filter(c => c.id !== commentId);
+        this.postComments.set(post.id, updated);
+
+        post.commentsCount = Math.max(0, (post.commentsCount ?? 1) - 1);
+        const original = this._posts.find(p => p.id === post.id);
+        if (original) original.commentsCount = post.commentsCount;
+
+        this.deletingCommentId = null;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.deletingCommentId = null;
+        alert(err.error?.message || 'Failed to delete comment.');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onCommentKeydown(event: KeyboardEvent, post: Post): void {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      this.submitComment(post);
+    }
+  }
+
+  canDeleteComment(comment: PostComment, post: Post): boolean {
+    if (!this.currentUser) return false;
+    return (
+      comment.authorUsername === this.currentUser.username ||
+      post.authorUsername === this.currentUser.username ||
+      this.currentUser.role === 'ROLE_ADMIN'
+    );
   }
 
   copyCode(code: string, id: string): void {

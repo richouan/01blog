@@ -531,3 +531,112 @@
   box-shadow: 3px 3px 0px var(--nb-shadow-color);
 }
 
+/* =========================================================
+   COMMENTS SECTION (Neo-Brutalist Drawer)
+   ========================================================= */
+
+.post-comments-container {
+  border-top: 1.5px dashed var(--nb-border-color) !important;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.active-comments {
+  background-color: var(--nb-subtle-bg);
+  border-color: var(--nb-border-color);
+  font-weight: 700;
+}
+
+.comment-input-box {
+  background-color: var(--nb-subtle-bg);
+  border: var(--nb-border);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+}
+
+.comment-author-avatar,
+.comment-item-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--nb-black);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--nb-black);
+}
+
+.comment-textarea {
+  border: 1.5px solid var(--nb-black);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  resize: vertical;
+  background-color: #ffffff;
+  color: var(--nb-black);
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: var(--nb-black);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+}
+
+.btn-nb-comment-submit {
+  background-color: var(--nb-canary);
+  border: 1.5px solid var(--nb-black);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--nb-black);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  cursor: pointer;
+}
+
+.btn-nb-comment-submit:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--nb-shadow-color);
+}
+
+.btn-nb-comment-submit:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+}
+
+.btn-nb-comment-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.comment-item {
+  border: 1.5px solid var(--nb-border-color);
+  border-radius: 6px;
+  background-color: var(--nb-card-bg);
+  transition: background-color 0.15s ease;
+}
+
+.comment-item:hover {
+  background-color: var(--nb-subtle-bg);
+}
+
+.btn-comment-delete {
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.btn-comment-delete:hover {
+  color: var(--nb-coral) !important;
+}
+
+.comment-empty-state {
+  background-color: var(--nb-subtle-bg);
+  border-radius: 6px;
+}
+
+
