@@ -102,6 +102,11 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
+        // Check if the account has been banned by an administrator
+        if (user.isBanned()) {
+            throw new IllegalArgumentException("This account has been suspended or banned by an administrator.");
+        }
+
         // Generate a JWT token for the authenticated user
         String token = jwtUtil.generateToken(user.getUsername());
 

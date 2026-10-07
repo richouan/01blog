@@ -50,7 +50,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     User user = userRepository.findByUsername(username).orElse(null);
 
-                    if (user != null) {
+                    if (user != null && !user.isBanned()) {
                         // Create authority based on user role (e.g. "ROLE_USER" or "ROLE_ADMIN")
                         List<SimpleGrantedAuthority> authorities = List.of(
                                 new SimpleGrantedAuthority(user.getRole().name())

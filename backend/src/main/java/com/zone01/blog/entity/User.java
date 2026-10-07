@@ -32,6 +32,10 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // Account moderation status: banned users are blocked from logging in or making requests
+    @Column(name = "banned", nullable = false)
+    private boolean banned = false;
+
     // following
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -49,6 +53,7 @@ public class User {
     public User() {
         this.role = UserRole.ROLE_USER; // Default role for any new user
         this.createdAt = LocalDateTime.now();
+        this.banned = false;
     }
 
     // Convenience constructor to easily create a new user
@@ -58,6 +63,7 @@ public class User {
         this.password = password;
         this.role = UserRole.ROLE_USER; // Default role
         this.createdAt = LocalDateTime.now();
+        this.banned = false;
     }
 
     // --- Standard Getters and Setters ---
@@ -135,6 +141,14 @@ public class User {
     public void unfollow(User target) {
         this.following.remove(target);
         target.getFollowers().remove(this);
+    }
+
+    public boolean isBanned() {
+        return banned;
+    }
+
+    public void setBanned(boolean banned) {
+        this.banned = banned;
     }
 
     @Override
