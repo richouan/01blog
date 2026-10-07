@@ -228,28 +228,45 @@
   background-color: #161b22;
 }
 
-/* Media Attachment Frame */
+/* Media Attachment Frame (Twitter/Instagram Adaptive Standard) */
 .post-media-frame {
-  border: 1.5px solid var(--nb-border-color);
+  border: var(--nb-border-sm);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 2.5px 2.5px 0px var(--nb-shadow-color);
-  background-color: #0d0d11;
-  max-height: 300px;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  background-color: var(--nb-subtle-bg);
+  max-height: 540px;
   margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.post-media-frame > a {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-height: 540px;
+  text-decoration: none;
 }
 
 .post-attachment-img {
-  max-height: 300px;
-  width: 100%;
-  object-fit: cover;
+  max-height: 540px;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   display: block;
+  margin: 0 auto;
 }
 
 .post-attachment-video {
-  max-height: 300px;
+  max-height: 540px;
   width: 100%;
   background-color: #000000;
+  display: block;
 }
 
 /* Compact Action Footer: NO Line Separator (Floating naturally below content) */
