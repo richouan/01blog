@@ -30,7 +30,7 @@ public class CommentService {
 
     // Add a new comment to a post
     @Transactional
-    public CommentResponse addComment(@NonNull Long postId, @NonNull String content, @NonNull String authorUsername) {
+    public CommentResponse addComment(@NonNull Long postId, String content, String authorUsername) {
         String trimmed = content.trim();
         if (trimmed.isEmpty()) {
             throw new IllegalArgumentException("Comment content cannot be empty.");
@@ -65,7 +65,7 @@ public class CommentService {
 
     // Delete comment with author, post author, or admin permission check
     @Transactional
-    public void deleteComment(@NonNull Long commentId, @NonNull String requestingUsername) {
+    public void deleteComment(@NonNull Long commentId, String requestingUsername) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found with ID: " + commentId));
 
