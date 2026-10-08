@@ -117,4 +117,40 @@ public class NotificationService {
         );
         notificationRepository.save(notification);
     }
+
+    // Trigger notification when someone requests to follow a private profile
+    @Transactional
+    public void notifyFollowRequest(User target, User requester) {
+        if (target == null || requester == null || target.getId().equals(requester.getId())) {
+            return;
+        }
+
+        String message = requester.getUsername() + " requested to follow your private profile";
+        Notification notification = new Notification(
+                target,
+                requester,
+                NotificationType.FOLLOW_REQUEST,
+                message,
+                requester.getId()
+        );
+        notificationRepository.save(notification);
+    }
+
+    // Trigger notification when a private follow request is accepted
+    @Transactional
+    public void notifyFollowAccepted(User requester, User target) {
+        if (requester == null || target == null || requester.getId().equals(target.getId())) {
+            return;
+        }
+
+        String message = target.getUsername() + " accepted your follow request";
+        Notification notification = new Notification(
+                requester,
+                target,
+                NotificationType.FOLLOW_ACCEPTED,
+                message,
+                target.getId()
+        );
+        notificationRepository.save(notification);
+    }
 }

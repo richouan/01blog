@@ -56,7 +56,7 @@
             routerLinkActive="nav-pill-active"
             class="nav-pill text-decoration-none"
           >
-            <i class="bi bi-shield-shaded"></i>
+            <i class="bi bi-terminal-fill"></i>
             <span class="ms-1">Admin</span>
           </a>
         </nav>
@@ -178,8 +178,8 @@
                 [class.notification-read]="item.isRead"
               >
                 <!-- Event Icon Box -->
-                <div class="notif-type-icon-box" [ngClass]="item.isRead ? 'bg-read-muted' : (item.type === 'NEW_POST' ? 'bg-canary' : 'bg-mint')">
-                  <i class="bi" [ngClass]="item.type === 'NEW_POST' ? 'bi-file-earmark-post-fill' : 'bi-person-plus-fill'"></i>
+                <div class="notif-type-icon-box" [ngClass]="item.isRead ? 'bg-read-muted' : (item.type === 'NEW_POST' ? 'bg-canary' : (item.type === 'FOLLOW_REQUEST' ? 'bg-coral' : 'bg-mint'))">
+                  <i class="bi" [ngClass]="item.type === 'NEW_POST' ? 'bi-file-earmark-post-fill' : (item.type === 'FOLLOW_REQUEST' ? 'bi-person-lines-fill' : 'bi-person-plus-fill')"></i>
                 </div>
 
                 <!-- Content -->
@@ -277,7 +277,7 @@
               (click)="toggleUserDropdown()"
               class="dropdown-item-nb text-decoration-none"
             >
-              <i class="bi bi-shield-lock-fill text-danger me-2"></i>
+              <i class="bi bi-terminal-fill text-danger me-2"></i>
               <span class="fw-bold">Admin Console</span>
             </a>
 
@@ -347,7 +347,7 @@
     routerLinkActive="dock-item-active"
     class="dock-item text-decoration-none"
   >
-    <i class="bi bi-shield-shaded dock-icon"></i>
+    <i class="bi bi-terminal-fill dock-icon"></i>
     <span class="dock-label">Admin</span>
   </a>
 </nav>

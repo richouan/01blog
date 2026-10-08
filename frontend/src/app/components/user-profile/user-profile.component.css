@@ -95,3 +95,31 @@
   justify-content: center;
   color: #121214;
 }
+
+.user-avatar-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: var(--nb-yellow);
+  border: var(--nb-border-sm);
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  font-family: var(--nb-font-display);
+  color: #121214;
+}
+
+.spin-icon {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+

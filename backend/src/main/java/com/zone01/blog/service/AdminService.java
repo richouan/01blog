@@ -22,12 +22,14 @@ public class AdminService {
     private final LikeRepository likeRepository;
     private final CommentRepository commentRepository;
     private final NotificationRepository notificationRepository;
+    private final FollowRequestRepository followRequestRepository;
     private final FileStorageService fileStorageService;
     private final PostService postService;
 
     public AdminService(UserRepository userRepository, PostRepository postRepository,
                         ReportRepository reportRepository, LikeRepository likeRepository,
                         CommentRepository commentRepository, NotificationRepository notificationRepository,
+                        FollowRequestRepository followRequestRepository,
                         FileStorageService fileStorageService, PostService postService) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
@@ -35,6 +37,7 @@ public class AdminService {
         this.likeRepository = likeRepository;
         this.commentRepository = commentRepository;
         this.notificationRepository = notificationRepository;
+        this.followRequestRepository = followRequestRepository;
         this.fileStorageService = fileStorageService;
         this.postService = postService;
     }
@@ -82,11 +85,15 @@ public class AdminService {
             throw new IllegalArgumentException("Administrators cannot delete their own account.");
         }
 
-        // 1. Delete moderation reports involving this user
+        // 1. Delete follow requests involving this user
+        followRequestRepository.deleteAllByRequester(user);
+        followRequestRepository.deleteAllByTarget(user);
+
+        // 2. Delete moderation reports involving this user
         reportRepository.deleteAllByReportedUser(user);
         reportRepository.deleteAllByReporter(user);
 
-        // 2. Delete notifications sent to or triggered by this user
+        // 3. Delete notifications sent to or triggered by this user
         notificationRepository.deleteAllByRecipient(user);
         notificationRepository.deleteAllByActor(user);
 

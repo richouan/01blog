@@ -120,11 +120,18 @@
                     (click)="toggleFollow(user)"
                     [disabled]="togglingUsernames.has(user.username)"
                     class="btn-nb-primary py-1 px-3 fs-6"
-                    [class.btn-nb-secondary]="user.isFollowing"
+                    [class.btn-nb-secondary]="user.isFollowing || user.hasPendingRequest"
+                    [title]="user.hasPendingRequest ? 'Click to cancel follow request' : ''"
                   >
                     <i *ngIf="togglingUsernames.has(user.username)" class="spinner-border spinner-border-sm me-1"></i>
-                    <i *ngIf="!togglingUsernames.has(user.username)" class="bi" [ngClass]="user.isFollowing ? 'bi-person-check-fill text-success' : 'bi-person-plus-fill'"></i>
-                    <span class="ms-1">{{ user.isFollowing ? 'Subscribed' : 'Subscribe' }}</span>
+                    <ng-container *ngIf="!togglingUsernames.has(user.username)">
+                      <i *ngIf="user.isFollowing" class="bi bi-person-check-fill text-success"></i>
+                      <i *ngIf="!user.isFollowing && user.hasPendingRequest" class="bi bi-clock-history text-warning"></i>
+                      <i *ngIf="!user.isFollowing && !user.hasPendingRequest" class="bi bi-person-plus-fill"></i>
+                      <span class="ms-1">
+                        {{ user.isFollowing ? 'Subscribed' : (user.hasPendingRequest ? 'Requested' : (user.privateProfile ? 'Request' : 'Subscribe')) }}
+                      </span>
+                    </ng-container>
                   </button>
                 </div>
 

@@ -89,13 +89,13 @@ public class NotificationResponse {
         return isRead;
     }
 
-    @JsonProperty("read")
-    public boolean getRead() {
-        return isRead;
+    @JsonProperty("isRead")
+    public void setRead(boolean isRead) {
+        this.isRead = isRead;
     }
 
-    public void setRead(boolean read) {
-        isRead = read;
+    public void setIsRead(boolean isRead) {
+        this.isRead = isRead;
     }
 
     public LocalDateTime getCreatedAt() {

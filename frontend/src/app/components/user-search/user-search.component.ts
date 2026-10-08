@@ -112,11 +112,33 @@ export class UserSearchComponent implements OnInit, OnDestroy {
     if (this.togglingUsernames.has(user.username)) return;
     this.togglingUsernames.add(user.username);
 
+    // If there is already a pending request, clicking cancels it
+    if (user.hasPendingRequest) {
+      this.userService.unfollowUser(user.username).subscribe({
+        next: () => {
+          user.hasPendingRequest = false;
+          this.togglingUsernames.delete(user.username);
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.togglingUsernames.delete(user.username);
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
+
     if (!user.isFollowing) {
       this.userService.followUser(user.username).subscribe({
-        next: () => {
-          user.isFollowing = true;
-          user.followersCount = (user.followersCount || 0) + 1;
+        next: (res) => {
+          if (res.requested) {
+            user.hasPendingRequest = true;
+            user.isFollowing = false;
+          } else {
+            user.isFollowing = true;
+            user.hasPendingRequest = false;
+            user.followersCount = (user.followersCount || 0) + 1;
+          }
           this.togglingUsernames.delete(user.username);
           this.cdr.detectChanges();
         },
@@ -129,6 +151,7 @@ export class UserSearchComponent implements OnInit, OnDestroy {
       this.userService.unfollowUser(user.username).subscribe({
         next: () => {
           user.isFollowing = false;
+          user.hasPendingRequest = false;
           if (user.followersCount > 0) {
             user.followersCount -= 1;
           }

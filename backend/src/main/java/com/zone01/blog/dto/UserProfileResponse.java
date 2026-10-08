@@ -20,11 +20,20 @@ public class UserProfileResponse {
     @JsonProperty("privateProfile")
     private boolean privateProfile;
 
+    @JsonProperty("hasPendingRequest")
+    private boolean hasPendingRequest;
+
     public UserProfileResponse() {}
 
     public UserProfileResponse(Long id, String username, String email, UserRole role, 
                               LocalDateTime createdAt, int followersCount, int followingCount, 
                               boolean isFollowing, boolean privateProfile) {
+        this(id, username, email, role, createdAt, followersCount, followingCount, isFollowing, privateProfile, false);
+    }
+
+    public UserProfileResponse(Long id, String username, String email, UserRole role, 
+                              LocalDateTime createdAt, int followersCount, int followingCount, 
+                              boolean isFollowing, boolean privateProfile, boolean hasPendingRequest) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -34,6 +43,7 @@ public class UserProfileResponse {
         this.followingCount = followingCount;
         this.isFollowing = isFollowing;
         this.privateProfile = privateProfile;
+        this.hasPendingRequest = hasPendingRequest;
     }
 
     public Long getId() {
@@ -106,6 +116,14 @@ public class UserProfileResponse {
 
     public void setPrivateProfile(boolean privateProfile) {
         this.privateProfile = privateProfile;
+    }
+
+    public boolean isHasPendingRequest() {
+        return hasPendingRequest;
+    }
+
+    public void setHasPendingRequest(boolean hasPendingRequest) {
+        this.hasPendingRequest = hasPendingRequest;
     }
 }
 

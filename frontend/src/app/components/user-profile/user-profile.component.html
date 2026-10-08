@@ -81,17 +81,24 @@
                   </button>
                 </ng-container>
 
-                <!-- If viewing another student's profile: Subscribe + Report -->
+                <!-- If viewing another student's profile: Subscribe / Follow Request + Report -->
                 <ng-container *ngIf="!isOwnProfile">
                   <button
                     (click)="onToggleFollow()"
                     [disabled]="isTogglingFollow"
                     class="btn-nb-primary py-1 px-3 fs-6"
-                    [class.btn-nb-secondary]="isFollowing"
+                    [class.btn-nb-secondary]="isFollowing || hasPendingRequest"
+                    [title]="hasPendingRequest ? 'Click to cancel follow request' : ''"
                   >
                     <i *ngIf="isTogglingFollow" class="spinner-border spinner-border-sm me-1"></i>
-                    <i *ngIf="!isTogglingFollow" class="bi" [ngClass]="isFollowing ? 'bi-person-check-fill text-success' : 'bi-person-plus-fill'"></i>
-                    <span class="ms-1">{{ isFollowing ? 'Subscribed' : 'Subscribe' }}</span>
+                    <ng-container *ngIf="!isTogglingFollow">
+                      <i *ngIf="isFollowing" class="bi bi-person-check-fill text-success"></i>
+                      <i *ngIf="!isFollowing && hasPendingRequest" class="bi bi-clock-history text-warning"></i>
+                      <i *ngIf="!isFollowing && !hasPendingRequest" class="bi bi-person-plus-fill"></i>
+                      <span class="ms-1">
+                        {{ isFollowing ? 'Subscribed' : (hasPendingRequest ? 'Requested' : (profile?.privateProfile ? 'Request to Follow' : 'Subscribe')) }}
+                      </span>
+                    </ng-container>
                   </button>
                   <button
                     (click)="openReportModal()"
@@ -152,6 +159,19 @@
                 <i class="bi bi-info-circle-fill me-1"></i>
                 <span>About Profile</span>
               </button>
+              <!-- Requests Tab for private profile owners -->
+              <button
+                *ngIf="isOwnProfile && profile?.privateProfile"
+                (click)="setActiveTab('requests')"
+                [class.tab-active]="activeTab === 'requests'"
+                class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent position-relative"
+              >
+                <i class="bi bi-person-lines-fill me-1"></i>
+                <span>Requests</span>
+                <span *ngIf="pendingRequests.length > 0" class="badge-nb badge-nb-coral ms-2 py-0 px-2" style="font-size: 0.75rem;">
+                  {{ pendingRequests.length }}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -165,9 +185,15 @@
                   <i class="bi bi-lock-fill fs-2"></i>
                 </div>
                 <h3 class="h4 fw-bold font-display text-dark mb-2">This Account is Private</h3>
-                <p class="text-muted fw-bold mb-0 mx-auto" style="max-width: 440px;">
-                  Subscribe to @{{ profile?.username }} to view their published posts, project updates, and feed.
+                <p *ngIf="!hasPendingRequest" class="text-muted fw-bold mb-0 mx-auto" style="max-width: 440px;">
+                  Request to follow @{{ profile?.username }} to view their published posts, project updates, and feed.
                 </p>
+                <div *ngIf="hasPendingRequest" class="mt-2">
+                  <span class="badge-nb badge-nb-yellow d-inline-flex align-items-center gap-1 py-1 px-3 fs-6">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Follow request sent • Waiting for approval</span>
+                  </span>
+                </div>
               </div>
 
               <!-- Posts List if profile is public, viewer is author, or viewer is subscribed -->
@@ -230,6 +256,79 @@
                       title="Switch privacy setting"
                     >
                       <i class="bi bi-arrow-repeat me-1"></i>Toggle
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 3: Incoming Follow Requests (Owner of Private Profile Only) -->
+            <div *ngIf="activeTab === 'requests'" class="py-2">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h6 fw-bold font-display text-uppercase mb-0 text-muted">
+                  Follow Requests ({{ pendingRequests.length }})
+                </h2>
+                <button
+                  (click)="loadPendingRequests()"
+                  [disabled]="isLoadingRequests"
+                  class="btn-nb-secondary py-1 px-2 fs-6"
+                  title="Refresh requests"
+                >
+                  <i class="bi bi-arrow-clockwise" [class.spin-icon]="isLoadingRequests"></i>
+                </button>
+              </div>
+
+              <!-- Loading Indicator -->
+              <div *ngIf="isLoadingRequests" class="text-center py-4 text-muted font-display small">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Loading follow requests...
+              </div>
+
+              <!-- Empty State -->
+              <div *ngIf="!isLoadingRequests && pendingRequests.length === 0" class="text-center py-5">
+                <div class="lock-icon-circle mx-auto mb-3" style="background: #faf7f2;">
+                  <i class="bi bi-inbox-fill fs-2 text-muted"></i>
+                </div>
+                <h3 class="h5 fw-bold font-display text-dark mb-1">No Pending Requests</h3>
+                <p class="text-muted small fw-bold mb-0">
+                  When other students ask to follow your private profile, they will appear here.
+                </p>
+              </div>
+
+              <!-- Requests List -->
+              <div *ngIf="!isLoadingRequests && pendingRequests.length > 0" class="d-flex flex-column gap-3">
+                <div
+                  *ngFor="let req of pendingRequests"
+                  class="card-nb p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3"
+                  style="border-width: 2px;"
+                >
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="user-avatar-sm flex-shrink-0">
+                      {{ req.requesterUsername.charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <a [routerLink]="['/profile', req.requesterUsername]" class="fw-bold font-display text-dark text-decoration-none">
+                        @{{ req.requesterUsername }}
+                      </a>
+                      <div class="small text-muted font-display">
+                        Requested on {{ req.createdAt | date:'mediumDate' }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 align-items-center">
+                    <button
+                      (click)="acceptRequest(req)"
+                      class="btn-nb-primary py-1 px-3 fs-6 d-flex align-items-center gap-1"
+                    >
+                      <i class="bi bi-check-lg"></i>
+                      <span>Accept</span>
+                    </button>
+                    <button
+                      (click)="rejectRequest(req)"
+                      class="btn-nb-secondary py-1 px-3 fs-6 text-danger d-flex align-items-center gap-1"
+                    >
+                      <i class="bi bi-x-lg"></i>
+                      <span>Decline</span>
                     </button>
                   </div>
                 </div>

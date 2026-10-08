@@ -1,11 +1,11 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { PostService } from '../../services/post.service';
-import { CurrentUser, UserProfile } from '../../models/auth.models';
+import { CurrentUser, UserProfile, FollowRequestItem } from '../../models/auth.models';
 import { Post } from '../../models/post.models';
 import { PostListComponent } from '../post-list/post-list.component';
 import { ReportModalComponent } from '../report-modal/report-modal.component';
@@ -14,7 +14,7 @@ import { ReportModalComponent } from '../report-modal/report-modal.component';
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, PostListComponent, ReportModalComponent],
+  imports: [CommonModule, RouterModule, PostListComponent, ReportModalComponent],
   templateUrl: './user-profile.component.html',
   styleUrl: './user-profile.component.css'
 })
@@ -24,15 +24,20 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   userPosts: Post[] = [];
   isOwnProfile = true;
   isFollowing = false;
+  hasPendingRequest = false;
   isTogglingFollow = false;
   isReportModalOpen = false;
   isLoading = true;
   isLoadingPosts = false;
   errorMessage = '';
-  activeTab: 'posts' | 'about' = 'posts';
+  activeTab: 'posts' | 'about' | 'requests' = 'posts';
   copiedLink = false;
   actionMessage = '';
   isTogglingPrivacy = false;
+
+  pendingRequests: FollowRequestItem[] = [];
+  isLoadingRequests = false;
+
   private sub = new Subscription();
 
   get isPrivateLocked(): boolean {
@@ -58,6 +63,17 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       })
     );
 
+    // Listen to query parameters (e.g. ?tab=requests from notification bell)
+    this.sub.add(
+      this.route.queryParamMap.subscribe(params => {
+        const tab = params.get('tab');
+        if (tab === 'requests' || tab === 'posts' || tab === 'about') {
+          this.activeTab = tab;
+          this.cdr.detectChanges();
+        }
+      })
+    );
+
     // Listen to route parameter changes (e.g. /profile vs /profile/:username)
     this.sub.add(
       this.route.paramMap.subscribe(params => {
@@ -73,6 +89,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.actionMessage = '';
     this.userPosts = [];
+    this.hasPendingRequest = false;
     this.cdr.detectChanges();
 
     const loggedInUsername = this.authService.getCurrentUser()?.username;
@@ -86,6 +103,9 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           next: (data) => {
             this.profile = data;
             this.isLoading = false;
+            if (data.privateProfile) {
+              this.loadPendingRequests();
+            }
             this.cdr.detectChanges();
           },
           error: (err) => {
@@ -102,6 +122,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           next: (data) => {
             this.profile = data;
             this.isFollowing = !!(data.isFollowing ?? data.following);
+            this.hasPendingRequest = !!data.hasPendingRequest;
             this.isLoading = false;
             this.cdr.detectChanges();
           },
@@ -139,24 +160,114 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     );
   }
 
+  // Load incoming follow requests for private profiles
+  loadPendingRequests(): void {
+    if (!this.isOwnProfile) return;
+    this.isLoadingRequests = true;
+    this.sub.add(
+      this.userService.getPendingFollowRequests().subscribe({
+        next: (requests) => {
+          this.pendingRequests = requests || [];
+          this.isLoadingRequests = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Could not load pending follow requests', err);
+          this.isLoadingRequests = false;
+          this.cdr.detectChanges();
+        }
+      })
+    );
+  }
+
+  // Accept a pending follow request
+  acceptRequest(request: FollowRequestItem): void {
+    this.userService.acceptFollowRequest(request.id).subscribe({
+      next: () => {
+        this.pendingRequests = this.pendingRequests.filter(r => r.id !== request.id);
+        if (this.profile) {
+          this.profile.followersCount = (this.profile.followersCount || 0) + 1;
+        }
+        this.actionMessage = `Accepted @${request.requesterUsername}'s follow request!`;
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.actionMessage = '';
+          this.cdr.detectChanges();
+        }, 3500);
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Could not accept follow request.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Reject / decline a pending follow request
+  rejectRequest(request: FollowRequestItem): void {
+    this.userService.rejectFollowRequest(request.id).subscribe({
+      next: () => {
+        this.pendingRequests = this.pendingRequests.filter(r => r.id !== request.id);
+        this.actionMessage = `Declined @${request.requesterUsername}'s follow request.`;
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.actionMessage = '';
+          this.cdr.detectChanges();
+        }, 3500);
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Could not decline follow request.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   // Follow / Subscribe action toggle connected to backend API
   onToggleFollow(): void {
     if (!this.profile?.username || this.isTogglingFollow) return;
     this.isTogglingFollow = true;
     const targetUsername = this.profile.username;
 
+    // If user currently has a pending follow request, clicking cancels it
+    if (this.hasPendingRequest) {
+      this.userService.unfollowUser(targetUsername).subscribe({
+        next: () => {
+          this.hasPendingRequest = false;
+          this.actionMessage = `Follow request cancelled.`;
+          this.isTogglingFollow = false;
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.actionMessage = '';
+            this.cdr.detectChanges();
+          }, 3000);
+        },
+        error: (err) => {
+          this.errorMessage = err.error?.message || 'Could not cancel follow request.';
+          this.isTogglingFollow = false;
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
+
     if (!this.isFollowing) {
       this.userService.followUser(targetUsername).subscribe({
-        next: () => {
-          this.isFollowing = true;
-          if (this.profile) {
-            this.profile.followersCount = (this.profile.followersCount || 0) + 1;
-            this.profile.isFollowing = true;
+        next: (res) => {
+          if (res.requested) {
+            this.hasPendingRequest = true;
+            this.isFollowing = false;
+            this.actionMessage = `Follow request sent to @${targetUsername}!`;
+          } else {
+            this.isFollowing = true;
+            this.hasPendingRequest = false;
+            if (this.profile) {
+              this.profile.followersCount = (this.profile.followersCount || 0) + 1;
+              this.profile.isFollowing = true;
+            }
+            this.actionMessage = `Subscribed to @${targetUsername}'s profile!`;
+            // Reload posts so private posts become visible immediately
+            this.loadUserPosts(targetUsername);
           }
-          this.actionMessage = `Subscribed to @${targetUsername}'s profile!`;
           this.isTogglingFollow = false;
-          // Reload posts so private posts become visible immediately
-          this.loadUserPosts(targetUsername);
           this.cdr.detectChanges();
           setTimeout(() => {
             this.actionMessage = '';
@@ -173,6 +284,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.userService.unfollowUser(targetUsername).subscribe({
         next: () => {
           this.isFollowing = false;
+          this.hasPendingRequest = false;
           if (this.profile) {
             if (this.profile.followersCount > 0) {
               this.profile.followersCount -= 1;
@@ -212,8 +324,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         }
         this.isTogglingPrivacy = false;
         this.actionMessage = updated.privateProfile
-          ? 'Profile is now PRIVATE. Only subscribers can see your posts.'
+          ? 'Profile is now PRIVATE. Other students must request to follow.'
           : 'Profile is now PUBLIC. Any student can see your posts.';
+        if (updated.privateProfile) {
+          this.loadPendingRequests();
+        } else {
+          this.pendingRequests = [];
+        }
         this.cdr.detectChanges();
         setTimeout(() => {
           this.actionMessage = '';
@@ -245,8 +362,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Switch between Posts and About tabs
-  setActiveTab(tab: 'posts' | 'about'): void {
+  // Switch between Posts, About, and Requests tabs
+  setActiveTab(tab: 'posts' | 'about' | 'requests'): void {
     this.activeTab = tab;
   }
 
