@@ -19,13 +19,8 @@
       </div>
 
       <div class="d-flex align-items-center gap-2">
-        <button
-          type="button"
-          (click)="loadStats(); loadAllData()"
-          class="btn-nb-secondary py-2 px-3 fs-6"
-          [disabled]="isLoadingStats || isLoadingData"
-          title="Refresh Dashboard"
-        >
+        <button type="button" (click)="loadStats(); loadAllData()" class="btn-nb-secondary py-2 px-3 fs-6"
+          [disabled]="isLoadingStats || isLoadingData" title="Refresh Dashboard">
           <i class="bi bi-arrow-clockwise" [class.spin]="isLoadingStats || isLoadingData"></i>
           <span class="ms-1 d-none d-sm-inline">Refresh</span>
         </button>
@@ -57,7 +52,7 @@
          4 METRIC ANALYTICS CARDS (Neo-Brutalist)
          ========================================================= -->
     <section class="row g-3 mb-4">
-      
+
       <!-- Card 1: Total Users -->
       <div class="col-6 col-lg-3">
         <div class="stat-metric-card stat-card-yellow p-3">
@@ -114,40 +109,28 @@
          TABBED MODERATION WORKSPACE
          ========================================================= -->
     <section class="card-nb moderation-table-card">
-      
+
       <!-- Card Toolbar (Tabs & Search) -->
       <div class="card-nb-header flex-wrap gap-2 p-3">
-        
+
         <!-- Tab Pills -->
         <div class="d-flex gap-2 align-items-center flex-wrap">
-          <button
-            type="button"
-            (click)="setTab('reports')"
-            class="tab-btn"
-            [class.tab-btn-active]="activeTab === 'reports'"
-          >
+          <button type="button" (click)="setTab('reports')" class="tab-btn"
+            [class.tab-btn-active]="activeTab === 'reports'">
             <i class="bi bi-flag-fill me-1"></i>
             <span>Reports</span>
             <span *ngIf="reportsTabCount > 0" class="badge-tab-count ms-1">{{ reportsTabCount }}</span>
           </button>
 
-          <button
-            type="button"
-            (click)="setTab('users')"
-            class="tab-btn"
-            [class.tab-btn-active]="activeTab === 'users'"
-          >
+          <button type="button" (click)="setTab('users')" class="tab-btn"
+            [class.tab-btn-active]="activeTab === 'users'">
             <i class="bi bi-people-fill me-1"></i>
             <span>Users</span>
             <span class="badge-tab-count ms-1">{{ usersTabCount }}</span>
           </button>
 
-          <button
-            type="button"
-            (click)="setTab('posts')"
-            class="tab-btn"
-            [class.tab-btn-active]="activeTab === 'posts'"
-          >
+          <button type="button" (click)="setTab('posts')" class="tab-btn"
+            [class.tab-btn-active]="activeTab === 'posts'">
             <i class="bi bi-newspaper me-1"></i>
             <span>Posts</span>
             <span class="badge-tab-count ms-1">{{ postsTabCount }}</span>
@@ -157,12 +140,8 @@
         <!-- Filter Input -->
         <div class="search-box-admin">
           <i class="bi bi-search me-1 text-muted"></i>
-          <input
-            type="text"
-            [(ngModel)]="searchFilter"
-            placeholder="Filter current view..."
-            class="input-admin-filter"
-          />
+          <input type="text" [(ngModel)]="searchFilter" placeholder="Filter current view..."
+            class="input-admin-filter" />
         </div>
 
       </div>
@@ -207,27 +186,72 @@
                   <div *ngIf="r.targetType === 'POST'">
                     <span class="fw-bold font-display text-dark">{{ r.reportedPostTitle }}</span>
                     <div class="small text-muted">Author: @{{ r.reportedUsername }}</div>
+                    <div *ngIf="getPost(r.reportedPostId, r.reportedPostTitle).textContent as text" class="small text-secondary mt-1">
+                      <span>{{ (text.length <= 80 || isPostExpanded(r.id)) ? ('"' + text + '"') : ('"' + text.slice(0, 80) + '..."') }}</span>
+                      <button *ngIf="text.length > 80" type="button" (click)="togglePostContent(r.id)"
+                        class="btn-show-more">
+                        {{ isPostExpanded(r.id) ? 'Show less' : 'Show more' }}
+                      </button>
+                    </div>
                   </div>
                 </td>
                 <td>
-                  <a [routerLink]="['/profile', r.reporterUsername]" class="text-muted text-decoration-none small fw-bold">
+                  <a [routerLink]="['/profile', r.reporterUsername]"
+                    class="text-muted text-decoration-none small fw-bold">
                     @{{ r.reporterUsername }}
                   </a>
                 </td>
                 <td class="reason-cell">
-                  <span class="reason-text">{{ r.reason }}</span>
+                  <div class="reason-text">
+                    <span>{{ (r.reason.length <= 90 || isReasonExpanded(r.id)) ? r.reason : (r.reason.slice(0, 90) + '...') }}</span>
+                    <button *ngIf="r.reason.length > 90" type="button" (click)="toggleReason(r.id)"
+                      class="btn-show-more">
+                      {{ isReasonExpanded(r.id) ? 'Show less' : 'Show more' }}
+                    </button>
+                  </div>
                 </td>
                 <td class="text-muted small">
                   {{ r.createdAt | date:'short' }}
                 </td>
                 <td class="text-end">
-                  <div class="d-inline-flex gap-1">
-                    <button
-                      type="button"
-                      (click)="promptDismissReport(r)"
-                      class="btn-action-nb btn-action-dismiss"
-                      title="Dismiss Report"
-                    >
+                  <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                    <!-- Actions for reported USER -->
+                    <ng-container *ngIf="r.targetType === 'USER'">
+                      <button type="button" (click)="promptToggleBan(getUser(r.reportedUserId, r.reportedUsername))"
+                        class="btn-action-nb"
+                        [ngClass]="getUser(r.reportedUserId, r.reportedUsername).banned ? 'btn-action-unban' : 'btn-action-ban'"
+                        [title]="getUser(r.reportedUserId, r.reportedUsername).banned ? 'Lift Ban' : 'Ban User'">
+                        <i class="bi" [ngClass]="getUser(r.reportedUserId, r.reportedUsername).banned ? 'bi-unlock-fill' : 'bi-lock-fill'"></i>
+                        <span>{{ getUser(r.reportedUserId, r.reportedUsername).banned ? 'Unban' : 'Ban' }}</span>
+                      </button>
+
+                      <button type="button" (click)="promptDeleteUser(getUser(r.reportedUserId, r.reportedUsername))"
+                        class="btn-action-nb btn-action-delete" title="Permanently Delete User">
+                        <i class="bi bi-trash3-fill"></i>
+                        <span>Delete</span>
+                      </button>
+                    </ng-container>
+
+                    <!-- Actions for reported POST -->
+                    <ng-container *ngIf="r.targetType === 'POST'">
+                      <button type="button" (click)="promptToggleHide(getPost(r.reportedPostId, r.reportedPostTitle))"
+                        class="btn-action-nb"
+                        [ngClass]="getPost(r.reportedPostId, r.reportedPostTitle).hidden ? 'btn-action-unhide' : 'btn-action-hide'"
+                        [title]="getPost(r.reportedPostId, r.reportedPostTitle).hidden ? 'Unhide publication' : 'Hide publication'">
+                        <i class="bi" [ngClass]="getPost(r.reportedPostId, r.reportedPostTitle).hidden ? 'bi-eye-fill' : 'bi-eye-slash-fill'"></i>
+                        <span>{{ getPost(r.reportedPostId, r.reportedPostTitle).hidden ? 'Unhide' : 'Hide' }}</span>
+                      </button>
+
+                      <button type="button" (click)="promptDeletePost(getPost(r.reportedPostId, r.reportedPostTitle))"
+                        class="btn-action-nb btn-action-delete" title="Permanently Delete Publication">
+                        <i class="bi bi-trash3-fill"></i>
+                        <span>Delete</span>
+                      </button>
+                    </ng-container>
+
+                    <!-- Dismiss Report -->
+                    <button type="button" (click)="promptDismissReport(r)" class="btn-action-nb btn-action-dismiss"
+                      title="Dismiss Report">
                       <i class="bi bi-check-lg"></i>
                       <span>Dismiss</span>
                     </button>
@@ -241,7 +265,8 @@
             <div class="empty-state-admin text-center py-5">
               <i class="bi bi-shield-check text-success fs-1 mb-2 d-block"></i>
               <h3 class="h6 fw-bold font-display">No Pending Reports</h3>
-              <p class="text-muted small mb-0">The student community is peaceful. No moderation reports pending review.</p>
+              <p class="text-muted small mb-0">The student community is peaceful. No moderation reports pending review.
+              </p>
             </div>
           </ng-template>
         </div>
@@ -269,7 +294,8 @@
                     <div class="user-avatar-sm">
                       {{ u.username.charAt(0).toUpperCase() }}
                     </div>
-                    <a [routerLink]="['/profile', u.username]" class="fw-bold font-display text-dark text-decoration-none">
+                    <a [routerLink]="['/profile', u.username]"
+                      class="fw-bold font-display text-dark text-decoration-none">
                       @{{ u.username }}
                     </a>
                   </div>
@@ -291,24 +317,16 @@
                 <td class="text-end">
                   <div class="d-inline-flex gap-1" *ngIf="u.role !== 'ROLE_ADMIN'">
                     <!-- Ban/Unban Toggle -->
-                    <button
-                      type="button"
-                      (click)="promptToggleBan(u)"
-                      class="btn-action-nb"
+                    <button type="button" (click)="promptToggleBan(u)" class="btn-action-nb"
                       [ngClass]="u.banned ? 'btn-action-unban' : 'btn-action-ban'"
-                      [title]="u.banned ? 'Lift Ban' : 'Ban User'"
-                    >
+                      [title]="u.banned ? 'Lift Ban' : 'Ban User'">
                       <i class="bi" [ngClass]="u.banned ? 'bi-unlock-fill' : 'bi-lock-fill'"></i>
                       <span>{{ u.banned ? 'Unban' : 'Ban' }}</span>
                     </button>
 
                     <!-- Delete User -->
-                    <button
-                      type="button"
-                      (click)="promptDeleteUser(u)"
-                      class="btn-action-nb btn-action-delete"
-                      title="Permanently Delete User"
-                    >
+                    <button type="button" (click)="promptDeleteUser(u)" class="btn-action-nb btn-action-delete"
+                      title="Permanently Delete User">
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
@@ -351,7 +369,8 @@
                   </div>
                 </td>
                 <td>
-                  <a [routerLink]="['/profile', p.authorUsername]" class="fw-bold font-display text-muted text-decoration-none small">
+                  <a [routerLink]="['/profile', p.authorUsername]"
+                    class="fw-bold font-display text-muted text-decoration-none small">
                     @{{ p.authorUsername }}
                   </a>
                 </td>
@@ -369,24 +388,16 @@
                 <td class="text-end">
                   <div class="d-inline-flex gap-1">
                     <!-- Hide / Unhide Toggle -->
-                    <button
-                      type="button"
-                      (click)="promptToggleHide(p)"
-                      class="btn-action-nb"
+                    <button type="button" (click)="promptToggleHide(p)" class="btn-action-nb"
                       [ngClass]="p.hidden ? 'btn-action-unhide' : 'btn-action-hide'"
-                      [title]="p.hidden ? 'Make Visible' : 'Hide from Feeds'"
-                    >
+                      [title]="p.hidden ? 'Make Visible' : 'Hide from Feeds'">
                       <i class="bi" [ngClass]="p.hidden ? 'bi-eye-fill' : 'bi-eye-slash-fill'"></i>
                       <span>{{ p.hidden ? 'Unhide' : 'Hide' }}</span>
                     </button>
 
                     <!-- Delete Post -->
-                    <button
-                      type="button"
-                      (click)="promptDeletePost(p)"
-                      class="btn-action-nb btn-action-delete"
-                      title="Permanently Delete Publication"
-                    >
+                    <button type="button" (click)="promptDeletePost(p)" class="btn-action-nb btn-action-delete"
+                      title="Permanently Delete Publication">
                       <i class="bi bi-trash3-fill"></i>
                     </button>
                   </div>
@@ -415,19 +426,15 @@
      ========================================================= -->
 <div *ngIf="confirmModal" class="modal-backdrop-nb" (click)="closeConfirmModal()">
   <div class="modal-dialog-nb modal-dialog-sm" (click)="$event.stopPropagation()">
-    
+
     <header class="modal-header-nb d-flex align-items-center justify-content-between p-3 border-bottom">
       <div class="d-flex align-items-center gap-2">
-        <i class="bi" [ngClass]="confirmModal.isDestructive ? 'bi-shield-exclamation text-danger fs-4' : 'bi-shield-check text-primary fs-4'"></i>
+        <i class="bi"
+          [ngClass]="confirmModal.isDestructive ? 'bi-shield-exclamation text-danger fs-4' : 'bi-shield-check text-primary fs-4'"></i>
         <h2 class="h6 mb-0 fw-bold font-display text-dark">{{ confirmModal.title }}</h2>
       </div>
-      <button
-        type="button"
-        (click)="closeConfirmModal()"
-        class="btn-close-nb"
-        [disabled]="isProcessingAction"
-        aria-label="Close"
-      >
+      <button type="button" (click)="closeConfirmModal()" class="btn-close-nb" [disabled]="isProcessingAction"
+        aria-label="Close">
         <i class="bi bi-x-lg"></i>
       </button>
     </header>
@@ -449,23 +456,16 @@
     </div>
 
     <footer class="modal-footer-nb d-flex align-items-center justify-content-end gap-2 p-3 border-top">
-      <button
-        type="button"
-        (click)="closeConfirmModal()"
-        class="btn-nb-secondary py-2 px-3"
-        [disabled]="isProcessingAction"
-      >
+      <button type="button" (click)="closeConfirmModal()" class="btn-nb-secondary py-2 px-3"
+        [disabled]="isProcessingAction">
         Cancel
       </button>
-      <button
-        type="button"
-        (click)="executeConfirmedAction()"
-        [ngClass]="confirmModal.isDestructive ? 'btn-nb-coral' : 'btn-nb-primary'"
-        class="py-2 px-3"
-        [disabled]="isProcessingAction"
-      >
+      <button type="button" (click)="executeConfirmedAction()"
+        [ngClass]="confirmModal.isDestructive ? 'btn-nb-coral' : 'btn-nb-primary'" class="py-2 px-3"
+        [disabled]="isProcessingAction">
         <span *ngIf="isProcessingAction" class="spinner-border spinner-border-sm me-1" role="status"></span>
-        <i *ngIf="!isProcessingAction" class="bi" [ngClass]="confirmModal.isDestructive ? 'bi-shield-exclamation me-1' : 'bi-check2-circle me-1'"></i>
+        <i *ngIf="!isProcessingAction" class="bi"
+          [ngClass]="confirmModal.isDestructive ? 'bi-shield-exclamation me-1' : 'bi-check2-circle me-1'"></i>
         <span>{{ isProcessingAction ? 'Processing...' : confirmModal.confirmBtnText }}</span>
       </button>
     </footer>

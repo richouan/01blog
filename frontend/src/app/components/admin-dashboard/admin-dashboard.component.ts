@@ -54,10 +54,38 @@ export class AdminDashboardComponent implements OnInit {
   successToast = '';
   errorAlert = '';
 
+  // Show more / Show less toggles for long content in reports
+  expandedReasons = new Set<number>();
+  expandedPosts = new Set<number>();
+
+  toggleReason(reportId: number): void {
+    if (this.expandedReasons.has(reportId)) {
+      this.expandedReasons.delete(reportId);
+    } else {
+      this.expandedReasons.add(reportId);
+    }
+  }
+
+  isReasonExpanded(reportId: number): boolean {
+    return this.expandedReasons.has(reportId);
+  }
+
+  togglePostContent(reportId: number): void {
+    if (this.expandedPosts.has(reportId)) {
+      this.expandedPosts.delete(reportId);
+    } else {
+      this.expandedPosts.add(reportId);
+    }
+  }
+
+  isPostExpanded(reportId: number): boolean {
+    return this.expandedPosts.has(reportId);
+  }
+
   constructor(
     private adminService: AdminService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadStats();
@@ -183,6 +211,35 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
+  // Entity helpers for reports view
+  getUser(userId?: number, username?: string): AdminUser {
+    return this.users.find(u => (userId && u.id === userId) || (username && u.username === username)) || {
+      id: userId || 0,
+      username: username || 'unknown',
+      email: '',
+      role: 'ROLE_USER',
+      banned: false,
+      createdAt: '',
+      postsCount: 0
+    };
+  }
+
+  getPost(postId?: number, postTitle?: string): Post {
+    return this.posts.find(p => p.id === postId) || {
+      id: postId || 0,
+      title: postTitle || (postId ? `Post #${postId}` : 'Publication'),
+      textContent: '',
+      mediaUrl: '',
+      authorId: 0,
+      authorUsername: '',
+      likesCount: 0,
+      liked: false,
+      commentsCount: 0,
+      hidden: false,
+      createdAt: ''
+    };
+  }
+
   // --- ACTION CONFIRMATION MODAL TRIGGERS ---
 
   promptDismissReport(report: ReportResponse): void {
@@ -197,7 +254,7 @@ export class AdminDashboardComponent implements OnInit {
     };
   }
 
-  promptToggleBan(user: AdminUser): void {
+  promptToggleBan(user: { id: number; username: string; banned?: boolean }): void {
     const isBanning = !user.banned;
     this.confirmModal = {
       type: isBanning ? 'ban' : 'unban',
@@ -212,7 +269,7 @@ export class AdminDashboardComponent implements OnInit {
     };
   }
 
-  promptDeleteUser(user: AdminUser): void {
+  promptDeleteUser(user: { id: number; username: string }): void {
     this.confirmModal = {
       type: 'deleteUser',
       targetId: user.id,
@@ -224,7 +281,7 @@ export class AdminDashboardComponent implements OnInit {
     };
   }
 
-  promptToggleHide(post: Post): void {
+  promptToggleHide(post: { id: number; title: string; hidden?: boolean }): void {
     const willHide = !post.hidden;
     this.confirmModal = {
       type: 'toggleHide',
@@ -239,7 +296,7 @@ export class AdminDashboardComponent implements OnInit {
     };
   }
 
-  promptDeletePost(post: Post): void {
+  promptDeletePost(post: { id: number; title: string }): void {
     this.confirmModal = {
       type: 'deletePost',
       targetId: post.id,
@@ -286,6 +343,7 @@ export class AdminDashboardComponent implements OnInit {
       this.adminService.deleteUser(targetId).subscribe({
         next: () => {
           this.users = this.users.filter(u => u.id !== targetId);
+          this.reports = this.reports.filter(r => r.reportedUserId !== targetId);
           this.loadStats();
           this.onActionSuccess('User account and all relational data permanently removed.');
         },
@@ -304,6 +362,7 @@ export class AdminDashboardComponent implements OnInit {
       this.adminService.deletePost(targetId).subscribe({
         next: () => {
           this.posts = this.posts.filter(p => p.id !== targetId);
+          this.reports = this.reports.filter(r => r.reportedPostId !== targetId);
           this.loadStats();
           this.onActionSuccess('Publication permanently deleted.');
         },

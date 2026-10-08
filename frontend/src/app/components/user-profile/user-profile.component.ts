@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -14,7 +14,7 @@ import { ReportModalComponent } from '../report-modal/report-modal.component';
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostListComponent, ReportModalComponent],
+  imports: [CommonModule, PostListComponent, ReportModalComponent],
   templateUrl: './user-profile.component.html',
   styleUrl: './user-profile.component.css'
 })
