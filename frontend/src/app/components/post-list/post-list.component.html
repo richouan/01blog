@@ -1,5 +1,16 @@
 <div class="post-feed-container">
 
+  <!-- Moderation Report Feedback Banner -->
+  <div *ngIf="reportFeedbackMessage" class="alert-nb-feedback mb-3 p-2 px-3 small fw-bold d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-shield-check text-success fs-5"></i>
+      <span>{{ reportFeedbackMessage }}</span>
+    </div>
+    <button type="button" class="btn-close-nb" (click)="reportFeedbackMessage = null" aria-label="Close">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
   <!-- =========================================================
        LOADING SKELETON CARDS
        ========================================================= -->
@@ -81,11 +92,11 @@
             </div>
           </div>
 
-          <!-- Right Side: 3-Dots (for Author/Admin) -->
+          <!-- Right Side: 3-Dots Options Menu -->
           <div class="d-flex align-items-center gap-2 flex-shrink-0 position-relative">
-            <!-- 3-Dots Options Button: ONLY visible if author or admin -->
+            <!-- 3-Dots Options Button: visible for all logged-in users -->
             <button
-              *ngIf="isOwnerOrAdmin(post)"
+              *ngIf="currentUser"
               type="button"
               (click)="toggleDropdown(post.id, $event)"
               class="btn-dots-nb"
@@ -96,13 +107,15 @@
               <i class="bi bi-three-dots-vertical"></i>
             </button>
 
-            <!-- Neo-Brutalist Options Dropdown Menu (Edit & Delete only) -->
+            <!-- Neo-Brutalist Options Dropdown Menu -->
             <div
-              *ngIf="activeDropdownPostId === post.id && isOwnerOrAdmin(post)"
+              *ngIf="activeDropdownPostId === post.id && currentUser"
               class="post-options-dropdown"
               (click)="$event.stopPropagation()"
             >
+              <!-- Author: Edit -->
               <button
+                *ngIf="isOwner(post)"
                 type="button"
                 (click)="openEditModal(post, $event)"
                 class="dropdown-item-nb"
@@ -111,13 +124,26 @@
                 <span>Edit post</span>
               </button>
 
+              <!-- Author or Admin: Delete -->
               <button
+                *ngIf="isOwnerOrAdmin(post)"
                 type="button"
                 (click)="openDeleteModal(post, $event)"
                 class="dropdown-item-nb text-danger"
               >
                 <i class="bi bi-trash3-fill"></i>
                 <span>Delete post</span>
+              </button>
+
+              <!-- Non-Author: Report -->
+              <button
+                *ngIf="!isOwner(post)"
+                type="button"
+                (click)="openReportModal(post, $event)"
+                class="dropdown-item-nb text-danger"
+              >
+                <i class="bi bi-flag-fill"></i>
+                <span>Report post</span>
               </button>
             </div>
           </div>
@@ -223,16 +249,28 @@
 
           </div>
 
-          <!-- Bookmark Action on Right -->
-          <button
-            type="button"
-            (click)="toggleBookmark(post)"
-            class="post-compact-action btn-bookmark"
-            [class.bookmarked]="isBookmarked(post.id)"
-            title="Bookmark"
-          >
-            <i class="bi" [ngClass]="isBookmarked(post.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'"></i>
-          </button>
+          <!-- Right Action: Report & Bookmark -->
+          <div class="d-flex align-items-center gap-1">
+            <button
+              *ngIf="currentUser && !isOwner(post)"
+              type="button"
+              (click)="openReportModal(post, $event)"
+              class="post-compact-action btn-report"
+              title="Report post"
+            >
+              <i class="bi bi-flag"></i>
+            </button>
+
+            <button
+              type="button"
+              (click)="toggleBookmark(post)"
+              class="post-compact-action btn-bookmark"
+              [class.bookmarked]="isBookmarked(post.id)"
+              title="Bookmark"
+            >
+              <i class="bi" [ngClass]="isBookmarked(post.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'"></i>
+            </button>
+          </div>
         </footer>
 
         <!-- Expandable Comments Drawer -->
@@ -484,5 +522,15 @@
 
     </div>
   </div>
+
+  <!-- Moderation Report Post Modal -->
+  <app-report-modal
+    [isOpen]="!!reportingPost"
+    [targetType]="'POST'"
+    [targetId]="reportingPost?.id || null"
+    [targetName]="reportingPost?.title || ''"
+    (closed)="closeReportModal()"
+    (reportSubmitted)="onReportSubmitted()"
+  ></app-report-modal>
 
 </div>

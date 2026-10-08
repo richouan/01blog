@@ -656,4 +656,25 @@
   border-radius: 6px;
 }
 
+/* Moderation Report Interactions */
+.btn-report {
+  transition: all 0.15s ease;
+}
+
+.btn-report:hover {
+  color: var(--nb-coral) !important;
+  background-color: #fee2e2 !important;
+  border-color: #dc2626 !important;
+}
+
+.alert-nb-feedback {
+  background-color: #ecfdf5;
+  border: var(--nb-border);
+  box-shadow: var(--nb-shadow-sm);
+  border-radius: 8px;
+  color: #065f46;
+  animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
 

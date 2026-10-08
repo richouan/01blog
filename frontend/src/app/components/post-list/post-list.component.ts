@@ -9,6 +9,8 @@ import { AuthService } from '../../services/auth.service';
 import { PostService } from '../../services/post.service';
 import { CommentService } from '../../services/comment.service';
 
+import { ReportModalComponent } from '../report-modal/report-modal.component';
+
 export interface ContentSegment {
   type: 'text' | 'code';
   content: string;
@@ -25,7 +27,7 @@ export interface DisplayPost extends Post {
 @Component({
   selector: 'app-post-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ReportModalComponent],
   templateUrl: './post-list.component.html',
   styleUrl: './post-list.component.css'
 })
@@ -89,6 +91,10 @@ export class PostListComponent implements OnInit, OnDestroy {
   isSubmittingDelete: boolean = false;
   deleteErrorMessage: string | null = null;
 
+  // Report Modal State
+  reportingPost: DisplayPost | null = null;
+  reportFeedbackMessage: string | null = null;
+
   constructor(
     private postService: PostService,
     private commentService: CommentService,
@@ -105,6 +111,11 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.authSub?.unsubscribe();
+  }
+
+  isOwner(post: Post): boolean {
+    if (!this.currentUser) return false;
+    return post.authorUsername === this.currentUser.username;
   }
 
   isOwnerOrAdmin(post: Post): boolean {
@@ -589,5 +600,26 @@ export class PostListComponent implements OnInit, OnDestroy {
         this.deleteErrorMessage = err.error?.message || 'Failed to delete post. Please try again.';
       }
     });
+  }
+
+  // --- REPORT MODAL CONTROLS ---
+
+  openReportModal(post: DisplayPost, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.closeDropdown();
+    this.reportingPost = post;
+  }
+
+  closeReportModal(): void {
+    this.reportingPost = null;
+  }
+
+  onReportSubmitted(): void {
+    this.reportFeedbackMessage = 'Moderation report submitted to administrators.';
+    setTimeout(() => {
+      this.reportFeedbackMessage = null;
+      this.cdr.detectChanges();
+    }, 4000);
+    this.cdr.detectChanges();
   }
 }

@@ -41,6 +41,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.themeService.toggleTheme();
   }
 
+  // Returns true if the logged-in user holds ROLE_ADMIN
+  get isAdmin(): boolean {
+    return this.currentUser?.role === 'ROLE_ADMIN';
+  }
+
   ngOnInit(): void {
     // Listen to user authentication changes
     this.sub.add(

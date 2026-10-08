@@ -8,12 +8,13 @@ import { PostService } from '../../services/post.service';
 import { CurrentUser, UserProfile } from '../../models/auth.models';
 import { Post } from '../../models/post.models';
 import { PostListComponent } from '../post-list/post-list.component';
+import { ReportModalComponent } from '../report-modal/report-modal.component';
 
 // UserProfileComponent displays personal or other students' Profile pages
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink, PostListComponent],
+  imports: [CommonModule, RouterLink, PostListComponent, ReportModalComponent],
   templateUrl: './user-profile.component.html',
   styleUrl: './user-profile.component.css'
 })
@@ -24,6 +25,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   isOwnProfile = true;
   isFollowing = false;
   isTogglingFollow = false;
+  isReportModalOpen = false;
   isLoading = true;
   isLoadingPosts = false;
   errorMessage = '';
@@ -230,6 +232,24 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     } catch {
       // Ignore copy error
     }
+  }
+
+  // --- MODERATION REPORT MODAL CONTROLS ---
+  openReportModal(): void {
+    this.isReportModalOpen = true;
+  }
+
+  closeReportModal(): void {
+    this.isReportModalOpen = false;
+  }
+
+  onReportSubmitted(): void {
+    this.actionMessage = 'Moderation report submitted to administrators.';
+    setTimeout(() => {
+      this.actionMessage = '';
+      this.cdr.detectChanges();
+    }, 4000);
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {

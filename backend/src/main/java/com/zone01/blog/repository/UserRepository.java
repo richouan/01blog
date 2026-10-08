@@ -23,5 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Search users by partial username match ignoring case
     java.util.List<User> findByUsernameContainingIgnoreCase(String username);
+
+    // Count banned users for admin dashboard analytics
+    long countByBannedTrue();
 }
 

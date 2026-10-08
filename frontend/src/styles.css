@@ -475,3 +475,78 @@ h1, h2, h3, h4, h5, h6, .font-display {
     padding-bottom: 84px !important;
   }
 }
+
+/* =========================================================
+   Global Neo-Brutalist Modal System
+   ========================================================= */
+
+.modal-backdrop-nb {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(18, 18, 20, 0.7) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  z-index: 2500 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+}
+
+.modal-dialog-nb {
+  position: relative !important;
+  background-color: var(--nb-card-bg) !important;
+  border: var(--nb-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 6px 6px 0px var(--nb-shadow-color) !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  overflow: hidden !important;
+  animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 2501 !important;
+}
+
+.modal-dialog-sm {
+  max-width: 440px !important;
+}
+
+@keyframes modal-pop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.modal-header-nb {
+  background-color: var(--nb-card-header);
+  border-bottom: var(--nb-border);
+}
+
+.modal-body-nb {
+  background-color: var(--nb-card-bg);
+}
+
+.modal-footer-nb {
+  background-color: var(--nb-card-bg);
+  border-top: var(--nb-border);
+}
+
+.btn-close-nb {
+  background: transparent;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  color: var(--nb-black);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+.btn-close-nb:hover {
+  transform: scale(1.1);
+  color: var(--nb-coral);
+}
+

@@ -76,7 +76,7 @@
                   </a>
                 </ng-container>
 
-                <!-- If viewing another student's profile: Subscribe + Report + Feed -->
+                <!-- If viewing another student's profile: Subscribe + Report + Share + Feed -->
                 <ng-container *ngIf="!isOwnProfile">
                   <button
                     (click)="onToggleFollow()"
@@ -87,6 +87,14 @@
                     <i *ngIf="isTogglingFollow" class="spinner-border spinner-border-sm me-1"></i>
                     <i *ngIf="!isTogglingFollow" class="bi" [ngClass]="isFollowing ? 'bi-person-check-fill text-success' : 'bi-person-plus-fill'"></i>
                     <span class="ms-1">{{ isFollowing ? 'Subscribed' : 'Subscribe' }}</span>
+                  </button>
+                  <button
+                    (click)="openReportModal()"
+                    class="btn-nb-secondary py-1 px-2 px-sm-3 fs-6 text-danger"
+                    title="Report Student Profile"
+                  >
+                    <i class="bi bi-flag-fill"></i>
+                    <span class="ms-1 d-none d-sm-inline">Report</span>
                   </button>
                   <button
                     (click)="copyProfileLink()"
@@ -215,3 +223,13 @@
     </div>
   </div>
 </div>
+
+<!-- Moderation Report Profile Modal -->
+<app-report-modal
+  [isOpen]="isReportModalOpen"
+  [targetType]="'USER'"
+  [targetId]="profile?.id || null"
+  [targetName]="profile?.username || ''"
+  (closed)="closeReportModal()"
+  (reportSubmitted)="onReportSubmitted()"
+></app-report-modal>

@@ -50,7 +50,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     User user = userRepository.findByUsername(username).orElse(null);
 
-                    if (user != null && !user.isBanned()) {
+                    if (user != null && user.isBanned()) {
+                        // Immediately reject banned users on ANY request before hitting controllers
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.setCharacterEncoding("UTF-8");
+                        response.getWriter().write("{\"error\":\"ACCOUNT_BANNED\",\"message\":\"This account has been suspended or banned by an administrator.\"}");
+                        return;
+                    }
+
+                    if (user != null) {
                         // Create authority based on user role (e.g. "ROLE_USER" or "ROLE_ADMIN")
                         List<SimpleGrantedAuthority> authorities = List.of(
                                 new SimpleGrantedAuthority(user.getRole().name())

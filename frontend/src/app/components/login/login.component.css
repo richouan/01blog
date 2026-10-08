@@ -17,3 +17,33 @@
   justify-content: center;
   font-size: 1.1rem;
 }
+
+/* Banned Account Modal Styling */
+.banned-avatar-badge {
+  width: 64px;
+  height: 64px;
+  background-color: #fee2e2;
+  border: var(--nb-border);
+  box-shadow: 3px 3px 0px var(--nb-shadow-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banned-notice-box {
+  background-color: #fff1f2;
+  border: var(--nb-border-sm);
+  border-color: #f43f5e;
+  border-radius: 8px;
+}
+
+:host-context([data-theme="dark"]) .banned-avatar-badge {
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+:host-context([data-theme="dark"]) .banned-notice-box {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+

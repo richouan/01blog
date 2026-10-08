@@ -45,6 +45,10 @@ public class CommentService {
         User author = userRepository.findByUsername(authorUsername)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + authorUsername));
 
+        if (author.isBanned()) {
+            throw new SecurityException("Banned accounts cannot post comments.");
+        }
+
         Comment comment = new Comment(trimmed, post, author);
         Comment saved = commentRepository.save(comment);
 

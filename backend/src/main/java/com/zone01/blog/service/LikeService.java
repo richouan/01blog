@@ -36,6 +36,10 @@ public class LikeService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
+        if (user.isBanned()) {
+            throw new SecurityException("Banned accounts cannot like posts.");
+        }
+
         Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post);
 
         boolean isLiked;

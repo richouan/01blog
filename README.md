@@ -1,95 +1,195 @@
 # 01Blog 🚀
 
-**01Blog** is a fullstack social blogging platform built for students to share learning experiences, discoveries, and progress. Users can publish posts with text and media, subscribe to other students' profiles (blocks), like, comment, and report inappropriate content. An administrative panel allows content moderation and user management.
+**01Blog** is a high-performance, fullstack social blogging platform engineered for students at Zone01 to document their coding journey, share insights, publish multimedia posts, follow peers, and engage through comments and reactions. It features role-based access control, real-time notification polling, automated content moderation, and an administrative dashboard built in a bold, tactile **Neo-Brutalist Developer Aesthetic**.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
-- **Backend:** Java 17, Spring Boot 3 (Spring Web, Spring Data JPA, Spring Security, JWT)
-- **Database:** PostgreSQL
-- **Frontend:** Angular, Bootstrap (HTML/CSS)
-- **Architecture:** Decoupled RESTful API Client-Server Architecture
+- **Backend:** Java 17, Spring Boot 3.3.4 (Spring Web, Spring Data JPA, Spring Security, jjwt 0.12.6, Apache Tika 2.9.2)
+- **Database:** PostgreSQL 16 (User-space `pg_ctl` compatible with Zone01 non-sudo environments)
+- **Frontend:** Angular 18 (Standalone Components, TypeScript, RxJS, Bootstrap 5 Icons & Grid)
+- **Design System:** Neo-Brutalist Developer Theme (`#121214` 2.5px solid borders, 5px hard shadows, canary yellow / mint / coral accents on warm cream `#faf7f2`, with full Dark Mode support)
+- **Architecture:** Flat 3-Tier Client-Server Architecture:
+  - Backend: `Controller` ➔ `Service` ➔ `Repository` ➔ `PostgreSQL`
+  - Frontend: `Component` ➔ `Service` ➔ `Backend REST API`
 
 ---
 
-## 📋 Prerequisites
+## 📁 Repository Structure
 
-Before running the project, make sure you have the following installed:
-- **Java Development Kit (JDK 17 or higher)**: `java -version`
-- **Node.js (v18 or higher) & npm**: `node -v`, `npm -v`
-- **PostgreSQL**: Running locally on port `5432`
+```text
+01blog/
+├── backend/
+│   ├── src/main/java/com/zone01/blog/
+│   │   ├── config/          # Security, JWT filter, WebMvc CORS & static upload handlers
+│   │   ├── controller/      # REST Controllers (Auth, Post, User, Notification, Report, Admin)
+│   │   ├── dto/             # Clean Data Transfer Objects (Requests & Responses)
+│   │   ├── entity/          # JPA Entities (User, Post, Like, Comment, Notification, Report)
+│   │   ├── exception/       # GlobalExceptionHandler (@RestControllerAdvice)
+│   │   ├── repository/      # Spring Data JPA Repositories
+│   │   └── service/         # Business logic layer & Apache Tika file management
+│   ├── src/main/resources/  # application.properties
+│   ├── uploads/             # Managed media upload storage (images & videos)
+│   ├── mvnw / mvnw.cmd      # Maven wrappers
+│   └── pom.xml              # Maven dependencies & build configuration
+├── frontend/
+│   ├── src/app/
+│   │   ├── components/      # Standalone Angular Components:
+│   │   │   ├── admin-dashboard/ # Admin moderation tables & metric analytics
+│   │   │   ├── comment-list/    # Nested comment threads with real-time add/delete
+│   │   │   ├── create-post/     # Collapsible post publisher with media preview
+│   │   │   ├── home/            # Feed switcher (All Posts vs Following)
+│   │   │   ├── login/           # Authentication with banned account popout modal
+│   │   │   ├── navbar/          # Brand header, unread bell badge & theme toggle
+│   │   │   ├── not-found/       # Neo-Brutalist 404 wildcard route handler
+│   │   │   ├── post-card/       # Individual post card with likes, media player, options
+│   │   │   ├── post-list/       # Responsive feed layout
+│   │   │   ├── register/        # Student onboarding form
+│   │   │   ├── report-modal/    # Content reporting dialog with confirmation
+│   │   │   ├── user-profile/    # Student block page (posts, followers, follow toggle)
+│   │   │   └── user-search/     # Peer discovery by username
+│   │   ├── guards/          # authGuard, guestGuard, adminGuard
+│   │   ├── interceptors/    # jwtInterceptor (Bearer token injection & 403 banned eviction)
+│   │   ├── models/          # TypeScript domain models & DTO interfaces
+│   │   └── services/        # AuthService, PostService, AdminService, ThemeService, etc.
+│   └── styles.css           # Global Neo-Brutalist theme variables & modal system
+├── LEARNING_BOOK.md         # Comprehensive chapter-by-chapter defense manual
+├── ROADMAP.md               # 60-commit roadmap tracker
+├── audit_subject.md         # Official evaluation questions
+└── project_subject.md       # Project specifications & requirements
+```
+
+---
+
+## ⚡ Prerequisites
+
+Before launching the project, verify that your environment has:
+- **Java Development Kit (JDK 17 or higher):** `java -version`
+- **Node.js (v18 or higher) & npm:** `node -v` && `npm -v`
+- **PostgreSQL 16:** Running locally on port `5432`
 
 ---
 
 ## 🗄️ Database Setup
 
-### Option A: Standard PostgreSQL (System Service)
-1. Open PostgreSQL (via `psql` or pgAdmin).
-2. Create the project database:
-   ```sql
-   CREATE DATABASE blog_db;
-   ```
+The application connects to a PostgreSQL database named `blog_db` on port `5432` with credentials `user: blog_user`, `password: blog_pass` (or defaults configured in `application.properties`).
 
-### Option B: Zone01 Linux Machine (Non-Sudo / User-Space PostgreSQL)
-If developing on a restricted Zone01 Linux machine without `sudo`:
+### Option A: Standard PostgreSQL (System Service / Sudo)
 ```bash
-# 1. Set environment paths
-export PATH="/home/richouan/.local/pgsql/usr/lib/postgresql/16/bin:/home/richouan/.local/pgsql/usr/bin:$PATH"
-export LD_LIBRARY_PATH="/home/richouan/.local/pgsql/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
-
-# 2. Start user-space PostgreSQL server on port 5432
-pg_ctl -D /home/richouan/pgdata -o "-k /tmp -p 5432" -l /home/richouan/pgdata/logfile start
-
-# 3. Stop server when done
-pg_ctl -D /home/richouan/pgdata stop
+# Connect to PostgreSQL and create database
+sudo -u postgres psql -c "CREATE DATABASE blog_db;"
+sudo -u postgres psql -c "CREATE USER blog_user WITH PASSWORD 'blog_pass';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE blog_db TO blog_user;"
 ```
 
-> **Note:** The tables (`users`, `posts`, etc.) will be created automatically by Hibernate (`ddl-auto=update`) when the backend starts.
+### Option B: Zone01 Linux Environment (Non-Sudo / User-Space)
+On Zone01 student workstations without `sudo` access:
+```bash
+# 1. Export local PostgreSQL binary and library paths
+export PATH="$HOME/.local/pgsql/usr/lib/postgresql/16/bin:$HOME/.local/pgsql/usr/bin:$PATH"
+export LD_LIBRARY_PATH="$HOME/.local/pgsql/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
+
+# 2. Start PostgreSQL server in your user directory
+pg_ctl -D ~/pgdata -o "-k /tmp -p 5432" -l ~/pgdata/logfile start
+
+# 3. Create the database if not already present
+createdb -h /tmp -p 5432 blog_db
+```
+> *Tables (`users`, `posts`, `likes`, `comments`, `notifications`, `reports`) are automatically initialized by Spring Boot Hibernate via `ddl-auto=update`.*
 
 ---
 
-## 🚀 How to Run the Application
+## 🚀 Running the Application
 
-### 1. Backend (Spring Boot)
-
-Navigate to the backend folder:
+### 1. Start the Backend (Spring Boot)
 ```bash
 cd backend
+
+# On Linux / macOS:
+./mvnw spring-boot:run
+
+# On Windows:
+.\mvnw.cmd spring-boot:run
 ```
+The backend REST API will be active at **`http://localhost:8080`**.
 
-- **On Windows:**
-  ```powershell
-  mvn spring-boot:run
-  ```
-  *(Or using the Maven wrapper: `.\mvnw.cmd spring-boot:run`)*
-
-- **On Linux (Zone01):**
-  ```bash
-  mvn spring-boot:run
-  ```
-  *(Or using the Maven wrapper: `./mvnw spring-boot:run`)*
-
-The backend will start on **`http://localhost:8080`**.
-
----
-
-### 2. Frontend (Angular)
-
-*(Setup coming in Day 2)*
+### 2. Start the Frontend (Angular)
+In a separate terminal:
 ```bash
 cd frontend
 npm install
 npm start
 ```
-The frontend will start on **`http://localhost:4200`**.
+The web application will open at **`http://localhost:4200`**.
 
 ---
 
-## 🔐 Key Features
-- **Authentication:** Secure user registration & login using JWT (JSON Web Tokens) and BCrypt password hashing.
-- **Role-Based Access Control:** Separate roles for regular students (`USER`) and moderators (`ADMIN`).
-- **User Block Page:** Personal profile displaying user posts, follower counts, and subscription buttons.
-- **Post Management:** Create, edit, and delete posts with text and media previews (images/videos).
-- **Social Engagement:** Likes, comments, and real-time/instant notifications from subscribed profiles.
-- **Moderation Tools:** Reporting system with text reasons and an admin dashboard to ban users or remove posts.
+## 📡 REST API Reference
+
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Public | Register new student account |
+| `POST` | `/api/auth/login` | Public | Authenticate student and obtain JWT Bearer token |
+| `GET` | `/api/posts` | Authenticated | Fetch active posts (supports feed filters & hide rules) |
+| `POST` | `/api/posts` | Authenticated | Create post with text & media (multipart/form-data) |
+| `PUT` | `/api/posts/{id}` | Author / Admin | Update post text content or media |
+| `DELETE` | `/api/posts/{id}` | Author / Admin | Delete post, cascade delete likes, comments & disk media |
+| `POST` | `/api/posts/{id}/like` | Authenticated | Toggle like on a post |
+| `POST` | `/api/posts/{id}/comments` | Authenticated | Add a comment to a post |
+| `DELETE` | `/api/posts/{id}/comments/{cid}` | Author / Admin | Remove comment |
+| `GET` | `/api/users/{username}` | Authenticated | Retrieve public profile, post history, and subscriber count |
+| `POST` | `/api/users/{username}/follow` | Authenticated | Follow or unfollow a student |
+| `GET` | `/api/notifications` | Authenticated | Fetch notification feed (post alerts, new followers) |
+| `GET` | `/api/notifications/unread-count`| Authenticated | Get unread notification badge count |
+| `PUT` | `/api/notifications/{id}/read` | Authenticated | Mark single notification as read |
+| `POST` | `/api/reports` | Authenticated | Submit report against a user profile or post |
+| `GET` | `/api/admin/stats` | Admin Only | Platform metrics (total users, posts, reports, bans) |
+| `GET` | `/api/admin/reports` | Admin Only | View all moderation reports with reasons & timestamps |
+| `DELETE` | `/api/admin/reports/{id}` | Admin Only | Dismiss moderation report |
+| `PUT` | `/api/admin/users/{id}/ban` | Admin Only | Toggle ban status for a user |
+| `DELETE` | `/api/admin/users/{id}` | Admin Only | Cascading deletion of user and all related data |
+| `PUT` | `/api/admin/posts/{id}/hide` | Admin Only | Toggle soft-hide visibility on a post |
+| `DELETE` | `/api/admin/posts/{id}` | Admin Only | Permanently delete post |
+
+---
+
+## 🛡️ Security & Edge-Case Protection
+
+1. **Password Hashing:** Passwords are never stored in plain text; hashed using industry-standard `BCryptPasswordEncoder`.
+2. **Stateless JWT Tokens:** Authentication runs via `Authorization: Bearer <token>` verified in `JwtAuthFilter`.
+3. **Immediate Banned Account Eviction:**
+   - Any request from a banned user is rejected at the HTTP filter level with `403 Forbidden` (`ACCOUNT_BANNED`).
+   - The frontend `jwtInterceptor` catches this status, invalidates session storage, and redirects the user to `/login?banned=true`.
+   - The login page displays a dedicated Neo-Brutalist **"Access Suspended"** modal popout and prevents re-authentication.
+4. **MIME Magic Byte Verification:** Media uploads are checked with Apache Tika to inspect byte headers, blocking disguised executable scripts (`.php`, `.sh`, `.exe`).
+5. **Upload Size Boundaries:** Enforces a 30MB limit configured in Spring Boot; uploads exceeding this return HTTP 413 handled gracefully by `GlobalExceptionHandler`.
+6. **SQL Injection & XSS Immunity:**
+   - All database access uses Spring Data JPA parameterized queries.
+   - All user inputs are sanitized and rendered using Angular's safe template binding.
+7. **Wildcard 404 Routing:** Unknown client paths redirect to `NotFoundComponent` without throwing console errors.
+
+---
+
+## 🧪 Peer-to-Peer Evaluation Guide (Audit Checklist)
+
+During peer evaluation, demonstrate the following flows:
+1. **Multi-User Interaction:**
+   - Open two browser profiles (e.g., Chrome and Chrome Incognito).
+   - Sign up two users: `@alice` and `@bob`.
+   - Follow `@bob` from `@alice`'s account. Notice notification bell badge updates on `@bob`'s screen.
+2. **Media Post & Feed:**
+   - Publish a post with text and an image/video as `@bob`.
+   - Verify `@alice` sees the post in her "Following" feed and receives an unread post notification.
+3. **Like & Commenting:**
+   - Like the post and add a comment; observe immediate counter updates and visual confirmation.
+4. **Moderation & Reporting:**
+   - Report `@bob`'s post using the report button (`Reason: Testing moderation`).
+   - Log in as an admin user (`ROLE_ADMIN`).
+   - Open `/admin`: inspect the analytics cards, locate the submitted report, test **Hide Post**, **Ban User**, or **Delete User**.
+5. **Banned User Lockdown:**
+   - Ban `@bob`. Within 15 seconds (or upon his next click), `@bob` is logged out and redirected to `/login` with the Neo-Brutalist "Account Banned" modal popout.
+   - Attempt to log in again as `@bob`; observe the login refusal and the banned modal.
+6. **Dark Mode & 404:**
+   - Click the theme toggle icon in the navbar to demonstrate seamless Dark Mode switching.
+   - Navigate to `/random-invalid-page` to demonstrate the custom 404 page.

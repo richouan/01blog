@@ -1,11 +1,13 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { catchError, throwError } from 'rxjs';
 
-// Attach JWT Bearer token to outgoing HTTP requests and auto-logout on 401 errors
+// Attach JWT Bearer token to outgoing HTTP requests and auto-logout on 401 or banned 403 errors
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  const router = inject(Router);
   const token = authService.getToken();
 
   let authReq = req;
@@ -19,9 +21,23 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
+      // Check if the backend flagged this account as banned or suspended
+      const isBanned = error.status === 403 && (
+        error.error?.error === 'ACCOUNT_BANNED' ||
+        (typeof error.error?.message === 'string' && error.error.message.toLowerCase().includes('banned')) ||
+        (typeof error.error?.message === 'string' && error.error.message.toLowerCase().includes('suspended'))
+      );
+
+      if (isBanned) {
+        authService.logout(false);
+        router.navigate(['/login'], { queryParams: { banned: 'true' } });
+        return throwError(() => error);
+      }
+
       // If server returns 401 Unauthorized on protected routes, automatically clear session and redirect to login
       if (error.status === 401 && !req.url.includes('/api/auth/login')) {
         authService.logout();
+        router.navigate(['/login']);
       }
       return throwError(() => error);
     })

@@ -1,0 +1,473 @@
+<div class="admin-container py-4 px-2 px-sm-3 px-md-4">
+  <div class="max-w-admin mx-auto">
+
+    <!-- Top Dashboard Header -->
+    <header class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="admin-badge-icon">
+          <i class="bi bi-shield-shaded text-danger fs-3"></i>
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <h1 class="h3 mb-0 fw-bold font-display text-dark">Admin Console</h1>
+            <span class="badge-nb badge-nb-coral">ROLE_ADMIN</span>
+          </div>
+          <!-- <p class="text-muted small mb-0 font-display">
+            Platform analytics, user moderation, report review & content governance
+          </p> -->
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          (click)="loadStats(); loadAllData()"
+          class="btn-nb-secondary py-2 px-3 fs-6"
+          [disabled]="isLoadingStats || isLoadingData"
+          title="Refresh Dashboard"
+        >
+          <i class="bi bi-arrow-clockwise" [class.spin]="isLoadingStats || isLoadingData"></i>
+          <span class="ms-1 d-none d-sm-inline">Refresh</span>
+        </button>
+        <a routerLink="/" class="btn-nb-primary py-2 px-3 fs-6 text-decoration-none">
+          <i class="bi bi-newspaper"></i>
+          <span class="ms-1">Back to Feed</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Feedback Toasts -->
+    <div *ngIf="successToast" class="alert-nb-success p-3 mb-3 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2 font-display fw-bold small">
+        <i class="bi bi-check-circle-fill text-success fs-5"></i>
+        <span>{{ successToast }}</span>
+      </div>
+      <button type="button" class="btn-close-nb" (click)="successToast = ''"><i class="bi bi-x-lg"></i></button>
+    </div>
+
+    <div *ngIf="errorAlert" class="alert-nb-coral p-3 mb-3 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2 font-display fw-bold small">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+        <span>{{ errorAlert }}</span>
+      </div>
+      <button type="button" class="btn-close-nb" (click)="errorAlert = ''"><i class="bi bi-x-lg"></i></button>
+    </div>
+
+    <!-- =========================================================
+         4 METRIC ANALYTICS CARDS (Neo-Brutalist)
+         ========================================================= -->
+    <section class="row g-3 mb-4">
+      
+      <!-- Card 1: Total Users -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-metric-card stat-card-yellow p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="stat-label">Total Users</span>
+            <div class="stat-mini-icon"><i class="bi bi-people-fill"></i></div>
+          </div>
+          <div class="stat-metric-value">{{ stats.totalUsers }}</div>
+          <div class="stat-meta text-muted small">Registered talents</div>
+        </div>
+      </div>
+
+      <!-- Card 2: Total Posts -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-metric-card stat-card-mint p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="stat-label">Publications</span>
+            <div class="stat-mini-icon"><i class="bi bi-newspaper"></i></div>
+          </div>
+          <div class="stat-metric-value">{{ stats.totalPosts }}</div>
+          <div class="stat-meta text-muted small">Active blog posts</div>
+        </div>
+      </div>
+
+      <!-- Card 3: Moderation Reports -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-metric-card stat-card-coral p-3" [class.has-alerts]="stats.totalReports > 0">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="stat-label">Pending Reports</span>
+            <div class="stat-mini-icon text-danger"><i class="bi bi-flag-fill"></i></div>
+          </div>
+          <div class="stat-metric-value text-danger">{{ stats.totalReports }}</div>
+          <div class="stat-meta text-muted small">
+            {{ stats.totalReports === 0 ? 'Queue clear' : 'Awaiting review' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Banned Accounts -->
+      <div class="col-6 col-lg-3">
+        <div class="stat-metric-card stat-card-dark p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="stat-label">Banned Users</span>
+            <div class="stat-mini-icon"><i class="bi bi-slash-circle-fill"></i></div>
+          </div>
+          <div class="stat-metric-value">{{ stats.bannedUsers }}</div>
+          <div class="stat-meta text-muted small">Suspended accounts</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- =========================================================
+         TABBED MODERATION WORKSPACE
+         ========================================================= -->
+    <section class="card-nb moderation-table-card">
+      
+      <!-- Card Toolbar (Tabs & Search) -->
+      <div class="card-nb-header flex-wrap gap-2 p-3">
+        
+        <!-- Tab Pills -->
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <button
+            type="button"
+            (click)="setTab('reports')"
+            class="tab-btn"
+            [class.tab-btn-active]="activeTab === 'reports'"
+          >
+            <i class="bi bi-flag-fill me-1"></i>
+            <span>Reports</span>
+            <span *ngIf="reportsTabCount > 0" class="badge-tab-count ms-1">{{ reportsTabCount }}</span>
+          </button>
+
+          <button
+            type="button"
+            (click)="setTab('users')"
+            class="tab-btn"
+            [class.tab-btn-active]="activeTab === 'users'"
+          >
+            <i class="bi bi-people-fill me-1"></i>
+            <span>Users</span>
+            <span class="badge-tab-count ms-1">{{ usersTabCount }}</span>
+          </button>
+
+          <button
+            type="button"
+            (click)="setTab('posts')"
+            class="tab-btn"
+            [class.tab-btn-active]="activeTab === 'posts'"
+          >
+            <i class="bi bi-newspaper me-1"></i>
+            <span>Posts</span>
+            <span class="badge-tab-count ms-1">{{ postsTabCount }}</span>
+          </button>
+        </div>
+
+        <!-- Filter Input -->
+        <div class="search-box-admin">
+          <i class="bi bi-search me-1 text-muted"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchFilter"
+            placeholder="Filter current view..."
+            class="input-admin-filter"
+          />
+        </div>
+
+      </div>
+
+      <!-- Card Body: Content Tables -->
+      <div class="card-nb-body p-0">
+
+        <!-- Loading State -->
+        <div *ngIf="isLoadingData" class="text-center py-5">
+          <div class="spinner-border text-dark mb-2" role="status"></div>
+          <p class="text-muted small font-display">Loading administration records...</p>
+        </div>
+
+        <!-- ================= TAB 1: REPORTS TABLE ================= -->
+        <div *ngIf="!isLoadingData && activeTab === 'reports'" class="table-responsive">
+          <table class="table-nb w-100" *ngIf="filteredReports.length > 0; else noReports">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Target Type</th>
+                <th>Reported Entity</th>
+                <th>Reporter</th>
+                <th>Reason</th>
+                <th>Filed Date</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of filteredReports">
+                <td class="fw-bold font-display">#{{ r.id }}</td>
+                <td>
+                  <span class="badge-nb" [ngClass]="r.targetType === 'USER' ? 'badge-nb-yellow' : 'badge-nb-mint'">
+                    {{ r.targetType }}
+                  </span>
+                </td>
+                <td>
+                  <div *ngIf="r.targetType === 'USER'" class="fw-bold font-display">
+                    <a [routerLink]="['/profile', r.reportedUsername]" class="text-dark text-decoration-none">
+                      @{{ r.reportedUsername }}
+                    </a>
+                  </div>
+                  <div *ngIf="r.targetType === 'POST'">
+                    <span class="fw-bold font-display text-dark">{{ r.reportedPostTitle }}</span>
+                    <div class="small text-muted">Author: @{{ r.reportedUsername }}</div>
+                  </div>
+                </td>
+                <td>
+                  <a [routerLink]="['/profile', r.reporterUsername]" class="text-muted text-decoration-none small fw-bold">
+                    @{{ r.reporterUsername }}
+                  </a>
+                </td>
+                <td class="reason-cell">
+                  <span class="reason-text">{{ r.reason }}</span>
+                </td>
+                <td class="text-muted small">
+                  {{ r.createdAt | date:'short' }}
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1">
+                    <button
+                      type="button"
+                      (click)="promptDismissReport(r)"
+                      class="btn-action-nb btn-action-dismiss"
+                      title="Dismiss Report"
+                    >
+                      <i class="bi bi-check-lg"></i>
+                      <span>Dismiss</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <ng-template #noReports>
+            <div class="empty-state-admin text-center py-5">
+              <i class="bi bi-shield-check text-success fs-1 mb-2 d-block"></i>
+              <h3 class="h6 fw-bold font-display">No Pending Reports</h3>
+              <p class="text-muted small mb-0">The student community is peaceful. No moderation reports pending review.</p>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- ================= TAB 2: USERS TABLE ================= -->
+        <div *ngIf="!isLoadingData && activeTab === 'users'" class="table-responsive">
+          <table class="table-nb w-100" *ngIf="filteredUsers.length > 0; else noUsers">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Posts</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th class="text-end">Moderation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of filteredUsers" [class.row-banned]="u.banned">
+                <td class="fw-bold font-display">#{{ u.id }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="user-avatar-sm">
+                      {{ u.username.charAt(0).toUpperCase() }}
+                    </div>
+                    <a [routerLink]="['/profile', u.username]" class="fw-bold font-display text-dark text-decoration-none">
+                      @{{ u.username }}
+                    </a>
+                  </div>
+                </td>
+                <td class="small text-muted">{{ u.email }}</td>
+                <td>
+                  <span class="badge-nb" [ngClass]="u.role === 'ROLE_ADMIN' ? 'badge-nb-coral' : 'badge-nb-mint'">
+                    {{ u.role === 'ROLE_ADMIN' ? 'ADMIN' : 'TALENT' }}
+                  </span>
+                </td>
+                <td class="font-display fw-bold">{{ u.postsCount }}</td>
+                <td>
+                  <span class="badge-status" [ngClass]="u.banned ? 'badge-status-banned' : 'badge-status-active'">
+                    <i class="bi" [ngClass]="u.banned ? 'bi-slash-circle-fill' : 'bi-check-circle-fill'"></i>
+                    {{ u.banned ? 'BANNED' : 'ACTIVE' }}
+                  </span>
+                </td>
+                <td class="small text-muted">{{ u.createdAt | date:'shortDate' }}</td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1" *ngIf="u.role !== 'ROLE_ADMIN'">
+                    <!-- Ban/Unban Toggle -->
+                    <button
+                      type="button"
+                      (click)="promptToggleBan(u)"
+                      class="btn-action-nb"
+                      [ngClass]="u.banned ? 'btn-action-unban' : 'btn-action-ban'"
+                      [title]="u.banned ? 'Lift Ban' : 'Ban User'"
+                    >
+                      <i class="bi" [ngClass]="u.banned ? 'bi-unlock-fill' : 'bi-lock-fill'"></i>
+                      <span>{{ u.banned ? 'Unban' : 'Ban' }}</span>
+                    </button>
+
+                    <!-- Delete User -->
+                    <button
+                      type="button"
+                      (click)="promptDeleteUser(u)"
+                      class="btn-action-nb btn-action-delete"
+                      title="Permanently Delete User"
+                    >
+                      <i class="bi bi-trash3-fill"></i>
+                    </button>
+                  </div>
+                  <span *ngIf="u.role === 'ROLE_ADMIN'" class="small text-muted fw-bold">Immune</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <ng-template #noUsers>
+            <div class="empty-state-admin text-center py-5">
+              <i class="bi bi-search text-muted fs-1 mb-2 d-block"></i>
+              <h3 class="h6 fw-bold font-display">No Users Matched</h3>
+              <p class="text-muted small mb-0">Try adjusting your search filter.</p>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- ================= TAB 3: POSTS TABLE ================= -->
+        <div *ngIf="!isLoadingData && activeTab === 'posts'" class="table-responsive">
+          <table class="table-nb w-100" *ngIf="filteredPosts.length > 0; else noPosts">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Engagement</th>
+                <th>Visibility</th>
+                <th>Published</th>
+                <th class="text-end">Moderation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of filteredPosts" [class.row-hidden]="p.hidden">
+                <td class="fw-bold font-display">#{{ p.id }}</td>
+                <td>
+                  <span class="fw-bold font-display text-dark">{{ p.title }}</span>
+                  <div *ngIf="p.mediaUrl" class="small text-muted">
+                    <i class="bi bi-image me-1"></i>Has Media
+                  </div>
+                </td>
+                <td>
+                  <a [routerLink]="['/profile', p.authorUsername]" class="fw-bold font-display text-muted text-decoration-none small">
+                    @{{ p.authorUsername }}
+                  </a>
+                </td>
+                <td class="small">
+                  <span class="me-2"><i class="bi bi-heart-fill text-danger me-1"></i>{{ p.likesCount || 0 }}</span>
+                  <span><i class="bi bi-chat-fill text-primary me-1"></i>{{ p.commentsCount || 0 }}</span>
+                </td>
+                <td>
+                  <span class="badge-status" [ngClass]="p.hidden ? 'badge-status-hidden' : 'badge-status-visible'">
+                    <i class="bi" [ngClass]="p.hidden ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                    {{ p.hidden ? 'HIDDEN' : 'VISIBLE' }}
+                  </span>
+                </td>
+                <td class="small text-muted">{{ p.createdAt | date:'short' }}</td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1">
+                    <!-- Hide / Unhide Toggle -->
+                    <button
+                      type="button"
+                      (click)="promptToggleHide(p)"
+                      class="btn-action-nb"
+                      [ngClass]="p.hidden ? 'btn-action-unhide' : 'btn-action-hide'"
+                      [title]="p.hidden ? 'Make Visible' : 'Hide from Feeds'"
+                    >
+                      <i class="bi" [ngClass]="p.hidden ? 'bi-eye-fill' : 'bi-eye-slash-fill'"></i>
+                      <span>{{ p.hidden ? 'Unhide' : 'Hide' }}</span>
+                    </button>
+
+                    <!-- Delete Post -->
+                    <button
+                      type="button"
+                      (click)="promptDeletePost(p)"
+                      class="btn-action-nb btn-action-delete"
+                      title="Permanently Delete Publication"
+                    >
+                      <i class="bi bi-trash3-fill"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <ng-template #noPosts>
+            <div class="empty-state-admin text-center py-5">
+              <i class="bi bi-search text-muted fs-1 mb-2 d-block"></i>
+              <h3 class="h6 fw-bold font-display">No Publications Matched</h3>
+              <p class="text-muted small mb-0">Try adjusting your search filter.</p>
+            </div>
+          </ng-template>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- =========================================================
+     ADMIN ACTION DOUBLE-CONFIRMATION MODAL
+     ========================================================= -->
+<div *ngIf="confirmModal" class="modal-backdrop-nb" (click)="closeConfirmModal()">
+  <div class="modal-dialog-nb modal-dialog-sm" (click)="$event.stopPropagation()">
+    
+    <header class="modal-header-nb d-flex align-items-center justify-content-between p-3 border-bottom">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi" [ngClass]="confirmModal.isDestructive ? 'bi-shield-exclamation text-danger fs-4' : 'bi-shield-check text-primary fs-4'"></i>
+        <h2 class="h6 mb-0 fw-bold font-display text-dark">{{ confirmModal.title }}</h2>
+      </div>
+      <button
+        type="button"
+        (click)="closeConfirmModal()"
+        class="btn-close-nb"
+        [disabled]="isProcessingAction"
+        aria-label="Close"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <div class="modal-body-nb p-3">
+      <div class="target-chip-banner mb-3 p-2 font-display fw-bold text-dark small">
+        Target: {{ confirmModal.targetName }}
+      </div>
+
+      <div class="warning-callout p-3 mb-2" [class.warning-callout-danger]="confirmModal.isDestructive">
+        <p class="small mb-0 fw-medium">
+          {{ confirmModal.warning }}
+        </p>
+      </div>
+
+      <p class="small text-muted mb-0 font-display">
+        Please confirm that you want to proceed with this administrative moderation action.
+      </p>
+    </div>
+
+    <footer class="modal-footer-nb d-flex align-items-center justify-content-end gap-2 p-3 border-top">
+      <button
+        type="button"
+        (click)="closeConfirmModal()"
+        class="btn-nb-secondary py-2 px-3"
+        [disabled]="isProcessingAction"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        (click)="executeConfirmedAction()"
+        class="btn-nb-coral py-2 px-3 text-white"
+        [disabled]="isProcessingAction"
+      >
+        <span *ngIf="isProcessingAction" class="spinner-border spinner-border-sm me-1" role="status"></span>
+        <i *ngIf="!isProcessingAction" class="bi bi-check2-circle me-1"></i>
+        <span>{{ isProcessingAction ? 'Processing...' : confirmModal.confirmBtnText }}</span>
+      </button>
+    </footer>
+
+  </div>
+</div>

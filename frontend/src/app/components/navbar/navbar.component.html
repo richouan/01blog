@@ -48,6 +48,17 @@
             <i class="bi bi-person"></i>
             <span class="ms-1">My Profile</span>
           </a>
+
+          <!-- Admin Dashboard (Only if ROLE_ADMIN) -->
+          <a
+            *ngIf="isAdmin"
+            routerLink="/admin"
+            routerLinkActive="nav-pill-active"
+            class="nav-pill text-decoration-none"
+          >
+            <i class="bi bi-shield-shaded"></i>
+            <span class="ms-1">Admin</span>
+          </a>
         </nav>
       </div>
 
@@ -215,6 +226,17 @@
               <span>Explore Students</span>
             </a>
 
+            <!-- Admin Console Link (if ROLE_ADMIN) -->
+            <a
+              *ngIf="isAdmin"
+              routerLink="/admin"
+              (click)="toggleUserDropdown()"
+              class="dropdown-item-nb text-decoration-none"
+            >
+              <i class="bi bi-shield-lock-fill text-danger me-2"></i>
+              <span class="fw-bold">Admin Console</span>
+            </a>
+
             <!-- Dropdown Dark Mode Option -->
             <button
               (click)="toggleTheme()"
@@ -272,6 +294,17 @@
   >
     <i class="bi bi-person dock-icon"></i>
     <span class="dock-label">Profile</span>
+  </a>
+
+  <!-- Mobile Admin Dock Item -->
+  <a
+    *ngIf="isAdmin"
+    routerLink="/admin"
+    routerLinkActive="dock-item-active"
+    class="dock-item text-decoration-none"
+  >
+    <i class="bi bi-shield-shaded dock-icon"></i>
+    <span class="dock-label">Admin</span>
   </a>
 </nav>
 

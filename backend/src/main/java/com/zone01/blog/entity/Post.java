@@ -33,10 +33,15 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Soft-moderation flag: hidden posts are suppressed from feeds for regular students
+    @Column(name = "hidden", nullable = false)
+    private boolean hidden = false;
+
     // Default constructor required by JPA
     public Post() {
         this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
         this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
+        this.hidden = false;
     }
 
     // Convenience constructor
@@ -113,6 +118,14 @@ public class Post {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 
     @Override

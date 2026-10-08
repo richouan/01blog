@@ -22,6 +22,7 @@ public class PostResponse {
     private long likesCount;
     private boolean liked;
     private long commentsCount;
+    private boolean hidden;
 
     public PostResponse() {}
 
@@ -49,7 +50,7 @@ public class PostResponse {
 
     // Static helpers to map Post entity directly to PostResponse DTO
     public static PostResponse fromEntity(Post post, long likesCount, boolean liked, long commentsCount) {
-        return new PostResponse(
+        PostResponse resp = new PostResponse(
                 post.getId(),
                 post.getTitle(),
                 post.getTextContent(),
@@ -62,6 +63,8 @@ public class PostResponse {
                 liked,
                 commentsCount
         );
+        resp.setHidden(post.isHidden());
+        return resp;
     }
 
     public static PostResponse fromEntity(Post post, long likesCount, boolean liked) {
@@ -162,5 +165,13 @@ public class PostResponse {
 
     public void setCommentsCount(long commentsCount) {
         this.commentsCount = commentsCount;
+    }
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 }

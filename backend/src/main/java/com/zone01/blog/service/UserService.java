@@ -90,6 +90,9 @@ public class UserService {
 
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + currentUsername));
+        if (currentUser.isBanned()) {
+            throw new SecurityException("Banned accounts cannot subscribe to users.");
+        }
         User targetUser = userRepository.findByUsername(targetUsername)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + targetUsername));
 
@@ -108,6 +111,9 @@ public class UserService {
 
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + currentUsername));
+        if (currentUser.isBanned()) {
+            throw new SecurityException("Banned accounts cannot perform social actions.");
+        }
         User targetUser = userRepository.findByUsername(targetUsername)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + targetUsername));
 

@@ -136,3 +136,59 @@
     </div>
   </div>
 </div>
+
+<!-- =========================================================
+     BANNED ACCOUNT POPOUT MODAL (Neo-Brutalist)
+     ========================================================= -->
+<div *ngIf="isBannedModalOpen" class="modal-backdrop-nb" (click)="closeBannedModal()">
+  <div class="modal-dialog-nb modal-dialog-sm" (click)="$event.stopPropagation()">
+    
+    <header class="modal-header-nb d-flex align-items-center justify-content-between p-3 border-bottom">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-slash-circle-fill text-danger fs-4"></i>
+        <h2 class="h6 mb-0 fw-bold font-display text-danger">Access Suspended</h2>
+      </div>
+      <button
+        type="button"
+        (click)="closeBannedModal()"
+        class="btn-close-nb"
+        aria-label="Close"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <div class="modal-body-nb p-4 text-center">
+      <div class="banned-avatar-badge mb-3 mx-auto">
+        <i class="bi bi-person-x-fill fs-1 text-danger"></i>
+      </div>
+      
+      <h3 class="h5 fw-bold font-display mb-2">Account Banned</h3>
+      
+      <p class="text-muted small mb-0 px-1">
+        {{ bannedReason }}
+      </p>
+
+      <div class="banned-notice-box mt-3 p-3 text-start">
+        <div class="d-flex align-items-start gap-2">
+          <i class="bi bi-shield-exclamation text-danger fs-5 flex-shrink-0"></i>
+          <span class="small text-danger fw-semibold">
+            Banned accounts cannot view feeds, publish posts, leave comments, like content, or authenticate. Contact a platform administrator for review.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-footer-nb d-flex align-items-center justify-content-end p-3 border-top">
+      <button
+        type="button"
+        (click)="closeBannedModal()"
+        class="btn-nb-primary py-2 px-4"
+      >
+        <span>Understood</span>
+      </button>
+    </footer>
+
+  </div>
+</div>
+

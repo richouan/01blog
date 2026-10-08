@@ -7,6 +7,7 @@ import com.zone01.blog.entity.UserRole;
 import com.zone01.blog.repository.CommentRepository;
 import com.zone01.blog.repository.LikeRepository;
 import com.zone01.blog.repository.PostRepository;
+import com.zone01.blog.repository.ReportRepository;
 import com.zone01.blog.repository.UserRepository;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -27,17 +28,20 @@ public class PostService {
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
     private final CommentRepository commentRepository;
+    private final ReportRepository reportRepository;
     private final FileStorageService fileStorageService;
     private final NotificationService notificationService;
 
     public PostService(PostRepository postRepository, UserRepository userRepository, 
                        LikeRepository likeRepository, CommentRepository commentRepository,
+                       ReportRepository reportRepository,
                        FileStorageService fileStorageService,
                        NotificationService notificationService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.likeRepository = likeRepository;
         this.commentRepository = commentRepository;
+        this.reportRepository = reportRepository;
         this.fileStorageService = fileStorageService;
         this.notificationService = notificationService;
     }
@@ -60,6 +64,10 @@ public class PostService {
         User author = userRepository.findByUsername(authorUsername)
                 .orElseThrow(() -> new IllegalArgumentException("Author not found: " + authorUsername));
 
+        if (author.isBanned()) {
+            throw new SecurityException("Banned accounts cannot create posts.");
+        }
+
         String mediaUrl = fileStorageService.storeFile(file);
 
         Post post = new Post(trimmedTitle, hasText ? trimmedText : null, mediaUrl, author);
@@ -79,6 +87,10 @@ public class PostService {
 
         User requestingUser = userRepository.findByUsername(requestingUsername)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + requestingUsername));
+
+        if (requestingUser.isBanned()) {
+            throw new SecurityException("Banned accounts cannot edit posts.");
+        }
 
         boolean isAuthor = post.getAuthor().getUsername().equals(requestingUsername);
         boolean isAdmin = requestingUser.getRole() == UserRole.ROLE_ADMIN;
@@ -129,6 +141,10 @@ public class PostService {
         User requestingUser = userRepository.findByUsername(requestingUsername)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + requestingUsername));
 
+        if (requestingUser.isBanned()) {
+            throw new SecurityException("Banned accounts cannot delete posts.");
+        }
+
         boolean isAuthor = post.getAuthor().getUsername().equals(requestingUsername);
         boolean isAdmin = requestingUser.getRole() == UserRole.ROLE_ADMIN;
 
@@ -136,9 +152,10 @@ public class PostService {
             throw new SecurityException("You do not have permission to delete this post.");
         }
 
-        // Remove all likes and comments for this post
+        // Remove all likes, comments, and moderation reports for this post
         likeRepository.deleteAllByPostId(postId);
         commentRepository.deleteAllByPostId(postId);
+        reportRepository.deleteAllByReportedPost(post);
 
         // Clean up uploaded media file from disk
         fileStorageService.deleteFile(post.getMediaUrl());
@@ -150,6 +167,7 @@ public class PostService {
     public List<PostResponse> getAllPosts(String currentUsername) {
         User currentUser = (currentUsername != null) ? userRepository.findByUsername(currentUsername).orElse(null) : null;
         return postRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(post -> isVisibleToUser(post, currentUser))
                 .map(post -> toPostResponse(post, currentUser))
                 .collect(Collectors.toList());
     }
@@ -163,6 +181,7 @@ public class PostService {
     public List<PostResponse> getUserPosts(String username, String currentUsername) {
         User currentUser = (currentUsername != null) ? userRepository.findByUsername(currentUsername).orElse(null) : null;
         return postRepository.findByAuthorUsernameOrderByCreatedAtDesc(username).stream()
+                .filter(post -> isVisibleToUser(post, currentUser))
                 .map(post -> toPostResponse(post, currentUser))
                 .collect(Collectors.toList());
     }
@@ -181,8 +200,22 @@ public class PostService {
         targetAuthors.add(currentUser);
 
         return postRepository.findByAuthorInOrderByCreatedAtDesc(targetAuthors).stream()
+                .filter(post -> isVisibleToUser(post, currentUser))
                 .map(post -> toPostResponse(post, currentUser))
                 .collect(Collectors.toList());
+    }
+
+    // Ensures hidden posts are suppressed for regular students but visible to admins and author
+    private boolean isVisibleToUser(Post post, User currentUser) {
+        if (!post.isHidden()) {
+            return true;
+        }
+        if (currentUser == null) {
+            return false;
+        }
+        boolean isAdmin = currentUser.getRole() == UserRole.ROLE_ADMIN;
+        boolean isAuthor = post.getAuthor().getId().equals(currentUser.getId());
+        return isAdmin || isAuthor;
     }
 
     private PostResponse toPostResponse(Post post, User currentUser) {

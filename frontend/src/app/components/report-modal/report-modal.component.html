@@ -1,0 +1,202 @@
+<!-- Neo-Brutalist Report Modal Backdrop -->
+<div *ngIf="isOpen" class="modal-backdrop-nb" (click)="close()">
+  
+  <div class="modal-dialog-nb report-modal-dialog" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <header class="modal-header-nb d-flex align-items-center justify-content-between p-3 border-bottom">
+      <div class="d-flex align-items-center gap-2">
+        <span class="report-badge-icon">
+          <i class="bi bi-flag-fill text-danger"></i>
+        </span>
+        <div>
+          <h2 class="h5 mb-0 fw-bold font-display text-dark">
+            {{ step === 'success' ? 'Report Submitted' : 'Report ' + (targetType === 'USER' ? 'Profile' : 'Post') }}
+          </h2>
+          <span class="small text-muted font-display" *ngIf="step !== 'success'">
+            {{ step === 'form' ? 'Step 1 of 2: Reason & Details' : 'Step 2 of 2: Confirmation' }}
+          </span>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="close()"
+        class="btn-close-nb"
+        aria-label="Close"
+        [disabled]="isSubmitting"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <!-- Modal Body -->
+    <div class="modal-body-nb p-3 p-sm-4">
+
+      <!-- Target Info Strip (Shown during Form & Confirm) -->
+      <div *ngIf="step !== 'success'" class="report-target-banner mb-3 p-2 p-sm-3 d-flex align-items-center gap-2">
+        <div class="target-icon-box">
+          <i class="bi" [ngClass]="targetType === 'USER' ? 'bi-person-badge-fill' : 'bi-file-earmark-richtext-fill'"></i>
+        </div>
+        <div class="min-w-0 flex-grow-1">
+          <div class="small text-uppercase fw-bold text-muted">
+            Reported {{ targetType === 'USER' ? 'Student Profile' : 'Publication' }}
+          </div>
+          <div class="fw-bold font-display text-dark text-truncate">
+            {{ targetType === 'USER' ? '@' + targetName : targetName }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Alert -->
+      <div *ngIf="errorMessage" class="alert-nb-coral mb-3 p-2 small fw-bold d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- ================= STEP 1: FORM ================= -->
+      <div *ngIf="step === 'form'">
+        
+        <!-- Preset Quick Reasons -->
+        <label class="label-nb mb-2">
+          Select reason category:
+        </label>
+        <div class="preset-chips-grid mb-3">
+          <button
+            *ngFor="let option of presetOptions"
+            type="button"
+            class="preset-chip"
+            [class.active]="selectedPreset === option"
+            (click)="selectPreset(option)"
+          >
+            <i class="bi bi-check-circle-fill me-1" *ngIf="selectedPreset === option"></i>
+            {{ option }}
+          </button>
+        </div>
+
+        <!-- Additional Explanation Textarea -->
+        <div class="form-group-nb">
+          <label class="label-nb d-flex justify-content-between align-items-center mb-1">
+            <span>Additional details or context:</span>
+            <span class="text-muted small fw-normal">{{ customDetails.length }}/1000</span>
+          </label>
+          <textarea
+            [(ngModel)]="customDetails"
+            maxlength="1000"
+            rows="3"
+            placeholder="Explain why this {{ targetType === 'USER' ? 'profile' : 'post' }} violates platform community standards..."
+            class="input-nb textarea-nb w-100"
+          ></textarea>
+        </div>
+
+        <div class="small text-muted mt-2 d-flex align-items-center gap-1">
+          <i class="bi bi-info-circle"></i>
+          <span>Reports are anonymous and forwarded to Zone01 platform administrators.</span>
+        </div>
+      </div>
+
+      <!-- ================= STEP 2: PRE-SUBMISSION CONFIRMATION ================= -->
+      <div *ngIf="step === 'confirm'">
+        <div class="confirmation-warning-card p-3 mb-3">
+          <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-shield-exclamation text-warning fs-4 flex-shrink-0"></i>
+            <div>
+              <h3 class="h6 fw-bold mb-1 font-display">Confirm Moderation Submission</h3>
+              <p class="small mb-0 text-muted">
+                Are you sure you want to flag this {{ targetType === 'USER' ? 'user profile' : 'publication' }}?
+                Our administration reviews all reports for harassment, spam, and code plagiarism.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Review Summary Box -->
+        <div class="report-summary-box p-3 mb-2">
+          <div class="small text-uppercase fw-bold text-muted mb-1">Report Summary:</div>
+          <div class="mb-2">
+            <span class="fw-bold font-display">Target:</span>
+            <span class="ms-1">{{ targetType === 'USER' ? '@' + targetName : targetName }}</span>
+          </div>
+          <div>
+            <span class="fw-bold font-display">Reason:</span>
+            <div class="reason-preview-quote mt-1 p-2">
+              "{{ fullReason }}"
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= STEP 3: SUCCESS ================= -->
+      <div *ngIf="step === 'success'" class="text-center py-3">
+        <div class="success-icon-badge mb-3 mx-auto">
+          <i class="bi bi-check2 text-dark fs-1"></i>
+        </div>
+        <h3 class="h5 fw-bold font-display text-dark mb-2">Report Successfully Filed</h3>
+        <p class="text-muted small mb-0 px-2">
+          Thank you for helping protect the Zone01 student developer platform.
+          An administrator will inspect this report and take appropriate moderation actions.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <footer class="modal-footer-nb d-flex align-items-center justify-content-end gap-2 p-3 border-top">
+      
+      <!-- Step 1 Footer -->
+      <ng-container *ngIf="step === 'form'">
+        <button
+          type="button"
+          (click)="close()"
+          class="btn-nb-secondary py-2 px-3"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          (click)="proceedToConfirmation()"
+          class="btn-nb-primary py-2 px-3"
+          [disabled]="!selectedPreset && customDetails.trim().length < 5"
+        >
+          <span>Review Report</span>
+          <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </ng-container>
+
+      <!-- Step 2 Footer (Confirmation) -->
+      <ng-container *ngIf="step === 'confirm'">
+        <button
+          type="button"
+          (click)="backToForm()"
+          class="btn-nb-secondary py-2 px-3"
+          [disabled]="isSubmitting"
+        >
+          <i class="bi bi-arrow-left me-1"></i>
+          <span>Edit Reason</span>
+        </button>
+        <button
+          type="button"
+          (click)="confirmAndSubmit()"
+          class="btn-nb-coral py-2 px-3 text-white"
+          [disabled]="isSubmitting"
+        >
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          <i *ngIf="!isSubmitting" class="bi bi-send-check-fill me-1"></i>
+          <span>{{ isSubmitting ? 'Submitting...' : 'Confirm & Submit Report' }}</span>
+        </button>
+      </ng-container>
+
+      <!-- Step 3 Footer (Success) -->
+      <ng-container *ngIf="step === 'success'">
+        <button
+          type="button"
+          (click)="close()"
+          class="btn-nb-primary py-2 px-4"
+        >
+          <span>Done</span>
+        </button>
+      </ng-container>
+
+    </footer>
+
+  </div>
+</div>

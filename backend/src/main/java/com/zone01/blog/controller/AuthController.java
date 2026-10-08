@@ -43,6 +43,10 @@ public class AuthController {
             AuthResponse response = authService.login(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("banned")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "ACCOUNT_BANNED", "message", e.getMessage()));
+            }
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

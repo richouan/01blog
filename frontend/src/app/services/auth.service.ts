@@ -43,14 +43,16 @@ export class AuthService {
     });
   }
 
-  // Clear session on logout and redirect to login page
-  logout(): void {
+  // Clear session on logout and redirect to login page (unless redirect is false)
+  logout(redirect: boolean = true): void {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
 
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']);
+    if (redirect) {
+      this.router.navigate(['/login']);
+    }
   }
 
   // Retrieve stored JWT token
