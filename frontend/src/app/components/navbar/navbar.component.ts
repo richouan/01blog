@@ -124,12 +124,40 @@ export class NavbarComponent implements OnInit, OnDestroy {
     });
   }
 
+  notificationFilter: 'all' | 'unread' = 'all';
+
+  get filteredNotifications(): NotificationItem[] {
+    if (this.notificationFilter === 'unread') {
+      return this.notifications.filter(n => !n.isRead);
+    }
+    return this.notifications;
+  }
+
+  // Acknowledge individual notification without navigating away
+  onMarkItemAsRead(item: NotificationItem, event: MouseEvent): void {
+    event.stopPropagation();
+    if (item.isRead) return;
+
+    this.notificationService.markAsRead(item.id).subscribe({
+      next: () => {
+        item.isRead = true;
+        item.read = true;
+        this.unreadCount = Math.max(0, this.unreadCount - 1);
+        this.notificationService.setUnreadCount(this.unreadCount);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   // Acknowledge notification and navigate to relevant target
   onNotificationClick(item: NotificationItem): void {
     if (!item.isRead) {
       this.notificationService.markAsRead(item.id).subscribe({
         next: () => {
           item.isRead = true;
+          item.read = true;
+          this.unreadCount = Math.max(0, this.unreadCount - 1);
+          this.notificationService.setUnreadCount(this.unreadCount);
           this.cdr.detectChanges();
         }
       });
@@ -148,8 +176,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (this.unreadCount === 0) return;
     this.notificationService.markAllAsRead().subscribe({
       next: () => {
-        this.notifications.forEach(n => n.isRead = true);
+        this.notifications.forEach(n => {
+          n.isRead = true;
+          n.read = true;
+        });
         this.unreadCount = 0;
+        this.notificationService.setUnreadCount(0);
         this.cdr.detectChanges();
       }
     });

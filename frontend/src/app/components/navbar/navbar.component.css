@@ -524,6 +524,34 @@
   overflow-y: auto;
 }
 
+.notif-filter-tabs {
+  background-color: var(--nb-subtle-bg);
+}
+
+.btn-notif-filter {
+  background: transparent;
+  border: 1px solid transparent;
+  font-family: var(--nb-font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--nb-text-muted);
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn-notif-filter:hover {
+  color: var(--nb-text);
+}
+
+.btn-notif-filter.active {
+  background-color: var(--nb-card-bg);
+  color: var(--nb-text);
+  border: var(--nb-border-sm);
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+}
+
 .notification-item-card {
   cursor: pointer;
   transition: background-color 0.12s ease;
@@ -536,6 +564,16 @@
 
 .notification-unread {
   background-color: rgba(255, 219, 88, 0.15) !important; /* Canary alert tint */
+}
+
+.notification-read {
+  background-color: var(--nb-card-bg) !important;
+  opacity: 0.88;
+}
+
+.notification-read:hover {
+  background-color: var(--nb-subtle-bg) !important;
+  opacity: 1;
 }
 
 .notif-type-icon-box {
@@ -560,6 +598,12 @@
   background-color: var(--nb-mint);
 }
 
+.bg-read-muted {
+  background-color: var(--nb-subtle-bg) !important;
+  color: var(--nb-text-muted) !important;
+  box-shadow: none !important;
+}
+
 .notif-message-text {
   font-size: 0.85rem;
   font-weight: 600;
@@ -570,6 +614,29 @@
 .notif-time-text {
   font-size: 0.72rem;
   font-weight: 600;
+}
+
+.btn-mark-item-read {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: var(--nb-border-sm);
+  background-color: var(--nb-card-bg);
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--nb-text);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.12s ease;
+}
+
+.btn-mark-item-read:hover {
+  background-color: var(--nb-mint);
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--nb-shadow-color);
 }
 
 .unread-pip {
@@ -594,5 +661,25 @@
 
 .x-small {
   font-size: 0.75rem;
+}
+
+/* Dark Mode Overrides for Notification Elements */
+:host-context([data-theme="dark"]) .notification-unread {
+  background-color: rgba(255, 219, 88, 0.12) !important;
+}
+
+:host-context([data-theme="dark"]) .bg-read-muted {
+  background-color: #27272a !important;
+  color: #a1a1aa !important;
+}
+
+:host-context([data-theme="dark"]) .btn-mark-item-read {
+  background-color: #27272a;
+  color: #fafafa;
+}
+
+:host-context([data-theme="dark"]) .btn-mark-item-read:hover {
+  background-color: #059669;
+  color: #ffffff;
 }
 

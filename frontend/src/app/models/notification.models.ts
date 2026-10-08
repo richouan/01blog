@@ -6,6 +6,7 @@ export interface NotificationItem {
   actorUsername: string;
   referenceId?: number;
   isRead: boolean;
+  read?: boolean;
   createdAt: string;
 }
 

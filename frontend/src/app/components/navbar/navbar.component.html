@@ -101,7 +101,7 @@
             </span>
           </button>
 
-          <!-- Notifications Dropdown Popover -->
+            <!-- Notifications Dropdown Popover -->
           <div *ngIf="isNotificationDropdownOpen" class="notification-menu-dropdown card-nb">
             <!-- Header -->
             <div class="notification-dropdown-header d-flex align-items-center justify-content-between p-3 border-bottom border-dark border-opacity-10">
@@ -123,6 +123,26 @@
               </button>
             </div>
 
+            <!-- Filter Tabs (All / Unread) -->
+            <div class="notif-filter-tabs d-flex align-items-center gap-2 px-3 py-2 border-bottom border-dark border-opacity-10">
+              <button
+                type="button"
+                (click)="notificationFilter = 'all'"
+                class="btn-notif-filter"
+                [class.active]="notificationFilter === 'all'"
+              >
+                All ({{ notifications.length }})
+              </button>
+              <button
+                type="button"
+                (click)="notificationFilter = 'unread'"
+                class="btn-notif-filter"
+                [class.active]="notificationFilter === 'unread'"
+              >
+                Unread ({{ unreadCount }})
+              </button>
+            </div>
+
             <!-- Notification Items List -->
             <div class="notification-items-scroll">
               <!-- Loading Skeleton -->
@@ -131,7 +151,7 @@
                 Loading alerts...
               </div>
 
-              <!-- Empty State -->
+              <!-- Empty State: Zero Notifications Total -->
               <div *ngIf="!isLoadingNotifications && notifications.length === 0" class="empty-notifications p-4 text-center">
                 <div class="empty-notif-icon mb-2">
                   <i class="bi bi-bell-slash"></i>
@@ -140,21 +160,31 @@
                 <div class="text-muted font-display x-small">No notifications yet. When peers follow you or post, alerts appear here.</div>
               </div>
 
+              <!-- Empty State: Zero Unread Notifications in Unread Filter -->
+              <div *ngIf="!isLoadingNotifications && notifications.length > 0 && filteredNotifications.length === 0 && notificationFilter === 'unread'" class="empty-notifications p-4 text-center">
+                <div class="empty-notif-icon mb-2 text-success">
+                  <i class="bi bi-check2-circle"></i>
+                </div>
+                <div class="fw-bold font-display text-dark small">No unread alerts</div>
+                <div class="text-muted font-display x-small">All your notifications have been reviewed.</div>
+              </div>
+
               <!-- List of Notifications -->
               <div
-                *ngFor="let item of notifications"
+                *ngFor="let item of filteredNotifications"
                 (click)="onNotificationClick(item)"
                 class="notification-item-card d-flex align-items-start gap-3 p-3 border-bottom border-dark border-opacity-10"
                 [class.notification-unread]="!item.isRead"
+                [class.notification-read]="item.isRead"
               >
                 <!-- Event Icon Box -->
-                <div class="notif-type-icon-box" [ngClass]="item.type === 'NEW_POST' ? 'bg-canary' : 'bg-mint'">
+                <div class="notif-type-icon-box" [ngClass]="item.isRead ? 'bg-read-muted' : (item.type === 'NEW_POST' ? 'bg-canary' : 'bg-mint')">
                   <i class="bi" [ngClass]="item.type === 'NEW_POST' ? 'bi-file-earmark-post-fill' : 'bi-person-plus-fill'"></i>
                 </div>
 
                 <!-- Content -->
                 <div class="flex-grow-1 min-w-0">
-                  <div class="notif-message-text text-dark font-body">
+                  <div class="notif-message-text text-dark font-body" [class.fw-bold]="!item.isRead">
                     {{ item.message }}
                   </div>
                   <div class="notif-time-text text-muted font-display mt-1">
@@ -162,8 +192,22 @@
                   </div>
                 </div>
 
-                <!-- Unread Pip Indicator -->
-                <div *ngIf="!item.isRead" class="unread-pip" title="Unread"></div>
+                <!-- Actions / Indicators -->
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <!-- Mark Single Notification as Read -->
+                  <button
+                    *ngIf="!item.isRead"
+                    type="button"
+                    (click)="onMarkItemAsRead(item, $event)"
+                    class="btn-mark-item-read"
+                    title="Mark as read"
+                  >
+                    <i class="bi bi-check2"></i>
+                  </button>
+
+                  <!-- Unread Pip Indicator -->
+                  <div *ngIf="!item.isRead" class="unread-pip" title="Unread"></div>
+                </div>
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 package com.zone01.blog.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zone01.blog.entity.Notification;
 import java.time.LocalDateTime;
 
@@ -11,6 +12,8 @@ public class NotificationResponse {
     private String message;
     private String actorUsername;
     private Long referenceId;
+
+    @JsonProperty("isRead")
     private boolean isRead;
     private LocalDateTime createdAt;
 
@@ -81,7 +84,13 @@ public class NotificationResponse {
         this.referenceId = referenceId;
     }
 
+    @JsonProperty("isRead")
     public boolean isRead() {
+        return isRead;
+    }
+
+    @JsonProperty("read")
+    public boolean getRead() {
         return isRead;
     }
 

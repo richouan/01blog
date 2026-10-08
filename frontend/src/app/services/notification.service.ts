@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap } from 'rxjs';
 import { NotificationItem, UnreadCountResponse } from '../models/notification.models';
 
 @Injectable({
@@ -16,7 +16,12 @@ export class NotificationService {
 
   // Fetch all notifications for the current student
   getNotifications(): Observable<NotificationItem[]> {
-    return this.http.get<NotificationItem[]>(this.apiUrl);
+    return this.http.get<NotificationItem[]>(this.apiUrl).pipe(
+      map(list => (list || []).map(item => ({
+        ...item,
+        isRead: item.isRead !== undefined ? item.isRead : !!item.read
+      })))
+    );
   }
 
   // Fetch unread count and update the reactive badge state
@@ -29,6 +34,10 @@ export class NotificationService {
   // Mark an individual notification as read
   markAsRead(id: number): Observable<NotificationItem> {
     return this.http.put<NotificationItem>(`${this.apiUrl}/${id}/read`, {}).pipe(
+      map(item => ({
+        ...item,
+        isRead: item.isRead !== undefined ? item.isRead : (item.read !== undefined ? item.read : true)
+      })),
       tap(() => {
         const current = this.unreadCountSubject.value;
         if (current > 0) {
