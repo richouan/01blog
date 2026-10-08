@@ -65,6 +65,10 @@ public class ReportService {
                 throw new IllegalArgumentException("You cannot report your own post.");
             }
 
+            if (reportRepository.existsByReporterAndReportedPost(reporter, reportedPost)) {
+                throw new IllegalArgumentException("You have already reported this publication. Our moderation team is reviewing it.");
+            }
+
             report = new Report(reporter, reportedUser, reportedPost, reason);
         } else {
             // Reporting a user profile
@@ -76,6 +80,10 @@ public class ReportService {
 
             if (reporter.getId().equals(reportedUser.getId())) {
                 throw new IllegalArgumentException("You cannot report your own profile.");
+            }
+
+            if (reportRepository.existsByReporterAndReportedUserAndReportedPostIsNull(reporter, reportedUser)) {
+                throw new IllegalArgumentException("You have already reported this user account. Our moderation team is reviewing it.");
             }
 
             report = new Report(reporter, reportedUser, reason);

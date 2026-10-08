@@ -22,4 +22,10 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     // Clean up reports filed by a deleted user
     void deleteAllByReporter(User reporter);
+
+    // Prevent spam: Check if a user already reported a post
+    boolean existsByReporterAndReportedPost(User reporter, Post reportedPost);
+
+    // Prevent spam: Check if a user already reported a profile
+    boolean existsByReporterAndReportedUserAndReportedPostIsNull(User reporter, User reportedUser);
 }
