@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReportService } from '../../services/report.service';
@@ -38,7 +38,10 @@ export class ReportModalComponent implements OnChanges {
   isSubmitting = false;
   errorMessage = '';
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isOpen'] && this.isOpen) {
@@ -111,10 +114,22 @@ export class ReportModalComponent implements OnChanges {
         this.isSubmitting = false;
         this.step = 'success';
         this.reportSubmitted.emit(response);
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.errorMessage = err.error?.message || err.message || 'Failed to submit report. Please try again.';
+        if (err.status === 0) {
+          this.errorMessage = 'Unable to reach backend server. Please try again.';
+        } else if (err.error && typeof err.error.message === 'string') {
+          this.errorMessage = err.error.message;
+        } else if (typeof err.error === 'string') {
+          this.errorMessage = err.error;
+        } else if (err.message) {
+          this.errorMessage = err.message;
+        } else {
+          this.errorMessage = 'Failed to submit report. Please try again.';
+        }
+        this.cdr.detectChanges();
       }
     });
   }
@@ -133,5 +148,6 @@ export class ReportModalComponent implements OnChanges {
     this.customDetails = '';
     this.isSubmitting = false;
     this.errorMessage = '';
+    this.cdr.detectChanges();
   }
 }
