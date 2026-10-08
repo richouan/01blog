@@ -32,6 +32,7 @@ export interface UserProfile {
   followingCount: number;
   isFollowing?: boolean;
   following?: boolean;
+  privateProfile?: boolean;
 }
 
 

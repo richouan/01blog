@@ -74,3 +74,24 @@
   border-radius: 8px;
   box-shadow: 2px 2px 0px var(--nb-shadow-color);
 }
+
+/* Private Account Locked Banner */
+.private-account-locked {
+  background-color: var(--nb-subtle-bg);
+  border: var(--nb-border);
+  border-radius: 12px;
+  box-shadow: var(--nb-shadow);
+}
+
+.lock-icon-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: var(--nb-coral, #ff6b6b);
+  border: var(--nb-border);
+  box-shadow: 3px 3px 0px var(--nb-shadow-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #121214;
+}

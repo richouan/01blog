@@ -49,6 +49,17 @@ public class CommentService {
             throw new SecurityException("Banned accounts cannot post comments.");
         }
 
+        User postAuthor = post.getAuthor();
+        if (postAuthor.isPrivateProfile()) {
+            boolean isAuthor = postAuthor.getId().equals(author.getId());
+            boolean isAdmin = author.getRole() == UserRole.ROLE_ADMIN;
+            boolean isFollower = author.getFollowing().stream()
+                    .anyMatch(u -> java.util.Objects.equals(u.getId(), postAuthor.getId()));
+            if (!isAuthor && !isAdmin && !isFollower) {
+                throw new SecurityException("Cannot comment on a post from a private account you do not follow.");
+            }
+        }
+
         Comment comment = new Comment(trimmed, post, author);
         Comment saved = commentRepository.save(comment);
 

@@ -4,6 +4,7 @@ import com.zone01.blog.dto.LikeResponse;
 import com.zone01.blog.entity.Like;
 import com.zone01.blog.entity.Post;
 import com.zone01.blog.entity.User;
+import com.zone01.blog.entity.UserRole;
 import com.zone01.blog.repository.LikeRepository;
 import com.zone01.blog.repository.PostRepository;
 import com.zone01.blog.repository.UserRepository;
@@ -38,6 +39,17 @@ public class LikeService {
 
         if (user.isBanned()) {
             throw new SecurityException("Banned accounts cannot like posts.");
+        }
+
+        User author = post.getAuthor();
+        if (author.isPrivateProfile()) {
+            boolean isAuthor = author.getId().equals(user.getId());
+            boolean isAdmin = user.getRole() == UserRole.ROLE_ADMIN;
+            boolean isFollower = user.getFollowing().stream()
+                    .anyMatch(u -> Objects.equals(u.getId(), author.getId()));
+            if (!isAuthor && !isAdmin && !isFollower) {
+                throw new SecurityException("Cannot like a post from a private account you do not follow.");
+            }
         }
 
         Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post);

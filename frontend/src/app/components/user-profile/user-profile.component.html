@@ -41,6 +41,12 @@
                     <span class="badge-nb badge-nb-mint">
                       {{ (profile?.role || currentUser?.role) === 'ROLE_ADMIN' ? 'Admin' : 'Talent' }}
                     </span>
+                    <span *ngIf="profile?.privateProfile" class="badge-nb badge-nb-coral">
+                      <i class="bi bi-lock-fill me-1"></i>Private
+                    </span>
+                    <span *ngIf="profile && !profile.privateProfile" class="badge-nb badge-nb-mint">
+                      <i class="bi bi-globe me-1"></i>Public
+                    </span>
                     <span *ngIf="isOwnProfile" class="badge-nb badge-nb-yellow d-none d-md-inline-flex">
                       My Profile
                     </span>
@@ -60,8 +66,19 @@
 
               <!-- Quick Actions -->
               <div class="d-flex gap-2 align-self-stretch align-self-sm-auto justify-content-end flex-wrap">
-                <!-- If viewing own profile: Share + Return to Feed -->
+                <!-- If viewing own profile: Privacy Toggle + Share + Return to Feed -->
                 <ng-container *ngIf="isOwnProfile">
+                  <button
+                    (click)="togglePrivacy()"
+                    [disabled]="isTogglingPrivacy"
+                    class="btn-nb-secondary py-1 px-3 fs-6"
+                    [class.border-danger]="profile?.privateProfile"
+                    [title]="profile?.privateProfile ? 'Click to make profile public' : 'Click to make profile private'"
+                  >
+                    <i *ngIf="isTogglingPrivacy" class="spinner-border spinner-border-sm me-1"></i>
+                    <i *ngIf="!isTogglingPrivacy" class="bi" [ngClass]="profile?.privateProfile ? 'bi-lock-fill text-danger' : 'bi-unlock-fill text-success'"></i>
+                    <span class="ms-1">{{ profile?.privateProfile ? 'Set Public' : 'Set Private' }}</span>
+                  </button>
                   <button
                     (click)="copyProfileLink()"
                     class="btn-nb-secondary py-1 px-3 fs-6"
@@ -164,7 +181,29 @@
 
             <!-- Tab 1: Posts Stream -->
             <div *ngIf="activeTab === 'posts'" class="pt-2">
+              <!-- Private Profile Locked Banner for Non-Subscribers -->
+              <div *ngIf="isPrivateLocked" class="private-account-locked text-center py-5 px-3">
+                <div class="lock-icon-circle mx-auto mb-3">
+                  <i class="bi bi-lock-fill fs-2"></i>
+                </div>
+                <h3 class="h4 fw-bold font-display text-dark mb-2">This Account is Private</h3>
+                <p class="text-muted fw-bold mb-4 mx-auto" style="max-width: 440px;">
+                  Subscribe to @{{ profile?.username }} to view their published posts, project updates, and feed.
+                </p>
+                <button
+                  (click)="onToggleFollow()"
+                  [disabled]="isTogglingFollow"
+                  class="btn-nb-primary py-2 px-4 fs-6"
+                >
+                  <i *ngIf="isTogglingFollow" class="spinner-border spinner-border-sm me-2"></i>
+                  <i *ngIf="!isTogglingFollow" class="bi bi-person-plus-fill me-2"></i>
+                  <span>Subscribe to View Posts</span>
+                </button>
+              </div>
+
+              <!-- Posts List if profile is public, viewer is author, or viewer is subscribed -->
               <app-post-list
+                *ngIf="!isPrivateLocked"
                 [posts]="userPosts"
                 [loading]="isLoadingPosts"
                 [emptyTitle]="isOwnProfile ? 'No posts on your profile yet' : 'No posts published yet by @' + profile?.username"
@@ -208,10 +247,22 @@
                   </span>
                 </div>
                 <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Profile Type</span>
-                  <span class="badge-nb badge-nb-mint">
-                    <i class="bi bi-check-circle-fill me-1"></i>Public Zone01 Profile
-                  </span>
+                  <span class="text-muted small fw-bold font-display">Profile Privacy</span>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge-nb" [ngClass]="profile?.privateProfile ? 'badge-nb-coral' : 'badge-nb-mint'">
+                      <i class="bi" [ngClass]="profile?.privateProfile ? 'bi-lock-fill' : 'bi-globe'"></i>
+                      <span class="ms-1">{{ profile?.privateProfile ? 'Private (Subscribers Only)' : 'Public (All Students)' }}</span>
+                    </span>
+                    <button
+                      *ngIf="isOwnProfile"
+                      (click)="togglePrivacy()"
+                      [disabled]="isTogglingPrivacy"
+                      class="btn-nb-secondary py-0 px-2 fs-6"
+                      title="Switch privacy setting"
+                    >
+                      <i class="bi bi-arrow-repeat me-1"></i>Toggle
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

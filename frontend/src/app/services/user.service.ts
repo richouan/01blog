@@ -36,6 +36,12 @@ export class UserService {
       params: { q: query }
     });
   }
+
+  // Toggle or explicitly set profile privacy (public vs private)
+  togglePrivacy(privateProfile?: boolean): Observable<UserProfile> {
+    const body = privateProfile !== undefined ? { privateProfile } : {};
+    return this.http.put<UserProfile>(`${this.apiUrl}/me/privacy`, body);
+  }
 }
 
 

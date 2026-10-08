@@ -17,11 +17,14 @@ public class UserProfileResponse {
     @JsonProperty("isFollowing")
     private boolean isFollowing;
 
+    @JsonProperty("privateProfile")
+    private boolean privateProfile;
 
     public UserProfileResponse() {}
 
     public UserProfileResponse(Long id, String username, String email, UserRole role, 
-                              LocalDateTime createdAt, int followersCount, int followingCount, boolean isFollowing) {
+                              LocalDateTime createdAt, int followersCount, int followingCount, 
+                              boolean isFollowing, boolean privateProfile) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -30,6 +33,7 @@ public class UserProfileResponse {
         this.followersCount = followersCount;
         this.followingCount = followingCount;
         this.isFollowing = isFollowing;
+        this.privateProfile = privateProfile;
     }
 
     public Long getId() {
@@ -94,6 +98,14 @@ public class UserProfileResponse {
 
     public void setFollowing(boolean following) {
         isFollowing = following;
+    }
+
+    public boolean isPrivateProfile() {
+        return privateProfile;
+    }
+
+    public void setPrivateProfile(boolean privateProfile) {
+        this.privateProfile = privateProfile;
     }
 }
 

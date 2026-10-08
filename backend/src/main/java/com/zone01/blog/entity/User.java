@@ -36,6 +36,10 @@ public class User {
     @Column(name = "banned", nullable = false)
     private boolean banned = false;
 
+    // Profile privacy: private profiles only reveal their posts to confirmed followers
+    @Column(name = "private_profile", nullable = false)
+    private boolean privateProfile = false;
+
     // following
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -149,6 +153,14 @@ public class User {
 
     public void setBanned(boolean banned) {
         this.banned = banned;
+    }
+
+    public boolean isPrivateProfile() {
+        return privateProfile;
+    }
+
+    public void setPrivateProfile(boolean privateProfile) {
+        this.privateProfile = privateProfile;
     }
 
     @Override

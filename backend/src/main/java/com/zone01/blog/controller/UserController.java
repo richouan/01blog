@@ -36,6 +36,31 @@ public class UserController {
         }
     }
 
+    @PutMapping("/me/privacy")
+    public ResponseEntity<?> updatePrivacy(
+            @RequestBody(required = false) Map<String, Boolean> body,
+            Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated"));
+        }
+
+        try {
+            Boolean explicitPrivacy = (body != null && body.containsKey("privateProfile")) 
+                    ? body.get("privateProfile") 
+                    : null;
+            UserProfileResponse updated = userService.updateProfilePrivacy(authentication.getName(), explicitPrivacy);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/search")
     public ResponseEntity<java.util.List<UserProfileResponse>> searchUsers(
             @RequestParam(name = "q", defaultValue = "") String query,

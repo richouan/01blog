@@ -32,7 +32,14 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   activeTab: 'posts' | 'about' = 'posts';
   copiedLink = false;
   actionMessage = '';
+  isTogglingPrivacy = false;
   private sub = new Subscription();
+
+  get isPrivateLocked(): boolean {
+    if (this.isOwnProfile) return false;
+    if (this.currentUser?.role === 'ROLE_ADMIN') return false;
+    return !!this.profile?.privateProfile && !this.isFollowing;
+  }
 
   constructor(
     private authService: AuthService,
@@ -144,9 +151,12 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           this.isFollowing = true;
           if (this.profile) {
             this.profile.followersCount = (this.profile.followersCount || 0) + 1;
+            this.profile.isFollowing = true;
           }
           this.actionMessage = `Subscribed to @${targetUsername}'s profile!`;
           this.isTogglingFollow = false;
+          // Reload posts so private posts become visible immediately
+          this.loadUserPosts(targetUsername);
           this.cdr.detectChanges();
           setTimeout(() => {
             this.actionMessage = '';
@@ -163,11 +173,18 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.userService.unfollowUser(targetUsername).subscribe({
         next: () => {
           this.isFollowing = false;
-          if (this.profile && this.profile.followersCount > 0) {
-            this.profile.followersCount -= 1;
+          if (this.profile) {
+            if (this.profile.followersCount > 0) {
+              this.profile.followersCount -= 1;
+            }
+            this.profile.isFollowing = false;
           }
           this.actionMessage = `Unsubscribed from @${targetUsername}.`;
           this.isTogglingFollow = false;
+          // If profile is private, immediately empty posts so lock screen appears
+          if (this.profile?.privateProfile && this.currentUser?.role !== 'ROLE_ADMIN') {
+            this.userPosts = [];
+          }
           this.cdr.detectChanges();
           setTimeout(() => {
             this.actionMessage = '';
@@ -181,6 +198,34 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  // Toggle account privacy (public vs private) for own profile
+  togglePrivacy(): void {
+    if (!this.profile || this.isTogglingPrivacy) return;
+    this.isTogglingPrivacy = true;
+    const nextStatus = !this.profile.privateProfile;
+    this.userService.togglePrivacy(nextStatus).subscribe({
+      next: (updated) => {
+        if (this.profile) {
+          this.profile.privateProfile = updated.privateProfile;
+        }
+        this.isTogglingPrivacy = false;
+        this.actionMessage = updated.privateProfile
+          ? 'Profile is now PRIVATE. Only subscribers can see your posts.'
+          : 'Profile is now PUBLIC. Any student can see your posts.';
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.actionMessage = '';
+          this.cdr.detectChanges();
+        }, 3500);
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to update profile privacy.';
+        this.isTogglingPrivacy = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // Handle post deletion from child PostListComponent

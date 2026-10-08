@@ -47,7 +47,8 @@ public class UserService {
                 user.getCreatedAt(),
                 followersCount,
                 followingCount,
-                isFollowing
+                isFollowing,
+                user.isPrivateProfile()
         );
     }
 
@@ -77,9 +78,35 @@ public class UserService {
                     user.getCreatedAt(),
                     user.getFollowers().size(),
                     user.getFollowing().size(),
-                    isFollowing
+                    isFollowing,
+                    user.isPrivateProfile()
             );
         }).collect(Collectors.toList());
+    }
+
+    // Toggle or explicitly update private profile visibility
+    @Transactional
+    public UserProfileResponse updateProfilePrivacy(String username, Boolean explicitPrivacy) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        if (user.isBanned()) {
+            throw new SecurityException("Banned accounts cannot change profile privacy.");
+        }
+        boolean newStatus = (explicitPrivacy != null) ? explicitPrivacy : !user.isPrivateProfile();
+        user.setPrivateProfile(newStatus);
+        User saved = userRepository.save(user);
+
+        return new UserProfileResponse(
+                saved.getId(),
+                saved.getUsername(),
+                saved.getEmail(),
+                saved.getRole(),
+                saved.getCreatedAt(),
+                saved.getFollowers().size(),
+                saved.getFollowing().size(),
+                false,
+                saved.isPrivateProfile()
+        );
     }
 
     @Transactional
