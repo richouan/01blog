@@ -55,6 +55,16 @@
   border-color: #121214;
 }
 
+/* Dark Mode: Unify all dashboard metric cards to the exact same sleek surface */
+:host-context([data-theme="dark"]) .stat-metric-card,
+:host-context([data-theme="dark"]) .stat-card-yellow,
+:host-context([data-theme="dark"]) .stat-card-mint,
+:host-context([data-theme="dark"]) .stat-card-coral,
+:host-context([data-theme="dark"]) .stat-card-dark {
+  background-color: var(--nb-subtle-bg) !important;
+  border-color: var(--nb-border-color) !important;
+}
+
 .stat-metric-card.has-alerts {
   animation: pulse-coral 2s infinite ease-in-out;
 }
@@ -425,5 +435,48 @@
 .btn-close-nb:hover {
   transform: scale(1.1);
   color: var(--nb-coral);
+}
+
+/* Confirmation Modal Action Buttons */
+.btn-nb-coral,
+.btn-nb-danger {
+  background-color: var(--nb-coral) !important;
+  color: #ffffff !important;
+  border: var(--nb-border) !important;
+  box-shadow: var(--nb-shadow-sm) !important;
+  border-radius: 8px !important;
+  font-family: var(--nb-font-display) !important;
+  font-weight: 700 !important;
+  padding: 8px 16px !important;
+  font-size: 0.88rem !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-nb-coral:hover:not(:disabled),
+.btn-nb-danger:hover:not(:disabled) {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0px var(--nb-shadow-color) !important;
+  background-color: #e63956 !important;
+  color: #ffffff !important;
+}
+
+.btn-nb-coral:active:not(:disabled),
+.btn-nb-danger:active:not(:disabled) {
+  transform: translate(3px, 3px) !important;
+  box-shadow: 0px 0px 0px var(--nb-shadow-color) !important;
+}
+
+.btn-nb-coral:disabled,
+.btn-nb-danger:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: var(--nb-shadow-sm) !important;
 }
 

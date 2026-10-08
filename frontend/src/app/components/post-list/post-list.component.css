@@ -302,10 +302,6 @@
   color: var(--nb-coral);
 }
 
-.post-compact-action.btn-bookmark:hover {
-  color: var(--nb-yellow);
-}
-
 .text-coral {
   color: var(--nb-coral) !important;
 }

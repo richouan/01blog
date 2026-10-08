@@ -33,15 +33,16 @@ export class LoginComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // Detect if redirected here due to an active ban
-    this.route.queryParams.subscribe(params => {
-      if (params['banned'] === 'true') {
-        this.isBannedModalOpen = true;
-        this.bannedReason = 'Your account has been suspended or banned by an administrator due to violations of platform guidelines.';
-        this.errorMessage = 'Account suspended: access denied by platform administration.';
-        this.cdr.detectChanges();
-      }
-    });
+    // Only display if redirected here programmatically by the interceptor after backend confirmed a ban
+    const navState = history.state;
+    if (navState && navState.wasBanned) {
+      this.isBannedModalOpen = true;
+      this.bannedReason = navState.bannedReason || 'Your account has been suspended or banned by an administrator.';
+      this.errorMessage = 'Account suspended: access denied by platform administration.';
+      // Clear history state so refreshing or subsequent loads do not trigger it
+      history.replaceState({}, document.title, window.location.pathname);
+      this.cdr.detectChanges();
+    }
   }
 
   closeBannedModal(): void {

@@ -460,11 +460,12 @@
       <button
         type="button"
         (click)="executeConfirmedAction()"
-        class="btn-nb-coral py-2 px-3 text-white"
+        [ngClass]="confirmModal.isDestructive ? 'btn-nb-coral' : 'btn-nb-primary'"
+        class="py-2 px-3"
         [disabled]="isProcessingAction"
       >
         <span *ngIf="isProcessingAction" class="spinner-border spinner-border-sm me-1" role="status"></span>
-        <i *ngIf="!isProcessingAction" class="bi bi-check2-circle me-1"></i>
+        <i *ngIf="!isProcessingAction" class="bi" [ngClass]="confirmModal.isDestructive ? 'bi-shield-exclamation me-1' : 'bi-check2-circle me-1'"></i>
         <span>{{ isProcessingAction ? 'Processing...' : confirmModal.confirmBtnText }}</span>
       </button>
     </footer>

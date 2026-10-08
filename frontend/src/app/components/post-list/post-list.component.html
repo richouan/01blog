@@ -249,7 +249,7 @@
 
           </div>
 
-          <!-- Right Action: Report & Bookmark -->
+          <!-- Right Action: Report -->
           <div class="d-flex align-items-center gap-1">
             <button
               *ngIf="currentUser && !isOwner(post)"
@@ -259,16 +259,6 @@
               title="Report post"
             >
               <i class="bi bi-flag"></i>
-            </button>
-
-            <button
-              type="button"
-              (click)="toggleBookmark(post)"
-              class="post-compact-action btn-bookmark"
-              [class.bookmarked]="isBookmarked(post.id)"
-              title="Bookmark"
-            >
-              <i class="bi" [ngClass]="isBookmarked(post.id) ? 'bi-bookmark-fill text-warning' : 'bi-bookmark'"></i>
             </button>
           </div>
         </footer>

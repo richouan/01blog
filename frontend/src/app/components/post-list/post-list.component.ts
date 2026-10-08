@@ -62,7 +62,6 @@ export class PostListComponent implements OnInit, OnDestroy {
   copiedCodeIndex: string | null = null;
 
   likedPostIds = new Set<number>();
-  bookmarkedPostIds = new Set<number>();
 
   // Comments state
   expandedCommentPostIds = new Set<number>();
@@ -295,18 +294,6 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   isLiked(postId: number): boolean {
     return this.likedPostIds.has(postId);
-  }
-
-  toggleBookmark(post: Post): void {
-    if (this.bookmarkedPostIds.has(post.id)) {
-      this.bookmarkedPostIds.delete(post.id);
-    } else {
-      this.bookmarkedPostIds.add(post.id);
-    }
-  }
-
-  isBookmarked(postId: number): boolean {
-    return this.bookmarkedPostIds.has(postId);
   }
 
   getLikesCount(post: Post): number {

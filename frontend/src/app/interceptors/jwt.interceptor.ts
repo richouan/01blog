@@ -30,7 +30,12 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (isBanned) {
         authService.logout(false);
-        router.navigate(['/login'], { queryParams: { banned: 'true' } });
+        const banMessage = typeof error.error?.message === 'string'
+          ? error.error.message
+          : 'Your account has been suspended or banned by an administrator.';
+        router.navigate(['/login'], {
+          state: { wasBanned: true, bannedReason: banMessage }
+        });
         return throwError(() => error);
       }
 
