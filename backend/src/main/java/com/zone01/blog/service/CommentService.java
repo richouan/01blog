@@ -31,10 +31,10 @@ public class CommentService {
     // Add a new comment to a post
     @Transactional
     public CommentResponse addComment(@NonNull Long postId, String content, String authorUsername) {
-        String trimmed = content.trim();
-        if (trimmed.isEmpty()) {
+        if (content == null || content.trim().isEmpty()) {
             throw new IllegalArgumentException("Comment content cannot be empty.");
         }
+        String trimmed = content.trim();
         if (trimmed.length() > 1000) {
             throw new IllegalArgumentException("Comment content must not exceed 1000 characters.");
         }

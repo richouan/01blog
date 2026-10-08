@@ -43,6 +43,10 @@ public class PostController {
             String authorUsername = authentication.getName();
             PostResponse createdPost = postService.createPost(title, textContent, file, authorUsername);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
+        } catch (SecurityException e) {
+            String code = (e.getMessage() != null && e.getMessage().toLowerCase().contains("banned")) ? "ACCOUNT_BANNED" : "FORBIDDEN";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", code, "message", e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
@@ -102,6 +106,10 @@ public class PostController {
         try {
             LikeResponse response = likeService.toggleLike(id, authentication.getName());
             return ResponseEntity.ok(response);
+        } catch (SecurityException e) {
+            String code = (e.getMessage() != null && e.getMessage().toLowerCase().contains("banned")) ? "ACCOUNT_BANNED" : "FORBIDDEN";
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", code, "message", e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("message", e.getMessage()));

@@ -4,7 +4,6 @@ import com.zone01.blog.dto.ReportRequest;
 import com.zone01.blog.dto.ReportResponse;
 import com.zone01.blog.entity.Post;
 import com.zone01.blog.entity.Report;
-import com.zone01.blog.entity.ReportTargetType;
 import com.zone01.blog.entity.User;
 import com.zone01.blog.repository.PostRepository;
 import com.zone01.blog.repository.ReportRepository;

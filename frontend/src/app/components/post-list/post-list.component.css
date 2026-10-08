@@ -72,10 +72,6 @@
   }
 }
 
-/* Compact Header Row: Avatar & Handle on Left, Tag & Dots on Right */
-.post-header-compact {
-  /* Aligns elements horizontally across the card */
-}
 
 .post-avatar-link {
   text-decoration: none;
