@@ -595,3 +595,42 @@ h1, h2, h3, h4, h5, h6, .font-display {
   color: var(--nb-coral);
 }
 
+/* =========================================================
+   Simple & Smooth Page Transitions
+   ========================================================= */
+
+/* Calm, subtle fade-in when switching pages */
+.app-container > * {
+  display: block;
+  animation: page-fade-in 0.16s ease-in-out;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0.15;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Tactile Active Down-Press on Navigation Pills */
+.nav-pill:active,
+.dock-item:active {
+  transform: translate(1.5px, 1.5px);
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+

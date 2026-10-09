@@ -70,11 +70,11 @@
             <!-- Follower counts summary -->
             <div class="row g-1 text-center pt-2 border-top border-dark border-opacity-10">
               <div class="col-6">
-                <div class="small fw-bold font-display text-dark">{{ userProfile?.followersCount ?? 0 }}</div>
+                <div class="small fw-bold font-display text-dark">{{ userProfile ? userProfile.followersCount : '–' }}</div>
                 <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Followers</div>
               </div>
               <div class="col-6">
-                <div class="small fw-bold font-display text-dark">{{ userProfile?.followingCount ?? 0 }}</div>
+                <div class="small fw-bold font-display text-dark">{{ userProfile ? userProfile.followingCount : '–' }}</div>
                 <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Following</div>
               </div>
             </div>

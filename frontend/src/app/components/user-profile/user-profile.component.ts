@@ -28,7 +28,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   isTogglingFollow = false;
   isReportModalOpen = false;
   isLoading = true;
-  isLoadingPosts = false;
+  isLoadingPosts = true;
   errorMessage = '';
   activeTab: 'posts' | 'requests' = 'posts';
   copiedLink = false;
@@ -95,6 +95,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   // Load profile data and posts from backend based on route parameter
   loadProfile(targetUsername?: string | null): void {
     this.isLoading = true;
+    this.isLoadingPosts = true;
     this.errorMessage = '';
     this.actionMessage = '';
     this.userPosts = [];

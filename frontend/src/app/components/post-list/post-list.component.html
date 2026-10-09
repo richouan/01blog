@@ -238,7 +238,7 @@
               [class.liked]="isLiked(post.id)"
               title="Like"
             >
-              <i class="bi" [ngClass]="isLiked(post.id) ? 'bi-heart-fill text-coral' : 'bi-heart'"></i>
+              <i class="bi" [ngClass]="isLiked(post.id) ? 'bi-heart-fill text-coral liked-heart-pop' : 'bi-heart'"></i>
               <span class="action-count">{{ getLikesCount(post) }}</span>
             </button>
 

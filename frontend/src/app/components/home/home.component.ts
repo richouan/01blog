@@ -24,7 +24,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   userProfile: UserProfile | null = null;
 
   posts: Post[] = [];
-  isLoadingPosts: boolean = false;
+  isLoadingPosts: boolean = true;
   activeFeedTab: 'following' | 'latest' = 'following';
 
   private sub = new Subscription();

@@ -132,7 +132,7 @@
                     title="Report Student Profile"
                   >
                     <i class="bi bi-flag-fill"></i>
-                    <span class="ms-1 d-none d-sm-inline">Report</span>
+                    <!-- <span class="ms-1 d-none d-sm-inline">Report</span> -->
                   </button>
                 </ng-container>
               </div>
@@ -143,19 +143,19 @@
             <div class="row g-2 g-sm-3 mt-3 pt-3 border-top border-dark border-opacity-10">
               <div class="col-4">
                 <div class="stat-card stat-card-yellow text-center p-2">
-                  <span class="stat-number">{{ userPosts.length }}</span>
+                  <span class="stat-number">{{ isLoadingPosts ? '–' : userPosts.length }}</span>
                   <span class="stat-label">Posts</span>
                 </div>
               </div>
               <div class="col-4">
                 <div class="stat-card stat-card-coral text-center p-2">
-                  <span class="stat-number">{{ profile?.followersCount ?? 0 }}</span>
+                  <span class="stat-number">{{ isLoading ? '–' : (profile?.followersCount ?? 0) }}</span>
                   <span class="stat-label">Followers</span>
                 </div>
               </div>
               <div class="col-4">
                 <div class="stat-card stat-card-mint text-center p-2">
-                  <span class="stat-number">{{ profile?.followingCount ?? 0 }}</span>
+                  <span class="stat-number">{{ isLoading ? '–' : (profile?.followingCount ?? 0) }}</span>
                   <span class="stat-label">Following</span>
                 </div>
               </div>
@@ -175,7 +175,7 @@
                 class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent"
               >
                 <i class="bi bi-collection-fill me-1"></i>
-                <span>Posts ({{ userPosts.length }})</span>
+                <span>Posts <span *ngIf="!isLoadingPosts">({{ userPosts.length }})</span></span>
               </button>
               <!-- Requests Tab for private profile owners -->
               <button
@@ -199,8 +199,11 @@
                     {{ isOwnProfile ? 'My Publications' : 'Published Posts' }}
                   </h2>
                 </div>
-                <span class="badge-nb badge-nb-yellow small">
+                <span class="badge-nb badge-nb-yellow small" *ngIf="!isLoadingPosts">
                   {{ userPosts.length }} {{ userPosts.length === 1 ? 'post' : 'posts' }}
+                </span>
+                <span class="badge-nb badge-nb-yellow small" *ngIf="isLoadingPosts">
+                  ...
                 </span>
               </div>
             </ng-template>
