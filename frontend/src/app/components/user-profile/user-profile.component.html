@@ -30,8 +30,34 @@
               
               <!-- Avatar & User Info -->
               <div class="d-flex align-items-center gap-3">
-                <div class="user-avatar-lg flex-shrink-0">
-                  {{ (profile?.username || currentUser?.username)?.charAt(0)?.toUpperCase() || 'U' }}
+                <div 
+                  class="user-avatar-wrapper position-relative"
+                  [class.cursor-pointer]="isOwnProfile"
+                  (click)="isOwnProfile ? openAvatarModal() : null"
+                  [title]="isOwnProfile ? 'Click to change profile picture' : (profile?.username || 'Avatar')"
+                >
+                  <div class="user-avatar-lg flex-shrink-0 overflow-hidden">
+                    <img 
+                      *ngIf="profile?.avatarUrl" 
+                      [src]="getMediaUrl(profile?.avatarUrl)" 
+                      [alt]="profile?.username || 'Avatar'"
+                      class="avatar-img-lg"
+                    />
+                    <span *ngIf="!profile?.avatarUrl">
+                      {{ (profile?.username || currentUser?.username)?.charAt(0)?.toUpperCase() || 'U' }}
+                    </span>
+                  </div>
+                  <!-- Camera Edit Badge for Profile Owner -->
+                  <button 
+                    *ngIf="isOwnProfile" 
+                    type="button" 
+                    class="avatar-edit-badge"
+                    (click)="$event.stopPropagation(); openAvatarModal()"
+                    title="Change profile avatar"
+                    aria-label="Change profile avatar"
+                  >
+                    <i class="bi bi-camera-fill"></i>
+                  </button>
                 </div>
                 <div>
                   <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
@@ -303,8 +329,16 @@
                   style="border-width: 2px;"
                 >
                   <div class="d-flex align-items-center gap-3">
-                    <div class="user-avatar-sm flex-shrink-0">
-                      {{ req.requesterUsername.charAt(0).toUpperCase() }}
+                    <div class="user-avatar-sm flex-shrink-0 overflow-hidden">
+                      <img 
+                        *ngIf="req.requesterAvatarUrl" 
+                        [src]="getMediaUrl(req.requesterAvatarUrl)" 
+                        [alt]="req.requesterUsername"
+                        class="avatar-sm-img"
+                      />
+                      <span *ngIf="!req.requesterAvatarUrl">
+                        {{ req.requesterUsername.charAt(0).toUpperCase() }}
+                      </span>
                     </div>
                     <div>
                       <a [routerLink]="['/profile', req.requesterUsername]" class="fw-bold font-display text-dark text-decoration-none">
@@ -352,3 +386,154 @@
   (closed)="closeReportModal()"
   (reportSubmitted)="onReportSubmitted()"
 ></app-report-modal>
+
+<!-- Neo-Brutalist Avatar Customization Modal -->
+<div *ngIf="isAvatarModalOpen" class="modal-backdrop-nb" (click)="closeAvatarModal()">
+  <div class="modal-dialog-nb avatar-modal-dialog" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <header class="modal-header-nb d-flex align-items-center justify-content-between p-3 border-bottom">
+      <div class="d-flex align-items-center gap-2">
+        <span class="avatar-modal-badge-icon">
+          <i class="bi bi-person-bounding-box text-dark"></i>
+        </span>
+        <div>
+          <h2 class="h5 mb-0 fw-bold font-display text-dark">Customize Profile Picture</h2>
+          <span class="small text-muted font-display">Pick a brutalist avatar or upload your own photo</span>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="closeAvatarModal()"
+        class="btn-close-nb"
+        aria-label="Close"
+        [disabled]="isUploadingAvatar"
+      >
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <!-- Modal Body -->
+    <div class="modal-body-nb p-3 p-sm-4">
+      
+      <!-- Error Alert -->
+      <div *ngIf="avatarUploadError" class="alert-nb alert-nb-danger mb-3 p-2 small fw-bold d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+        <span>{{ avatarUploadError }}</span>
+      </div>
+
+      <!-- Live Preview Strip -->
+      <div class="avatar-preview-box mb-4 p-3 d-flex align-items-center gap-3">
+        <div class="avatar-preview-circle">
+          <img 
+            *ngIf="customAvatarPreview" 
+            [src]="customAvatarPreview" 
+            alt="Custom Preview" 
+            class="preview-img"
+          />
+          <img 
+            *ngIf="!customAvatarPreview && selectedPreset" 
+            [src]="getMediaUrl(selectedPreset)" 
+            alt="Preset Preview" 
+            class="preview-img"
+          />
+          <span *ngIf="!customAvatarPreview && !selectedPreset" class="fw-bold fs-4">
+            {{ (profile?.username || currentUser?.username)?.charAt(0)?.toUpperCase() || 'U' }}
+          </span>
+        </div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="fw-bold font-display text-dark fs-6">Active Selection</div>
+          <div class="small text-muted font-display" *ngIf="customAvatarFile">
+            Custom File: {{ customAvatarFile.name }}
+          </div>
+          <div class="small text-muted font-display" *ngIf="!customAvatarFile && selectedPreset">
+            Preset Character #{{ selectedPreset.replace('/uploads/avatars/brutalist-', '').replace('.svg', '') }}
+          </div>
+          <div class="small text-muted font-display" *ngIf="!customAvatarFile && !selectedPreset">
+            No avatar selected yet
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-nb-secondary py-1 px-2 small d-flex align-items-center gap-1 flex-shrink-0"
+          (click)="rollRandomPreset()"
+          title="Roll a random preset character"
+        >
+          <i class="bi bi-shuffle"></i>
+          <span class="d-none d-sm-inline">Random Roll</span>
+        </button>
+      </div>
+
+      <!-- Presets Gallery -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <label class="label-nb mb-0">Brutalist Characters Gallery</label>
+          <span class="small text-muted font-display">10 unique characters</span>
+        </div>
+        <div class="preset-grid">
+          <button
+            *ngFor="let preset of presetAvatars; let idx = index"
+            type="button"
+            class="preset-item-btn"
+            [class.active]="selectedPreset === preset && !customAvatarFile"
+            (click)="selectPreset(preset)"
+            [title]="'Brutalist Character #' + (idx + 1)"
+          >
+            <img [src]="getMediaUrl(preset)" [alt]="'Preset ' + (idx + 1)" class="preset-img" />
+            <span class="preset-active-check" *ngIf="selectedPreset === preset && !customAvatarFile">
+              <i class="bi bi-check-lg"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Upload Section -->
+      <div class="upload-section">
+        <label class="label-nb mb-2">Or Upload Custom Avatar Image</label>
+        <div class="file-upload-card p-3 text-center position-relative">
+          <input
+            type="file"
+            id="avatarFileInput"
+            class="avatar-file-input"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            (change)="onFileSelected($event)"
+          />
+          <div class="d-flex flex-column align-items-center gap-1">
+            <i class="bi bi-cloud-arrow-up-fill fs-3 text-dark"></i>
+            <span class="fw-bold font-display text-dark small">
+              {{ customAvatarFile ? customAvatarFile.name : 'Click to choose image or drag & drop' }}
+            </span>
+            <span class="text-muted" style="font-size: 0.75rem;">
+              PNG, JPG, WEBP or GIF (Max 5MB)
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <footer class="modal-footer-nb p-3 border-top d-flex justify-content-between align-items-center bg-light">
+      <button
+        type="button"
+        class="btn-nb-secondary py-1 px-3 fs-6"
+        (click)="closeAvatarModal()"
+        [disabled]="isUploadingAvatar"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        class="btn-nb-primary py-1 px-4 fs-6 d-flex align-items-center gap-2"
+        (click)="saveAvatar()"
+        [disabled]="isUploadingAvatar || (!selectedPreset && !customAvatarFile)"
+      >
+        <span *ngIf="isUploadingAvatar" class="spinner-border spinner-border-sm" role="status"></span>
+        <i *ngIf="!isUploadingAvatar" class="bi bi-check-circle-fill"></i>
+        <span>{{ isUploadingAvatar ? 'Saving...' : 'Apply Avatar' }}</span>
+      </button>
+    </footer>
+
+  </div>
+</div>

@@ -1,12 +1,16 @@
 package com.zone01.blog.controller;
 
 import com.zone01.blog.dto.UserProfileResponse;
+import com.zone01.blog.service.AvatarService;
 import com.zone01.blog.service.UserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -14,9 +18,11 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final AvatarService avatarService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, AvatarService avatarService) {
         this.userService = userService;
+        this.avatarService = avatarService;
     }
 
     @GetMapping("/me")
@@ -58,6 +64,65 @@ public class UserController {
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Get list of all available default brutalist avatars for student selection
+    @GetMapping("/avatars/presets")
+    public ResponseEntity<List<String>> getPresetAvatars() {
+        return ResponseEntity.ok(avatarService.getPresetAvatarUrls());
+    }
+
+    // Upload custom profile picture file
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadAvatar(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated"));
+        }
+
+        try {
+            UserProfileResponse updated = userService.updateAvatarFile(authentication.getName(), file);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error updating avatar: " + e.getMessage()));
+        }
+    }
+
+    // Choose a preset brutalist avatar from the gallery
+    @PutMapping("/me/avatar/preset")
+    public ResponseEntity<?> updateAvatarPreset(
+            @RequestBody Map<String, String> body,
+            Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated"));
+        }
+
+        try {
+            String presetUrl = (body != null) ? body.get("avatarUrl") : null;
+            UserProfileResponse updated = userService.updateAvatarPreset(authentication.getName(), presetUrl);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error updating preset avatar: " + e.getMessage()));
         }
     }
 

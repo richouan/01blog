@@ -82,6 +82,13 @@ export class AdminDashboardComponent implements OnInit {
     return this.expandedPosts.has(reportId);
   }
 
+  getMediaUrl(url?: string | null): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    return `http://localhost:8080${clean}`;
+  }
+
   constructor(
     private adminService: AdminService,
     private cdr: ChangeDetectorRef

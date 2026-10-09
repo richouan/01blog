@@ -21,13 +21,19 @@ public class UserService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final FollowRequestRepository followRequestRepository;
+    private final AvatarService avatarService;
+    private final FileStorageService fileStorageService;
 
     public UserService(UserRepository userRepository, 
                        NotificationService notificationService,
-                       FollowRequestRepository followRequestRepository) {
+                       FollowRequestRepository followRequestRepository,
+                       AvatarService avatarService,
+                       FileStorageService fileStorageService) {
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.followRequestRepository = followRequestRepository;
+        this.avatarService = avatarService;
+        this.fileStorageService = fileStorageService;
     }
 
     // readOnly keeps session open for lazy-loaded collections (followers/following)
@@ -60,6 +66,11 @@ public class UserService {
         }
         String displayEmail = (isOwnProfile || isAdmin) ? user.getEmail() : null;
 
+        String avatarUrl = user.getAvatarUrl();
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            avatarUrl = avatarService.getFallbackAvatarForUsername(user.getUsername());
+        }
+
         return new UserProfileResponse(
                 user.getId(),
                 user.getUsername(),
@@ -70,7 +81,8 @@ public class UserService {
                 followingCount,
                 isFollowing,
                 user.isPrivateProfile(),
-                hasPendingRequest
+                hasPendingRequest,
+                avatarUrl
         );
     }
 
@@ -96,6 +108,10 @@ public class UserService {
                 hasPendingRequest = followRequestRepository.existsByRequesterAndTarget(currentViewer, user);
             }
             String displayEmail = (user.getUsername().equals(currentViewerUsername) || isAdminViewer) ? user.getEmail() : null;
+            String avatarUrl = user.getAvatarUrl();
+            if (avatarUrl == null || avatarUrl.isBlank()) {
+                avatarUrl = avatarService.getFallbackAvatarForUsername(user.getUsername());
+            }
             return new UserProfileResponse(
                     user.getId(),
                     user.getUsername(),
@@ -106,7 +122,8 @@ public class UserService {
                     user.getFollowing().size(),
                     isFollowing,
                     user.isPrivateProfile(),
-                    hasPendingRequest
+                    hasPendingRequest,
+                    avatarUrl
             );
         }).collect(Collectors.toList());
     }
@@ -135,6 +152,11 @@ public class UserService {
         user.setPrivateProfile(newStatus);
         User saved = userRepository.save(user);
 
+        String avatarUrl = saved.getAvatarUrl();
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            avatarUrl = avatarService.getFallbackAvatarForUsername(saved.getUsername());
+        }
+
         return new UserProfileResponse(
                 saved.getId(),
                 saved.getUsername(),
@@ -145,7 +167,8 @@ public class UserService {
                 saved.getFollowing().size(),
                 false,
                 saved.isPrivateProfile(),
-                false
+                false,
+                avatarUrl
         );
     }
 
@@ -255,5 +278,60 @@ public class UserService {
         }
 
         followRequestRepository.delete(request);
+    }
+
+    // Upload and update user avatar with a custom image file
+    @Transactional
+    public UserProfileResponse updateAvatarFile(String username, org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Please select an image file to upload.");
+        }
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        if (user.isBanned()) {
+            throw new SecurityException("Banned accounts cannot update profile picture.");
+        }
+
+        // Store new image file (validates MIME format with Apache Tika and saves to /uploads/uuid.ext)
+        String newAvatarUrl = fileStorageService.storeFile(file);
+
+        // Delete old custom upload if it was not a default preset
+        String oldAvatar = user.getAvatarUrl();
+        if (oldAvatar != null && oldAvatar.startsWith("/uploads/") && !oldAvatar.startsWith("/uploads/avatars/")) {
+            fileStorageService.deleteFile(oldAvatar);
+        }
+
+        user.setAvatarUrl(newAvatarUrl);
+        userRepository.save(user);
+
+        return getUserProfile(username, username);
+    }
+
+    // Select a preset brutalist avatar from the gallery
+    @Transactional
+    public UserProfileResponse updateAvatarPreset(String username, String presetUrl) {
+        if (presetUrl == null || presetUrl.isBlank() || !avatarService.isValidPreset(presetUrl)) {
+            throw new IllegalArgumentException("Invalid preset avatar selection.");
+        }
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        if (user.isBanned()) {
+            throw new SecurityException("Banned accounts cannot update profile picture.");
+        }
+
+        // Delete old custom upload if user was using a custom uploaded image
+        String oldAvatar = user.getAvatarUrl();
+        if (oldAvatar != null && oldAvatar.startsWith("/uploads/") && !oldAvatar.startsWith("/uploads/avatars/")) {
+            fileStorageService.deleteFile(oldAvatar);
+        }
+
+        user.setAvatarUrl(presetUrl.trim());
+        userRepository.save(user);
+
+        return getUserProfile(username, username);
     }
 }

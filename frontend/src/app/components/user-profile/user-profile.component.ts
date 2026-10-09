@@ -38,6 +38,15 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   pendingRequests: FollowRequestItem[] = [];
   isLoadingRequests = false;
 
+  // Avatar Modal State
+  isAvatarModalOpen = false;
+  presetAvatars: string[] = [];
+  selectedPreset = '';
+  isUploadingAvatar = false;
+  avatarUploadError = '';
+  customAvatarFile: File | null = null;
+  customAvatarPreview = '';
+
   private sub = new Subscription();
 
   get isPrivateLocked(): boolean {
@@ -412,6 +421,133 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     }, 4000);
     this.cdr.detectChanges();
+  }
+
+  // --- AVATAR MANAGEMENT CONTROLS ---
+  getMediaUrl(url?: string | null): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    return `http://localhost:8080${clean}`;
+  }
+
+  openAvatarModal(): void {
+    this.isAvatarModalOpen = true;
+    this.avatarUploadError = '';
+    this.customAvatarFile = null;
+    this.customAvatarPreview = '';
+    this.selectedPreset = this.profile?.avatarUrl || '';
+
+    if (this.presetAvatars.length === 0) {
+      this.userService.getPresetAvatars().subscribe({
+        next: (presets) => {
+          this.presetAvatars = presets;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.presetAvatars = Array.from({ length: 10 }, (_, i) => `/uploads/avatars/brutalist-${i + 1}.svg`);
+          this.cdr.detectChanges();
+        }
+      });
+    }
+  }
+
+  closeAvatarModal(): void {
+    if (this.isUploadingAvatar) return;
+    this.isAvatarModalOpen = false;
+    this.customAvatarFile = null;
+    this.customAvatarPreview = '';
+    this.avatarUploadError = '';
+  }
+
+  selectPreset(url: string): void {
+    this.selectedPreset = url;
+    this.customAvatarFile = null;
+    this.customAvatarPreview = '';
+    this.avatarUploadError = '';
+  }
+
+  rollRandomPreset(): void {
+    if (this.presetAvatars.length === 0) return;
+    const randomIndex = Math.floor(Math.random() * this.presetAvatars.length);
+    this.selectedPreset = this.presetAvatars[randomIndex];
+    this.customAvatarFile = null;
+    this.customAvatarPreview = '';
+    this.avatarUploadError = '';
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      this.avatarUploadError = 'Image file must be smaller than 5MB.';
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.avatarUploadError = 'Only image files (.png, .jpg, .jpeg, .webp, .gif) are supported.';
+      return;
+    }
+
+    this.customAvatarFile = file;
+    this.avatarUploadError = '';
+    this.customAvatarPreview = URL.createObjectURL(file);
+  }
+
+  saveAvatar(): void {
+    if (this.isUploadingAvatar) return;
+
+    if (this.customAvatarFile) {
+      this.isUploadingAvatar = true;
+      this.avatarUploadError = '';
+      this.userService.uploadAvatar(this.customAvatarFile).subscribe({
+        next: (updatedProfile) => {
+          this.profile = updatedProfile;
+          if (updatedProfile.avatarUrl) {
+            this.authService.updateAvatar(updatedProfile.avatarUrl);
+          }
+          this.isUploadingAvatar = false;
+          this.closeAvatarModal();
+          this.actionMessage = 'Profile picture updated successfully!';
+          setTimeout(() => {
+            this.actionMessage = '';
+            this.cdr.detectChanges();
+          }, 3500);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.isUploadingAvatar = false;
+          this.avatarUploadError = err.error?.message || 'Failed to upload profile picture.';
+          this.cdr.detectChanges();
+        }
+      });
+    } else if (this.selectedPreset) {
+      this.isUploadingAvatar = true;
+      this.avatarUploadError = '';
+      this.userService.selectPresetAvatar(this.selectedPreset).subscribe({
+        next: (updatedProfile) => {
+          this.profile = updatedProfile;
+          if (updatedProfile.avatarUrl) {
+            this.authService.updateAvatar(updatedProfile.avatarUrl);
+          }
+          this.isUploadingAvatar = false;
+          this.closeAvatarModal();
+          this.actionMessage = 'Avatar preset updated successfully!';
+          setTimeout(() => {
+            this.actionMessage = '';
+            this.cdr.detectChanges();
+          }, 3500);
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.isUploadingAvatar = false;
+          this.avatarUploadError = err.error?.message || 'Failed to update avatar preset.';
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
   ngOnDestroy(): void {

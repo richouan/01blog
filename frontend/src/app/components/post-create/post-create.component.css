@@ -28,6 +28,13 @@
   color: #121214;
 }
 
+.avatar-md-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* Expanded State Container */
 .expanded-form-wrapper {
   animation: fadeIn 0.18s ease-out;

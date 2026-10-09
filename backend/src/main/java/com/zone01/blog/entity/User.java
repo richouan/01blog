@@ -40,6 +40,10 @@ public class User {
     @Column(name = "private_profile", nullable = false)
     private boolean privateProfile = false;
 
+    // Profile avatar URL (defaults to a random brutalist avatar preset or custom uploaded image)
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     // following
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -161,6 +165,14 @@ public class User {
 
     public void setPrivateProfile(boolean privateProfile) {
         this.privateProfile = privateProfile;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     @Override

@@ -36,11 +36,31 @@ export class AuthService {
     localStorage.setItem('token', response.token);
     localStorage.setItem('username', response.username);
     localStorage.setItem('role', response.role);
+    if (response.avatarUrl) {
+      localStorage.setItem('avatarUrl', response.avatarUrl);
+    }
 
     this.currentUserSubject.next({
       username: response.username,
-      role: response.role
+      role: response.role,
+      avatarUrl: response.avatarUrl
     });
+  }
+
+  // Update current user avatar in state and storage
+  updateAvatar(newAvatarUrl: string): void {
+    if (newAvatarUrl) {
+      localStorage.setItem('avatarUrl', newAvatarUrl);
+    } else {
+      localStorage.removeItem('avatarUrl');
+    }
+    const current = this.currentUserSubject.value;
+    if (current) {
+      this.currentUserSubject.next({
+        ...current,
+        avatarUrl: newAvatarUrl
+      });
+    }
   }
 
   // Clear session on logout and redirect to login page (unless redirect is false)
@@ -48,6 +68,7 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
+    localStorage.removeItem('avatarUrl');
 
     this.currentUserSubject.next(null);
     if (redirect) {
@@ -106,15 +127,17 @@ export class AuthService {
     const token = localStorage.getItem('token');
     const username = localStorage.getItem('username');
     const role = localStorage.getItem('role');
+    const avatarUrl = localStorage.getItem('avatarUrl') || undefined;
 
     if (token && username && role) {
       if (this.isTokenExpired(token)) {
         localStorage.removeItem('token');
         localStorage.removeItem('username');
         localStorage.removeItem('role');
+        localStorage.removeItem('avatarUrl');
         return null;
       }
-      return { username, role };
+      return { username, role, avatarUrl };
     }
     return null;
   }

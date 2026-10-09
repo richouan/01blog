@@ -15,4 +15,5 @@ export interface AdminUser {
   banned: boolean;
   postsCount: number;
   createdAt: string;
+  avatarUrl?: string | null;
 }

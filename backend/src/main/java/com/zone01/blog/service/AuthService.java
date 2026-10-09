@@ -16,12 +16,14 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AvatarService avatarService;
 
     // Constructor injection for required dependencies
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, AvatarService avatarService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.avatarService = avatarService;
     }
 
     // Registers a new user with validation, hashed password, and returns an auth token
@@ -70,14 +72,18 @@ public class AuthService {
         // Hash the plain text password with BCrypt
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
+        // Pick a random brutalist avatar preset for the new student
+        String randomAvatar = avatarService.getRandomAvatarUrl();
+
         // Create and persist the new user entity
         User user = new User(username, email, hashedPassword);
+        user.setAvatarUrl(randomAvatar);
         userRepository.save(user);
 
         // Generate a JWT token for immediate login
         String token = jwtUtil.generateToken(user.getUsername());
 
-        return new AuthResponse(token, user.getUsername(), user.getRole().name());
+        return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getAvatarUrl());
     }
 
     // Authenticates an existing user and returns an auth token
@@ -107,9 +113,17 @@ public class AuthService {
             throw new IllegalArgumentException("This account has been suspended or banned by an administrator.");
         }
 
+        // Ensure user has a valid avatar (assign fallback if previous account had null avatar)
+        String avatarUrl = user.getAvatarUrl();
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            avatarUrl = avatarService.getFallbackAvatarForUsername(user.getUsername());
+            user.setAvatarUrl(avatarUrl);
+            userRepository.save(user);
+        }
+
         // Generate a JWT token for the authenticated user
         String token = jwtUtil.generateToken(user.getUsername());
 
-        return new AuthResponse(token, user.getUsername(), user.getRole().name());
+        return new AuthResponse(token, user.getUsername(), user.getRole().name(), avatarUrl);
     }
 }

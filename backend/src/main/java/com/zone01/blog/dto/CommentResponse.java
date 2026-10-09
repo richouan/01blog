@@ -10,6 +10,7 @@ public class CommentResponse {
     private Long postId;
     private Long authorId;
     private String authorUsername;
+    private String authorAvatarUrl;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -18,10 +19,15 @@ public class CommentResponse {
     }
 
     public CommentResponse(Long id, Long postId, Long authorId, String authorUsername, String content, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this(id, postId, authorId, authorUsername, null, content, createdAt, updatedAt);
+    }
+
+    public CommentResponse(Long id, Long postId, Long authorId, String authorUsername, String authorAvatarUrl, String content, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.postId = postId;
         this.authorId = authorId;
         this.authorUsername = authorUsername;
+        this.authorAvatarUrl = authorAvatarUrl;
         this.content = content;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -32,11 +38,19 @@ public class CommentResponse {
         if (comment == null) {
             return null;
         }
+        String avatar = (comment.getAuthor() != null) ? comment.getAuthor().getAvatarUrl() : null;
+        if (avatar == null || avatar.isBlank()) {
+            if (comment.getAuthor() != null) {
+                int idx = (Math.abs(comment.getAuthor().getUsername().hashCode()) % 10) + 1;
+                avatar = "/uploads/avatars/brutalist-" + idx + ".svg";
+            }
+        }
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost() != null ? comment.getPost().getId() : null,
                 comment.getAuthor() != null ? comment.getAuthor().getId() : null,
                 comment.getAuthor() != null ? comment.getAuthor().getUsername() : null,
+                avatar,
                 comment.getContent(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt()
@@ -74,6 +88,14 @@ public class CommentResponse {
 
     public void setAuthorUsername(String authorUsername) {
         this.authorUsername = authorUsername;
+    }
+
+    public String getAuthorAvatarUrl() {
+        return authorAvatarUrl;
+    }
+
+    public void setAuthorAvatarUrl(String authorAvatarUrl) {
+        this.authorAvatarUrl = authorAvatarUrl;
     }
 
     public String getContent() {

@@ -5,6 +5,7 @@ export interface Post {
   mediaUrl?: string | null;
   authorId: number;
   authorUsername: string;
+  authorAvatarUrl?: string | null;
   createdAt: string;
   updatedAt?: string | null;
   likesCount?: number;
@@ -24,6 +25,7 @@ export interface PostComment {
   postId: number;
   authorId: number;
   authorUsername: string;
+  authorAvatarUrl?: string | null;
   content: string;
   createdAt: string;
   updatedAt?: string | null;

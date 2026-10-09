@@ -14,6 +14,8 @@ public class UserProfileResponse {
     private int followersCount;
     private int followingCount;
 
+    private String avatarUrl;
+
     @JsonProperty("isFollowing")
     private boolean isFollowing;
 
@@ -28,12 +30,18 @@ public class UserProfileResponse {
     public UserProfileResponse(Long id, String username, String email, UserRole role, 
                               LocalDateTime createdAt, int followersCount, int followingCount, 
                               boolean isFollowing, boolean privateProfile) {
-        this(id, username, email, role, createdAt, followersCount, followingCount, isFollowing, privateProfile, false);
+        this(id, username, email, role, createdAt, followersCount, followingCount, isFollowing, privateProfile, false, null);
     }
 
     public UserProfileResponse(Long id, String username, String email, UserRole role, 
                               LocalDateTime createdAt, int followersCount, int followingCount, 
                               boolean isFollowing, boolean privateProfile, boolean hasPendingRequest) {
+        this(id, username, email, role, createdAt, followersCount, followingCount, isFollowing, privateProfile, hasPendingRequest, null);
+    }
+
+    public UserProfileResponse(Long id, String username, String email, UserRole role, 
+                              LocalDateTime createdAt, int followersCount, int followingCount, 
+                              boolean isFollowing, boolean privateProfile, boolean hasPendingRequest, String avatarUrl) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -44,6 +52,7 @@ public class UserProfileResponse {
         this.isFollowing = isFollowing;
         this.privateProfile = privateProfile;
         this.hasPendingRequest = hasPendingRequest;
+        this.avatarUrl = avatarUrl;
     }
 
     public Long getId() {
@@ -124,6 +133,14 @@ public class UserProfileResponse {
 
     public void setHasPendingRequest(boolean hasPendingRequest) {
         this.hasPendingRequest = hasPendingRequest;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }
 

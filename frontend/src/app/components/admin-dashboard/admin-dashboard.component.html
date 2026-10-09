@@ -291,8 +291,14 @@
                 <td class="fw-bold font-display">#{{ u.id }}</td>
                 <td>
                   <div class="d-flex align-items-center gap-2">
-                    <div class="user-avatar-sm">
-                      {{ u.username.charAt(0).toUpperCase() }}
+                    <div class="user-avatar-sm overflow-hidden">
+                      <img 
+                        *ngIf="u.avatarUrl" 
+                        [src]="getMediaUrl(u.avatarUrl)" 
+                        [alt]="u.username"
+                        class="avatar-sm-img"
+                      />
+                      <span *ngIf="!u.avatarUrl">{{ u.username.charAt(0).toUpperCase() }}</span>
                     </div>
                     <a [routerLink]="['/profile', u.username]"
                       class="fw-bold font-display text-dark text-decoration-none">

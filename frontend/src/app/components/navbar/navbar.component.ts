@@ -46,6 +46,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.currentUser?.role === 'ROLE_ADMIN';
   }
 
+  getMediaUrl(url?: string | null): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    return `http://localhost:8080${clean}`;
+  }
+
   ngOnInit(): void {
     // Listen to user authentication changes
     this.sub.add(

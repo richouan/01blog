@@ -13,12 +13,18 @@ public class AdminUserResponse {
     private boolean banned;
     private long postsCount;
     private LocalDateTime createdAt;
+    private String avatarUrl;
 
     public AdminUserResponse() {
     }
 
     public AdminUserResponse(Long id, String username, String email, String role,
                              boolean banned, long postsCount, LocalDateTime createdAt) {
+        this(id, username, email, role, banned, postsCount, createdAt, null);
+    }
+
+    public AdminUserResponse(Long id, String username, String email, String role,
+                             boolean banned, long postsCount, LocalDateTime createdAt, String avatarUrl) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -26,9 +32,15 @@ public class AdminUserResponse {
         this.banned = banned;
         this.postsCount = postsCount;
         this.createdAt = createdAt;
+        this.avatarUrl = avatarUrl;
     }
 
     public static AdminUserResponse fromEntity(User user, long postsCount) {
+        String avatar = user.getAvatarUrl();
+        if (avatar == null || avatar.isBlank()) {
+            int idx = (Math.abs(user.getUsername().hashCode()) % 10) + 1;
+            avatar = "/uploads/avatars/brutalist-" + idx + ".svg";
+        }
         return new AdminUserResponse(
                 user.getId(),
                 user.getUsername(),
@@ -36,7 +48,8 @@ public class AdminUserResponse {
                 user.getRole().name(),
                 user.isBanned(),
                 postsCount,
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                avatar
         );
     }
 
@@ -94,5 +107,13 @@ public class AdminUserResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }

@@ -234,9 +234,17 @@
             type="button"
             title="Account Menu"
           >
-            <!-- Yellow Avatar Square -->
-            <div class="user-avatar-sq">
-              {{ currentUser.username.charAt(0).toUpperCase() }}
+            <!-- Avatar Square -->
+            <div class="user-avatar-sq overflow-hidden">
+              <img 
+                *ngIf="currentUser.avatarUrl" 
+                [src]="getMediaUrl(currentUser.avatarUrl)" 
+                [alt]="currentUser.username" 
+                class="avatar-nav-img"
+              />
+              <span *ngIf="!currentUser.avatarUrl">
+                {{ currentUser.username.charAt(0).toUpperCase() }}
+              </span>
             </div>
 
             <!-- Username & Role Label -->

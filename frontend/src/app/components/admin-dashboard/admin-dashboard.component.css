@@ -260,6 +260,13 @@
   color: #121214;
 }
 
+.avatar-sm-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* Status Badges */
 .badge-status {
   display: inline-flex;

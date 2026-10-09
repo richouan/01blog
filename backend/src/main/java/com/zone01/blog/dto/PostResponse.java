@@ -12,6 +12,7 @@ public class PostResponse {
     private String mediaUrl;
     private Long authorId;
     private String authorUsername;
+    private String authorAvatarUrl;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime createdAt;
@@ -63,6 +64,12 @@ public class PostResponse {
                 liked,
                 commentsCount
         );
+        String authorAvatar = post.getAuthor().getAvatarUrl();
+        if (authorAvatar == null || authorAvatar.isBlank()) {
+            int idx = (Math.abs(post.getAuthor().getUsername().hashCode()) % 10) + 1;
+            authorAvatar = "/uploads/avatars/brutalist-" + idx + ".svg";
+        }
+        resp.setAuthorAvatarUrl(authorAvatar);
         resp.setHidden(post.isHidden());
         return resp;
     }
@@ -125,6 +132,14 @@ public class PostResponse {
 
     public void setAuthorUsername(String authorUsername) {
         this.authorUsername = authorUsername;
+    }
+
+    public String getAuthorAvatarUrl() {
+        return authorAvatarUrl;
+    }
+
+    public void setAuthorAvatarUrl(String authorAvatarUrl) {
+        this.authorAvatarUrl = authorAvatarUrl;
     }
 
     public LocalDateTime getCreatedAt() {

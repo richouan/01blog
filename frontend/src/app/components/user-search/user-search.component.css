@@ -44,6 +44,13 @@
   box-shadow: 2px 2px 0px var(--nb-shadow-color);
 }
 
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .student-result-card {
   transition: transform 0.15s ease;
 }

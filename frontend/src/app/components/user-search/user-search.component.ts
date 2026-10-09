@@ -59,6 +59,13 @@ export class UserSearchComponent implements OnInit, OnDestroy {
     );
   }
 
+  getMediaUrl(url?: string | null): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const clean = url.startsWith('/') ? url : `/${url}`;
+    return `http://localhost:8080${clean}`;
+  }
+
   onQueryChange(value: string): void {
     this.searchSubject.next(value);
   }

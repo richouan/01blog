@@ -57,4 +57,21 @@ export class UserService {
   rejectFollowRequest(requestId: number): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/requests/${requestId}/reject`, {});
   }
+
+  // Fetch list of all preset brutalist avatars
+  getPresetAvatars(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/avatars/presets`);
+  }
+
+  // Upload a custom profile picture image file
+  uploadAvatar(file: File): Observable<UserProfile> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<UserProfile>(`${this.apiUrl}/me/avatar`, formData);
+  }
+
+  // Choose a preset brutalist avatar from the gallery
+  selectPresetAvatar(avatarUrl: string): Observable<UserProfile> {
+    return this.http.put<UserProfile>(`${this.apiUrl}/me/avatar/preset`, { avatarUrl });
+  }
 }

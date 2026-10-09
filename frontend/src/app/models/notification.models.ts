@@ -4,6 +4,7 @@ export interface NotificationItem {
   type: 'NEW_POST' | 'NEW_FOLLOWER' | 'FOLLOW_REQUEST' | 'FOLLOW_ACCEPTED';
   message: string;
   actorUsername: string;
+  actorAvatarUrl?: string | null;
   referenceId?: number;
   isRead: boolean;
   read?: boolean;

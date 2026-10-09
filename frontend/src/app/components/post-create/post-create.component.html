@@ -10,8 +10,16 @@
     <div class="d-flex gap-2 gap-sm-3 align-items-start">
       
       <!-- Current User Avatar Box -->
-      <span class="user-avatar-md flex-shrink-0">
-        {{ currentUser?.username?.charAt(0)?.toUpperCase() || 'R' }}
+      <span class="user-avatar-md flex-shrink-0 overflow-hidden">
+        <img 
+          *ngIf="currentUser?.avatarUrl" 
+          [src]="getMediaUrl(currentUser?.avatarUrl)" 
+          [alt]="currentUser?.username || 'Avatar'"
+          class="avatar-md-img"
+        />
+        <span *ngIf="!currentUser?.avatarUrl">
+          {{ currentUser?.username?.charAt(0)?.toUpperCase() || 'R' }}
+        </span>
       </span>
 
       <div class="flex-grow-1">

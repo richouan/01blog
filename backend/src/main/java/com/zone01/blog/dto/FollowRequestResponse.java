@@ -9,23 +9,30 @@ public class FollowRequestResponse {
     private Long id;
     private Long requesterId;
     private String requesterUsername;
+    private String requesterAvatarUrl;
     private LocalDateTime createdAt;
 
     public FollowRequestResponse() {
     }
 
-    public FollowRequestResponse(Long id, Long requesterId, String requesterUsername, LocalDateTime createdAt) {
+    public FollowRequestResponse(Long id, Long requesterId, String requesterUsername, String requesterAvatarUrl, LocalDateTime createdAt) {
         this.id = id;
         this.requesterId = requesterId;
         this.requesterUsername = requesterUsername;
+        this.requesterAvatarUrl = requesterAvatarUrl;
         this.createdAt = createdAt;
     }
 
     public static FollowRequestResponse fromEntity(FollowRequest entity) {
+        String avatar = entity.getRequester().getAvatarUrl();
+        if (avatar == null || avatar.isBlank()) {
+            avatar = "/uploads/avatars/brutalist-" + (Math.abs(entity.getRequester().getUsername().hashCode() % 10) + 1) + ".svg";
+        }
         return new FollowRequestResponse(
                 entity.getId(),
                 entity.getRequester().getId(),
                 entity.getRequester().getUsername(),
+                avatar,
                 entity.getCreatedAt()
         );
     }
@@ -52,6 +59,14 @@ public class FollowRequestResponse {
 
     public void setRequesterUsername(String requesterUsername) {
         this.requesterUsername = requesterUsername;
+    }
+
+    public String getRequesterAvatarUrl() {
+        return requesterAvatarUrl;
+    }
+
+    public void setRequesterAvatarUrl(String requesterAvatarUrl) {
+        this.requesterAvatarUrl = requesterAvatarUrl;
     }
 
     public LocalDateTime getCreatedAt() {

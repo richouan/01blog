@@ -11,6 +11,7 @@ public class NotificationResponse {
     private String type;
     private String message;
     private String actorUsername;
+    private String actorAvatarUrl;
     private Long referenceId;
 
     @JsonProperty("isRead")
@@ -22,10 +23,16 @@ public class NotificationResponse {
 
     public NotificationResponse(Long id, String type, String message, String actorUsername,
                                 Long referenceId, boolean isRead, LocalDateTime createdAt) {
+        this(id, type, message, actorUsername, null, referenceId, isRead, createdAt);
+    }
+
+    public NotificationResponse(Long id, String type, String message, String actorUsername, String actorAvatarUrl,
+                                Long referenceId, boolean isRead, LocalDateTime createdAt) {
         this.id = id;
         this.type = type;
         this.message = message;
         this.actorUsername = actorUsername;
+        this.actorAvatarUrl = actorAvatarUrl;
         this.referenceId = referenceId;
         this.isRead = isRead;
         this.createdAt = createdAt;
@@ -33,11 +40,19 @@ public class NotificationResponse {
 
     // Factory method converting JPA entity into a safe client DTO
     public static NotificationResponse fromEntity(Notification entity) {
+        String actorAvatar = (entity.getActor() != null) ? entity.getActor().getAvatarUrl() : null;
+        if (actorAvatar == null || actorAvatar.isBlank()) {
+            if (entity.getActor() != null) {
+                int idx = (Math.abs(entity.getActor().getUsername().hashCode()) % 10) + 1;
+                actorAvatar = "/uploads/avatars/brutalist-" + idx + ".svg";
+            }
+        }
         return new NotificationResponse(
                 entity.getId(),
                 entity.getType().name(),
                 entity.getMessage(),
                 entity.getActor() != null ? entity.getActor().getUsername() : null,
+                actorAvatar,
                 entity.getReferenceId(),
                 entity.isRead(),
                 entity.getCreatedAt()
@@ -74,6 +89,14 @@ public class NotificationResponse {
 
     public void setActorUsername(String actorUsername) {
         this.actorUsername = actorUsername;
+    }
+
+    public String getActorAvatarUrl() {
+        return actorAvatarUrl;
+    }
+
+    public void setActorAvatarUrl(String actorAvatarUrl) {
+        this.actorAvatarUrl = actorAvatarUrl;
     }
 
     public Long getReferenceId() {

@@ -15,11 +15,13 @@ export interface AuthResponse {
   token: string;
   username: string;
   role: string;
+  avatarUrl?: string;
 }
 
 export interface CurrentUser {
   username: string;
   role: string;
+  avatarUrl?: string;
 }
 
 export interface UserProfile {
@@ -30,6 +32,7 @@ export interface UserProfile {
   createdAt: string;
   followersCount: number;
   followingCount: number;
+  avatarUrl?: string;
   isFollowing?: boolean;
   following?: boolean;
   privateProfile?: boolean;
@@ -40,6 +43,7 @@ export interface FollowRequestItem {
   id: number;
   requesterId: number;
   requesterUsername: string;
+  requesterAvatarUrl?: string;
   createdAt: string;
 }
 

@@ -50,8 +50,8 @@ public class SecurityConfig {
 
             // Configure endpoint permissions
             .authorizeHttpRequests(auth -> auth
-                // Allow anyone to access registration, login, static uploads, and error dispatcher
-                .requestMatchers("/api/auth/**", "/uploads/**", "/error").permitAll()
+                // Allow anyone to access registration, login, static uploads, preset avatars, and error dispatcher
+                .requestMatchers("/api/auth/**", "/uploads/**", "/error", "/api/users/avatars/presets").permitAll()
                 // Require ROLE_ADMIN for all admin dashboard and moderation endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // All other endpoints require the user to be logged in
