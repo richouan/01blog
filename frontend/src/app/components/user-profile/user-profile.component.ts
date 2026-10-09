@@ -30,7 +30,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   isLoading = true;
   isLoadingPosts = false;
   errorMessage = '';
-  activeTab: 'posts' | 'about' | 'requests' = 'posts';
+  activeTab: 'posts' | 'requests' = 'posts';
   copiedLink = false;
   actionMessage = '';
   isTogglingPrivacy = false;
@@ -76,7 +76,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.sub.add(
       this.route.queryParamMap.subscribe(params => {
         const tab = params.get('tab');
-        if (tab === 'requests' || tab === 'posts' || tab === 'about') {
+        if (tab === 'requests' || tab === 'posts') {
           this.activeTab = tab;
           this.cdr.detectChanges();
         }
@@ -371,8 +371,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Switch between Posts, About, and Requests tabs
-  setActiveTab(tab: 'posts' | 'about' | 'requests'): void {
+  // Switch between Posts and Requests tabs
+  setActiveTab(tab: 'posts' | 'requests'): void {
     this.activeTab = tab;
   }
 

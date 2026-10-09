@@ -52,6 +52,7 @@ export class PostListComponent implements OnInit, OnDestroy {
   @Input() emptyTitle: string = 'No posts in the stream yet';
   @Input() emptyMessage: string = 'Be the first developer to share a code snippet, question, or thought!';
   @Input() showAuthor: boolean = true;
+  @Input() showCreateButton: boolean = true;
 
   @Output() postLiked = new EventEmitter<Post>();
   @Output() postCommentClicked = new EventEmitter<Post>();

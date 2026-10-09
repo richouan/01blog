@@ -41,6 +41,7 @@
       {{ emptyMessage }}
     </p>
     <button
+      *ngIf="showCreateButton"
       type="button"
       (click)="onCreateClick()"
       class="btn-nb-primary py-1 px-3 small d-inline-flex align-items-center gap-2"

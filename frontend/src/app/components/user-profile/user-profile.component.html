@@ -166,9 +166,9 @@
 
         <!-- Profile Content Tabs -->
         <div class="card-nb">
-          <!-- Tab Navigation Header -->
-          <div class="card-nb-header p-0">
-            <div class="d-flex w-100">
+          <!-- Header Bar: Tabs if private profile owner has requests, clean section header otherwise -->
+          <div class="card-nb-header" [class.p-0]="isOwnProfile && profile?.privateProfile">
+            <div class="d-flex w-100" *ngIf="isOwnProfile && profile?.privateProfile; else singlePostsHeader">
               <button
                 (click)="setActiveTab('posts')"
                 [class.tab-active]="activeTab === 'posts'"
@@ -177,28 +177,33 @@
                 <i class="bi bi-collection-fill me-1"></i>
                 <span>Posts ({{ userPosts.length }})</span>
               </button>
-              <button
-                (click)="setActiveTab('about')"
-                [class.tab-active]="activeTab === 'about'"
-                class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent"
-              >
-                <i class="bi bi-info-circle-fill me-1"></i>
-                <span>About Profile</span>
-              </button>
               <!-- Requests Tab for private profile owners -->
               <button
-                *ngIf="isOwnProfile && profile?.privateProfile"
                 (click)="setActiveTab('requests')"
                 [class.tab-active]="activeTab === 'requests'"
                 class="tab-btn-nb flex-fill py-3 px-3 border-0 bg-transparent position-relative"
               >
                 <i class="bi bi-person-lines-fill me-1"></i>
-                <span>Requests</span>
+                <span>Follow Requests</span>
                 <span *ngIf="pendingRequests.length > 0" class="badge-nb badge-nb-coral ms-2 py-0 px-2" style="font-size: 0.75rem;">
                   {{ pendingRequests.length }}
                 </span>
               </button>
             </div>
+
+            <ng-template #singlePostsHeader>
+              <div class="d-flex align-items-center justify-content-between w-100 px-3 py-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-collection-fill fs-5 text-warning"></i>
+                  <h2 class="h6 mb-0 fw-bold font-display text-dark">
+                    {{ isOwnProfile ? 'My Publications' : 'Published Posts' }}
+                  </h2>
+                </div>
+                <span class="badge-nb badge-nb-yellow small">
+                  {{ userPosts.length }} {{ userPosts.length === 1 ? 'post' : 'posts' }}
+                </span>
+              </div>
+            </ng-template>
           </div>
 
           <div class="card-nb-body p-3 p-sm-4">
@@ -227,6 +232,7 @@
                 *ngIf="!isPrivateLocked"
                 [posts]="userPosts"
                 [loading]="isLoadingPosts"
+                [showCreateButton]="false"
                 [emptyTitle]="isOwnProfile ? 'No posts on your profile yet' : 'No posts published yet by @' + profile?.username"
                 [emptyMessage]="isOwnProfile ? 'Share your projects, ideas, or questions with the community!' : 'When this student publishes posts, they will appear here.'"
                 (postDeleted)="onPostDeleted($event)"
@@ -234,59 +240,7 @@
               ></app-post-list>
             </div>
 
-            <!-- Tab 2: About / Student Metadata -->
-            <div *ngIf="activeTab === 'about'" class="py-2">
-              <h2 class="h6 fw-bold font-display text-uppercase mb-3 text-muted">
-                {{ isOwnProfile ? 'My Account Details' : 'Student Profile Information' }}
-              </h2>
-              <div class="list-group list-group-flush gap-2">
-                <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Student ID</span>
-                  <span class="badge-nb badge-nb-yellow">#{{ profile?.id || '—' }}</span>
-                </div>
-                <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Username Handle</span>
-                  <span class="fw-bold font-display text-dark">&#64;{{ profile?.username || currentUser?.username }}</span>
-                </div>
-                <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Email Address</span>
-                  <span *ngIf="isOwnProfile" class="fw-bold text-dark font-display">{{ profile?.email || 'Loading...' }}</span>
-                  <span *ngIf="!isOwnProfile" class="badge-nb badge-nb-yellow">
-                    <i class="bi bi-shield-lock-fill me-1"></i>Private
-                  </span>
-                </div>
-                <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Account Role</span>
-                  <span class="badge-nb badge-nb-mint">
-                    {{ (profile?.role || currentUser?.role) === 'ROLE_ADMIN' ? 'Administrator' : 'Standard Student' }}
-                  </span>
-                </div>
-                <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Registration Date</span>
-                  <span class="fw-bold text-dark font-display">
-                    {{ (profile?.createdAt | date:'medium') || 'Loading...' }}
-                  </span>
-                </div>
-                <div class="about-item p-3 d-flex justify-content-between align-items-center">
-                  <span class="text-muted small fw-bold font-display">Profile Privacy</span>
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="badge-nb" [ngClass]="profile?.privateProfile ? 'badge-nb-coral' : 'badge-nb-mint'">
-                      <i class="bi" [ngClass]="profile?.privateProfile ? 'bi-lock-fill' : 'bi-globe'"></i>
-                      <span class="ms-1">{{ profile?.privateProfile ? 'Private (Subscribers Only)' : 'Public (All Students)' }}</span>
-                    </span>
-                    <button
-                      *ngIf="isOwnProfile"
-                      (click)="togglePrivacy()"
-                      [disabled]="isTogglingPrivacy"
-                      class="btn-nb-secondary py-0 px-2 fs-6"
-                      title="Switch privacy setting"
-                    >
-                      <i class="bi bi-arrow-repeat me-1"></i>Toggle
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+
 
             <!-- Tab 3: Incoming Follow Requests (Owner of Private Profile Only) -->
             <div *ngIf="activeTab === 'requests'" class="py-2">

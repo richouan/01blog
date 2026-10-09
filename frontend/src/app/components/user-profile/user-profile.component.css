@@ -67,13 +67,7 @@
   max-width: 450px;
 }
 
-/* About Items */
-.about-item {
-  background-color: var(--nb-subtle-bg);
-  border: var(--nb-border-sm);
-  border-radius: 8px;
-  box-shadow: 2px 2px 0px var(--nb-shadow-color);
-}
+
 
 /* Private Account Locked Banner */
 .private-account-locked {
