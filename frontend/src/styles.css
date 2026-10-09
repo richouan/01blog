@@ -65,27 +65,30 @@
 html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
-  scrollbar-color: var(--nb-scrollbar-thumb) var(--nb-bg);
 }
 
-/* Neo-Brutalist Custom Scrollbar */
+/* Neo-Brutalist Custom Scrollbar (Signature Yellow Pill with Black Border) */
 ::-webkit-scrollbar {
   width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--nb-bg);
+  background-color: var(--nb-bg);
   border-left: 1.5px solid var(--nb-border-color);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--nb-scrollbar-thumb);
-  border: 1.5px solid var(--nb-border-color);
-  border-radius: 4px;
+  background-color: var(--nb-yellow);
+  border: 2px solid var(--nb-border-color);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--nb-yellow);
+  background-color: #ffd000;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: #f5c400;
 }
 
 * {

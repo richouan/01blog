@@ -20,6 +20,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   currentUser: CurrentUser | null = null;
   searchQuery = '';
   isUserDropdownOpen = false;
+  isShortcutsModalOpen = false;
 
   // Notification center state
   unreadCount = 0;
@@ -196,16 +197,153 @@ export class NavbarComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Focus search input on Ctrl+K / Cmd+K
+  toggleShortcutsModal(): void {
+    this.isShortcutsModalOpen = !this.isShortcutsModalOpen;
+    if (this.isShortcutsModalOpen) {
+      this.isUserDropdownOpen = false;
+      this.isNotificationDropdownOpen = false;
+    }
+    this.cdr.detectChanges();
+  }
+
+  openShortcutsModal(): void {
+    this.isShortcutsModalOpen = true;
+    this.isUserDropdownOpen = false;
+    this.isNotificationDropdownOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  closeShortcutsModal(): void {
+    this.isShortcutsModalOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  // Global Discord-style Keyboard Shortcuts (Ctrl+/ cheat sheet, Ctrl+K search, Alt+nav)
   @HostListener('document:keydown', ['$event'])
   handleKeyboardShortcut(event: KeyboardEvent): void {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    const isCtrlOrCmd = event.metaKey || event.ctrlKey;
+    const isSlash = event.key === '/' || event.code === 'Slash';
+
+    // 1. Toggle Shortcuts Modal: Ctrl + / or Cmd + /
+    if (isCtrlOrCmd && isSlash) {
+      event.preventDefault();
+      this.toggleShortcutsModal();
+      return;
+    }
+
+    // 2. Escape: Dismiss open modal, dropdowns, or blur active inputs
+    if (event.key === 'Escape') {
+      if (this.isShortcutsModalOpen) {
+        this.isShortcutsModalOpen = false;
+        this.cdr.detectChanges();
+        return;
+      }
+      if (this.isUserDropdownOpen || this.isNotificationDropdownOpen) {
+        this.isUserDropdownOpen = false;
+        this.isNotificationDropdownOpen = false;
+        this.cdr.detectChanges();
+        return;
+      }
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        activeEl.blur();
+        return;
+      }
+    }
+
+    // 3. Quick Search: Ctrl + K or Cmd + K
+    if (isCtrlOrCmd && event.key.toLowerCase() === 'k') {
       event.preventDefault();
       const input = document.getElementById('navSearchInput') as HTMLInputElement;
       if (input) {
         input.focus();
         input.select();
+      } else {
+        this.router.navigate(['/search']);
       }
+      return;
+    }
+
+    // Check if user is typing in an active input / textarea
+    const activeEl = document.activeElement;
+    const isInputActive = activeEl && (
+      activeEl.tagName === 'INPUT' ||
+      activeEl.tagName === 'TEXTAREA' ||
+      (activeEl as HTMLElement).isContentEditable
+    );
+
+    if (isInputActive) {
+      return;
+    }
+
+    // 4. Pressing '?' (Shift + /) opens shortcuts sheet
+    if (!isCtrlOrCmd && event.key === '?') {
+      event.preventDefault();
+      this.toggleShortcutsModal();
+      return;
+    }
+
+    // 5. Alt + H -> Feed Home
+    if (event.altKey && event.key.toLowerCase() === 'h') {
+      event.preventDefault();
+      this.router.navigate(['/']);
+      return;
+    }
+
+    // 6. Alt + E -> Explore
+    if (event.altKey && event.key.toLowerCase() === 'e') {
+      event.preventDefault();
+      this.router.navigate(['/search']);
+      return;
+    }
+
+    // 7. Alt + P -> My Profile
+    if (event.altKey && event.key.toLowerCase() === 'p') {
+      event.preventDefault();
+      this.router.navigate(['/profile']);
+      return;
+    }
+
+    // 8. Single key 't' -> Toggle Theme
+    if (!isCtrlOrCmd && !event.altKey && event.key.toLowerCase() === 't') {
+      event.preventDefault();
+      this.toggleTheme();
+      return;
+    }
+
+    // 9. Single key 'c' -> Create Post Focus
+    if (!isCtrlOrCmd && !event.altKey && event.key.toLowerCase() === 'c') {
+      event.preventDefault();
+
+      const focusPostCreator = () => {
+        let attempts = 0;
+        const intervalId = setInterval(() => {
+          attempts++;
+          const titleInput = document.querySelector('.post-title-input') as HTMLInputElement;
+          if (titleInput) {
+            clearInterval(intervalId);
+            titleInput.focus();
+            titleInput.click();
+            const card = document.querySelector('.create-post-card') as HTMLElement;
+            if (card) {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+          }
+          if (attempts >= 20) {
+            clearInterval(intervalId);
+          }
+        }, 50);
+      };
+
+      if (this.router.url !== '/') {
+        this.router.navigate(['/']).then(() => {
+          focusPostCreator();
+        });
+      } else {
+        focusPostCreator();
+      }
+      return;
     }
   }
 

@@ -193,3 +193,10 @@ During peer evaluation, demonstrate the following flows:
 6. **Dark Mode & 404:**
    - Click the theme toggle icon in the navbar to demonstrate seamless Dark Mode switching.
    - Navigate to `/random-invalid-page` to demonstrate the custom 404 page.
+
+
+
+
+
+cd squashfs-root
+./AppRun

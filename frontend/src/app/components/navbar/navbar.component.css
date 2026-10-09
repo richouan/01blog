@@ -690,3 +690,93 @@
   color: #ffffff;
 }
 
+/* =========================================================
+   Discord-Style Neo-Brutalist Keybinds Modal & Keycaps
+   ========================================================= */
+
+.modal-shortcuts-nb {
+  max-width: 540px !important;
+  width: 95% !important;
+}
+
+.shortcuts-group-title {
+  color: var(--nb-black);
+  letter-spacing: 0.5px;
+}
+
+.shortcut-card {
+  background-color: var(--nb-subtle-bg);
+  border: var(--nb-border-sm);
+  border-radius: 8px;
+  transition: background-color 0.12s ease, transform 0.12s ease;
+}
+
+.shortcut-card:hover {
+  background-color: var(--nb-card-bg);
+  transform: translateX(2px);
+}
+
+.shortcut-desc {
+  font-family: var(--nb-font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--nb-black);
+}
+
+/* Neo-Brutalist Tactile Keyboard Cap (<kbd>) */
+.kbd-nb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--nb-card-bg);
+  color: var(--nb-black);
+  font-family: var(--nb-font-display);
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  min-width: 28px;
+  border: 1.5px solid var(--nb-border-color);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0px var(--nb-shadow-color);
+  line-height: 1.2;
+}
+
+.kbd-single {
+  background-color: var(--nb-yellow);
+  color: #121214;
+}
+
+.kbd-plus {
+  font-family: var(--nb-font-display);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--nb-text-muted);
+  padding: 0 1px;
+}
+
+.kbd-nb-mini {
+  display: inline-block;
+  background-color: var(--nb-yellow);
+  color: #121214;
+  font-family: var(--nb-font-display);
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border: 1.5px solid var(--nb-border-color);
+  border-radius: 4px;
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+}
+
+.kbd-shortcut-chip {
+  background-color: var(--nb-subtle-bg);
+  color: var(--nb-black);
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border: 1px solid var(--nb-border-color);
+  border-radius: 4px;
+  box-shadow: 1px 1px 0px var(--nb-shadow-color);
+}
+
+

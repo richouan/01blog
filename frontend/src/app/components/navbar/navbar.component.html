@@ -76,6 +76,7 @@
             [(ngModel)]="searchQuery"
             name="searchQuery"
             autocomplete="off"
+            (keydown.escape)="$any($event.target).blur()"
           />
           <span class="kbd-shortcut" title="Press Ctrl+K or Cmd+K to search">⌘ K</span>
         </form>
@@ -359,4 +360,120 @@
     <span class="dock-label">Admin</span>
   </a>
 </nav>
+
+<!-- =========================================================
+     DISCORD-STYLE NEO-BRUTALIST KEYBOARD SHORTCUTS MODAL (Ctrl + /)
+     ========================================================= -->
+<div class="modal-backdrop-nb" *ngIf="isShortcutsModalOpen" (click)="closeShortcutsModal()">
+  <div class="modal-dialog-nb modal-shortcuts-nb" (click)="$event.stopPropagation()">
+    <!-- Header with Neo-Brutalist Yellow Accent -->
+    <div class="modal-header-nb p-3 px-3 px-sm-4 d-flex align-items-center justify-content-between border-bottom">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge-nb badge-nb-yellow py-1 px-2 font-display fw-bold">
+          <i class="bi bi-keyboard-fill me-1"></i>KEYBINDS
+        </span>
+        <h2 class="h5 mb-0 fw-bold font-display text-dark">Keyboard Shortcuts</h2>
+      </div>
+      <button type="button" class="btn-close-nb" (click)="closeShortcutsModal()" aria-label="Close" title="Close (Esc)">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Body: Discord Cheatsheet layout in Neo-Brutalist Design -->
+    <div class="modal-body-nb p-3 p-sm-4">
+      <div class="shortcuts-grid">
+
+        <!-- Section: Navigation -->
+        <div class="shortcuts-group mb-3">
+          <div class="shortcuts-group-title d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-compass-fill text-warning fs-6"></i>
+            <span class="fw-bold font-display small text-uppercase">Navigation</span>
+          </div>
+          <div class="shortcuts-list d-flex flex-column gap-2">
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Go to Feed Home</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb">Alt</kbd>
+                <span class="kbd-plus">+</span>
+                <kbd class="kbd-nb">H</kbd>
+              </div>
+            </div>
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Explore Students & Posts</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb">Alt</kbd>
+                <span class="kbd-plus">+</span>
+                <kbd class="kbd-nb">E</kbd>
+              </div>
+            </div>
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Open My Profile</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb">Alt</kbd>
+                <span class="kbd-plus">+</span>
+                <kbd class="kbd-nb">P</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Quick Actions -->
+        <div class="shortcuts-group mb-2">
+          <div class="shortcuts-group-title d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-lightning-charge-fill text-primary fs-6"></i>
+            <span class="fw-bold font-display small text-uppercase">Quick Actions</span>
+          </div>
+          <div class="shortcuts-list d-flex flex-column gap-2">
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Global Search & Explore</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb">Ctrl</kbd>
+                <span class="kbd-plus">+</span>
+                <kbd class="kbd-nb">K</kbd>
+              </div>
+            </div>
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Focus & Create Post</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb kbd-single">C</kbd>
+              </div>
+            </div>
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Toggle Dark / Light Theme</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb kbd-single">T</kbd>
+              </div>
+            </div>
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Toggle Keybinds Cheat Sheet</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb">Ctrl</kbd>
+                <span class="kbd-plus">+</span>
+                <kbd class="kbd-nb">/</kbd>
+              </div>
+            </div>
+            <div class="shortcut-card d-flex align-items-center justify-content-between p-2 px-3">
+              <span class="shortcut-desc">Dismiss Dialog or Dropdown</span>
+              <div class="shortcut-keys d-flex align-items-center gap-1">
+                <kbd class="kbd-nb">Esc</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer: Neo-Brutalist ProTip -->
+    <div class="modal-footer-nb p-3 px-3 px-sm-4 d-flex align-items-center justify-content-between border-top">
+      <div class="d-flex align-items-center gap-2 small text-muted font-display">
+        <i class="bi bi-info-circle-fill text-warning"></i>
+        <span>ProTip: Press <kbd class="kbd-nb-mini">?</kbd> anywhere to toggle</span>
+      </div>
+      <button type="button" class="btn-nb-primary py-1 px-3 small font-display fw-bold" (click)="closeShortcutsModal()">
+        Got it!
+      </button>
+    </div>
+  </div>
+</div>
 

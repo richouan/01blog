@@ -25,6 +25,7 @@
                   name="searchQuery"
                   autocomplete="off"
                   autofocus
+                  (keydown.escape)="$any($event.target).blur()"
                 />
                 <button
                   type="submit"
