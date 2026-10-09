@@ -55,7 +55,7 @@
        ========================================================= -->
   <div *ngIf="!loading && displayPosts.length > 0" class="stream-posts-list">
     <article
-      *ngFor="let post of displayPosts; let i = index"
+      *ngFor="let post of visiblePosts; let i = index"
       class="card-nb post-card"
       [attr.aria-labelledby]="'post-header-' + post.id"
     >
@@ -392,6 +392,21 @@
 
       </div>
     </article>
+
+    <!-- Infinite Scroll Loading Indicator & End-of-Feed Status -->
+    <div *ngIf="isLoadingMore" class="text-center py-3 my-2">
+      <div class="card-nb d-inline-flex align-items-center gap-2 py-2 px-3 bg-light" style="border-width: 2px;">
+        <span class="spinner-border spinner-border-sm text-dark" role="status"></span>
+        <span class="fw-bold font-display small text-dark">Loading more publications...</span>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoadingMore && displayPosts.length > pageSize && visibleCount >= displayPosts.length" class="text-center py-4 my-2">
+      <div class="card-nb d-inline-flex align-items-center gap-2 py-1 px-3 small font-display text-muted" style="border-width: 1.5px; background: #faf7f2;">
+        <i class="bi bi-check2-all text-success fs-6"></i>
+        <span>You're all caught up • {{ displayPosts.length }} publications</span>
+      </div>
+    </div>
   </div>
 
   <!-- =========================================================

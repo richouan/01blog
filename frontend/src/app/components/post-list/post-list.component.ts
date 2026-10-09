@@ -34,6 +34,10 @@ export interface DisplayPost extends Post {
 export class PostListComponent implements OnInit, OnDestroy {
   private _posts: Post[] = [];
   displayPosts: DisplayPost[] = [];
+  visiblePosts: DisplayPost[] = [];
+  readonly pageSize = 6;
+  visibleCount = 6;
+  isLoadingMore = false;
 
   @Input()
   set posts(val: Post[]) {
@@ -137,6 +141,33 @@ export class PostListComponent implements OnInit, OnDestroy {
         segments: this.parsePostSegments(post.textContent)
       };
     });
+    this.visibleCount = Math.max(this.pageSize, Math.min(this.visibleCount, this.displayPosts.length || this.pageSize));
+    this.updateVisiblePosts();
+  }
+
+  private updateVisiblePosts(): void {
+    this.visiblePosts = this.displayPosts.slice(0, this.visibleCount);
+  }
+
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    if (this.isLoadingMore || this.visibleCount >= this.displayPosts.length) return;
+    const scrollPosition = window.innerHeight + window.scrollY;
+    const threshold = document.documentElement.scrollHeight - 350;
+    if (scrollPosition >= threshold) {
+      this.loadMorePosts();
+    }
+  }
+
+  loadMorePosts(): void {
+    if (this.isLoadingMore || this.visibleCount >= this.displayPosts.length) return;
+    this.isLoadingMore = true;
+    setTimeout(() => {
+      this.visibleCount = Math.min(this.visibleCount + this.pageSize, this.displayPosts.length);
+      this.updateVisiblePosts();
+      this.isLoadingMore = false;
+      this.cdr.detectChanges();
+    }, 200);
   }
 
   getRelativeTime(dateString?: string): string {
