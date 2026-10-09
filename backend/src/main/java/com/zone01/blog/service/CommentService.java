@@ -50,6 +50,16 @@ public class CommentService {
         }
 
         User postAuthor = post.getAuthor();
+
+        // Guard against commenting on posts hidden by moderators
+        if (post.isHidden()) {
+            boolean isAuthor = postAuthor.getId().equals(author.getId());
+            boolean isAdmin = author.getRole() == UserRole.ROLE_ADMIN;
+            if (!isAuthor && !isAdmin) {
+                throw new SecurityException("Cannot comment on a post that has been hidden by moderators.");
+            }
+        }
+
         if (postAuthor.isPrivateProfile()) {
             boolean isAuthor = postAuthor.getId().equals(author.getId());
             boolean isAdmin = author.getRole() == UserRole.ROLE_ADMIN;
@@ -66,16 +76,50 @@ public class CommentService {
         return CommentResponse.fromEntity(saved);
     }
 
-    // Fetch all comments for a post in chronological order
+    // Fetch all comments for a post in chronological order, verifying viewer visibility
     @Transactional(readOnly = true)
-    public List<CommentResponse> getCommentsByPost(@NonNull Long postId) {
-        if (!postRepository.existsById(postId)) {
-            throw new IllegalArgumentException("Post not found with ID: " + postId);
+    public List<CommentResponse> getCommentsByPost(@NonNull Long postId, String currentUsername) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
+
+        User currentUser = (currentUsername != null) ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+
+        // Verify hidden post visibility
+        if (post.isHidden()) {
+            if (currentUser == null) {
+                throw new SecurityException("This post has been hidden by moderators.");
+            }
+            boolean isAuthor = post.getAuthor().getId().equals(currentUser.getId());
+            boolean isAdmin = currentUser.getRole() == UserRole.ROLE_ADMIN;
+            if (!isAuthor && !isAdmin) {
+                throw new SecurityException("This post has been hidden by moderators.");
+            }
+        }
+
+        // Verify private profile visibility
+        User postAuthor = post.getAuthor();
+        if (postAuthor.isPrivateProfile()) {
+            if (currentUser == null) {
+                throw new SecurityException("Cannot view comments on a private account's post.");
+            }
+            boolean isAuthor = postAuthor.getId().equals(currentUser.getId());
+            boolean isAdmin = currentUser.getRole() == UserRole.ROLE_ADMIN;
+            boolean isFollower = currentUser.getFollowing().stream()
+                    .anyMatch(u -> java.util.Objects.equals(u.getId(), postAuthor.getId()));
+            if (!isAuthor && !isAdmin && !isFollower) {
+                throw new SecurityException("Cannot view comments on a private account's post.");
+            }
         }
 
         return commentRepository.findByPostIdOrderByCreatedAtAsc(postId).stream()
                 .map(CommentResponse::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    // Overload for backward compatibility
+    @Transactional(readOnly = true)
+    public List<CommentResponse> getCommentsByPost(@NonNull Long postId) {
+        return getCommentsByPost(postId, null);
     }
 
     // Delete comment with author, post author, or admin permission check

@@ -4,6 +4,7 @@ import com.zone01.blog.dto.FollowRequestResponse;
 import com.zone01.blog.dto.UserProfileResponse;
 import com.zone01.blog.entity.FollowRequest;
 import com.zone01.blog.entity.User;
+import com.zone01.blog.entity.UserRole;
 import com.zone01.blog.repository.FollowRequestRepository;
 import com.zone01.blog.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -49,10 +50,20 @@ public class UserService {
             }
         }
 
+        boolean isOwnProfile = currentViewerUsername != null && currentViewerUsername.equals(targetUsername);
+        boolean isAdmin = false;
+        if (currentViewerUsername != null) {
+            User currentViewer = userRepository.findByUsername(currentViewerUsername).orElse(null);
+            if (currentViewer != null) {
+                isAdmin = currentViewer.getRole() == UserRole.ROLE_ADMIN;
+            }
+        }
+        String displayEmail = (isOwnProfile || isAdmin) ? user.getEmail() : null;
+
         return new UserProfileResponse(
                 user.getId(),
                 user.getUsername(),
-                user.getEmail(),
+                displayEmail,
                 user.getRole(),
                 user.getCreatedAt(),
                 followersCount,
@@ -74,6 +85,7 @@ public class UserService {
         User currentViewer = currentViewerUsername != null 
                 ? userRepository.findByUsername(currentViewerUsername).orElse(null) 
                 : null;
+        boolean isAdminViewer = currentViewer != null && currentViewer.getRole() == UserRole.ROLE_ADMIN;
 
         return users.stream().map(user -> {
             boolean isFollowing = false;
@@ -83,10 +95,11 @@ public class UserService {
                         .anyMatch(u -> java.util.Objects.equals(u.getId(), user.getId()));
                 hasPendingRequest = followRequestRepository.existsByRequesterAndTarget(currentViewer, user);
             }
+            String displayEmail = (user.getUsername().equals(currentViewerUsername) || isAdminViewer) ? user.getEmail() : null;
             return new UserProfileResponse(
                     user.getId(),
                     user.getUsername(),
-                    user.getEmail(),
+                    displayEmail,
                     user.getRole(),
                     user.getCreatedAt(),
                     user.getFollowers().size(),

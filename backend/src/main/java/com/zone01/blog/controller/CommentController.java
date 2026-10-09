@@ -22,14 +22,23 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    // Fetch all comments for a post
+    // Fetch all comments for a post (enforces post visibility rules)
     @GetMapping
-    public ResponseEntity<?> getComments(@PathVariable("postId") @NonNull Long postId) {
+    public ResponseEntity<?> getComments(
+            @PathVariable("postId") @NonNull Long postId,
+            Authentication authentication
+    ) {
         try {
-            List<CommentResponse> comments = commentService.getCommentsByPost(postId);
+            String currentUsername = (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName()))
+                    ? authentication.getName()
+                    : null;
+            List<CommentResponse> comments = commentService.getCommentsByPost(postId, currentUsername);
             return ResponseEntity.ok(comments);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

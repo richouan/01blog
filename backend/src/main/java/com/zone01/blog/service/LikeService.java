@@ -42,6 +42,16 @@ public class LikeService {
         }
 
         User author = post.getAuthor();
+
+        // Guard against liking hidden posts
+        if (post.isHidden()) {
+            boolean isAuthor = author.getId().equals(user.getId());
+            boolean isAdmin = user.getRole() == UserRole.ROLE_ADMIN;
+            if (!isAuthor && !isAdmin) {
+                throw new SecurityException("Cannot like a post that has been hidden by moderators.");
+            }
+        }
+
         if (author.isPrivateProfile()) {
             boolean isAuthor = author.getId().equals(user.getId());
             boolean isAdmin = user.getRole() == UserRole.ROLE_ADMIN;
@@ -70,18 +80,40 @@ public class LikeService {
         return new LikeResponse(postId, isLiked, count);
     }
 
-    // Get current like status and total like count for a post
+    // Get current like status and total like count for a post (verifying post visibility)
     @Transactional(readOnly = true)
     public LikeResponse getLikeStatus(@NonNull Long postId, String username) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found with ID: " + postId));
 
-        boolean isLiked = false;
-        if (username != null && !username.isBlank()) {
-            User user = userRepository.findByUsername(username).orElse(null);
-            if (user != null) {
-                isLiked = likeRepository.existsByUserAndPost(user, post);
+        User requestingUser = (username != null && !username.isBlank())
+                ? userRepository.findByUsername(username).orElse(null)
+                : null;
+
+        // If post is hidden, non-authors/non-admins cannot inspect like count
+        if (post.isHidden()) {
+            boolean isAuthor = (requestingUser != null) && post.getAuthor().getId().equals(requestingUser.getId());
+            boolean isAdmin = (requestingUser != null) && requestingUser.getRole() == UserRole.ROLE_ADMIN;
+            if (!isAuthor && !isAdmin) {
+                return new LikeResponse(postId, false, 0);
             }
+        }
+
+        // If post author is private, non-followers cannot inspect like count
+        User author = post.getAuthor();
+        if (author.isPrivateProfile()) {
+            boolean isAuthor = (requestingUser != null) && author.getId().equals(requestingUser.getId());
+            boolean isAdmin = (requestingUser != null) && requestingUser.getRole() == UserRole.ROLE_ADMIN;
+            boolean isFollower = (requestingUser != null) && requestingUser.getFollowing().stream()
+                    .anyMatch(u -> Objects.equals(u.getId(), author.getId()));
+            if (!isAuthor && !isAdmin && !isFollower) {
+                return new LikeResponse(postId, false, 0);
+            }
+        }
+
+        boolean isLiked = false;
+        if (requestingUser != null) {
+            isLiked = likeRepository.existsByUserAndPost(requestingUser, post);
         }
 
         long count = likeRepository.countByPost(post);
