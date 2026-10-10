@@ -102,6 +102,9 @@ export class PostListComponent implements OnInit, OnDestroy {
   reportingPost: DisplayPost | null = null;
   reportFeedbackMessage: string | null = null;
 
+  // Image Preview Lightbox State
+  previewImageUrl: string | null = null;
+
   constructor(
     private postService: PostService,
     private commentService: CommentService,
@@ -522,6 +525,24 @@ export class PostListComponent implements OnInit, OnDestroy {
   @HostListener('document:click')
   onDocumentClick(): void {
     this.closeDropdown();
+  }
+
+  @HostListener('window:keydown.escape')
+  onEscapeKey(): void {
+    if (this.previewImageUrl) {
+      this.closeImagePreview();
+    }
+  }
+
+  // --- IMAGE PREVIEW LIGHTBOX CONTROLS ---
+
+  openImagePreview(url: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.previewImageUrl = this.getMediaUrl(url);
+  }
+
+  closeImagePreview(): void {
+    this.previewImageUrl = null;
   }
 
   // --- EDIT POST MODAL CONTROLS ---

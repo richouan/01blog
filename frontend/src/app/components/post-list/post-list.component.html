@@ -208,16 +208,20 @@
 
           <!-- Compact Media Attachment (Image or Video) -->
           <div *ngIf="post.mediaUrl" class="post-media-frame mt-2">
-            <!-- Image Attachment -->
+            <!-- Image Attachment (Click to Preview in Lightbox) -->
             <ng-container *ngIf="!isVideo(post.mediaUrl)">
-              <a [href]="getMediaUrl(post.mediaUrl)" target="_blank" rel="noopener noreferrer" class="d-block text-center">
+              <div 
+                (click)="openImagePreview(post.mediaUrl, $event)" 
+                class="d-block text-center cursor-pointer post-media-clickable"
+                title="Click to preview full image"
+              >
                 <img
                   [src]="getMediaUrl(post.mediaUrl)"
                   alt="Post attachment"
                   loading="lazy"
                   class="post-attachment-img img-fluid"
                 />
-              </a>
+              </div>
             </ng-container>
 
             <!-- Video Attachment -->
@@ -599,5 +603,21 @@
     (closed)="closeReportModal()"
     (reportSubmitted)="onReportSubmitted()"
   ></app-report-modal>
+
+  <!-- =========================================================
+       IMAGE PREVIEW LIGHTBOX MODAL (Neo-Brutalist)
+       ========================================================= -->
+  <div *ngIf="previewImageUrl" class="modal-backdrop-nb" (click)="closeImagePreview()">
+    <div class="image-preview-modal-dialog" (click)="$event.stopPropagation()">
+      <div class="d-flex justify-content-end mb-2">
+        <button type="button" (click)="closeImagePreview()" class="btn-close-nb bg-white" aria-label="Close" title="Close Preview (Esc)">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="image-preview-card card-nb p-2">
+        <img [src]="previewImageUrl" alt="Post media full preview" class="img-fluid rounded d-block mx-auto image-preview-img" />
+      </div>
+    </div>
+  </div>
 
 </div>

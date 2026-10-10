@@ -692,5 +692,35 @@
   animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Image Preview Lightbox */
+.post-media-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.post-media-clickable:hover .post-attachment-img {
+  filter: brightness(1.03);
+}
+
+.image-preview-modal-dialog {
+  width: 92vw;
+  max-width: 850px;
+  margin: auto;
+  animation: modal-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.image-preview-card {
+  border: var(--nb-border);
+  box-shadow: var(--nb-shadow-lg);
+  background-color: var(--nb-card-bg);
+}
+
+.image-preview-img {
+  max-height: 80vh;
+  object-fit: contain;
+  width: auto;
+  max-width: 100%;
+}
+
 
 
