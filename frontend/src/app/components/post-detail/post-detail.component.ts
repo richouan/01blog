@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { PostService } from '../../services/post.service';
 import { Post } from '../../models/post.models';
@@ -22,6 +22,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private postService: PostService,
     private location: Location,
     private cdr: ChangeDetectorRef
@@ -34,13 +35,13 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         if (idParam) {
           const parsed = Number(idParam);
           if (isNaN(parsed) || parsed <= 0) {
-            this.errorMessage = 'Post not found.';
-            this.isLoading = false;
-            this.cdr.detectChanges();
+            this.router.navigate(['/404'], { replaceUrl: true });
             return;
           }
           this.postId = parsed;
           this.loadPost(this.postId);
+        } else {
+          this.router.navigate(['/404'], { replaceUrl: true });
         }
       })
     );
@@ -61,14 +62,17 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           if (err.status === 404) {
-            this.errorMessage = err.error?.message || 'Post not found. It may have been deleted.';
+            this.router.navigate(['/404'], { replaceUrl: true });
+            return;
           } else if (err.status === 403) {
             this.errorMessage = err.error?.message || 'This post is private or unavailable.';
+            this.isLoading = false;
+            this.cdr.detectChanges();
           } else {
             this.errorMessage = err.error?.message || 'Could not load this post. Please try again.';
+            this.isLoading = false;
+            this.cdr.detectChanges();
           }
-          this.isLoading = false;
-          this.cdr.detectChanges();
         }
       })
     );

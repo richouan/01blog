@@ -75,6 +75,9 @@ export class PostListComponent implements OnInit, OnDestroy {
   commentInputs: { [postId: number]: string } = {};
   submittingComment = new Set<number>();
   deletingCommentId: number | null = null;
+  deletingCommentTarget: { post: Post; commentId: number } | null = null;
+  isSubmittingDeleteComment = false;
+  deleteCommentErrorMessage: string | null = null;
   commentError: { [postId: number]: string | null } = {};
 
   // Dropdown menu state
@@ -390,7 +393,8 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   submitComment(post: Post): void {
     if (!this.currentUser) {
-      alert('Please log in to comment.');
+      this.commentError[post.id] = 'Please log in to comment.';
+      this.cdr.markForCheck();
       return;
     }
 
@@ -422,9 +426,32 @@ export class PostListComponent implements OnInit, OnDestroy {
     });
   }
 
+  openDeleteCommentModal(post: Post, commentId: number): void {
+    this.deletingCommentTarget = { post, commentId };
+    this.deleteCommentErrorMessage = null;
+    this.isSubmittingDeleteComment = false;
+    this.cdr.markForCheck();
+  }
+
+  closeDeleteCommentModal(): void {
+    if (this.isSubmittingDeleteComment) return;
+    this.deletingCommentTarget = null;
+    this.deleteCommentErrorMessage = null;
+    this.isSubmittingDeleteComment = false;
+    this.cdr.markForCheck();
+  }
+
   deleteComment(post: Post, commentId: number): void {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
-    this.deletingCommentId = commentId;
+    this.openDeleteCommentModal(post, commentId);
+  }
+
+  confirmDeleteComment(): void {
+    if (!this.deletingCommentTarget) return;
+
+    const { post, commentId } = this.deletingCommentTarget;
+    this.isSubmittingDeleteComment = true;
+    this.deleteCommentErrorMessage = null;
+    this.cdr.markForCheck();
 
     this.commentService.deleteComment(post.id, commentId).subscribe({
       next: () => {
@@ -436,12 +463,13 @@ export class PostListComponent implements OnInit, OnDestroy {
         const original = this._posts.find(p => p.id === post.id);
         if (original) original.commentsCount = post.commentsCount;
 
-        this.deletingCommentId = null;
+        this.isSubmittingDeleteComment = false;
+        this.deletingCommentTarget = null;
         this.cdr.markForCheck();
       },
       error: (err) => {
-        this.deletingCommentId = null;
-        alert(err.error?.message || 'Failed to delete comment.');
+        this.isSubmittingDeleteComment = false;
+        this.deleteCommentErrorMessage = err.error?.message || 'Failed to delete comment. Please try again.';
         this.cdr.markForCheck();
       }
     });

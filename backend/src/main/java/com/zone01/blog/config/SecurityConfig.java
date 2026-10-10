@@ -14,6 +14,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -52,10 +56,26 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Allow anyone to access registration, login, static uploads, preset avatars, and error dispatcher
                 .requestMatchers("/api/auth/**", "/uploads/**", "/error", "/api/users/avatars/presets").permitAll()
+                // Allow public read-only access for viewing posts and profiles (privacy checks enforced in service layer)
+                .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/users/profile/**").permitAll()
                 // Require ROLE_ADMIN for all admin dashboard and moderation endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // All other endpoints require the user to be logged in
                 .anyRequest().authenticated()
+            )
+
+            // Return clean JSON instead of HTML Whitelabel Error Pages for unauthenticated/unauthorized API requests
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.getWriter().write("{\"timestamp\":\"" + LocalDateTime.now() + "\",\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Authentication required to access this resource.\"}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    response.getWriter().write("{\"timestamp\":\"" + LocalDateTime.now() + "\",\"status\":403,\"error\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource.\"}");
+                })
             )
 
             // Execute our JWT filter before the standard username/password filter

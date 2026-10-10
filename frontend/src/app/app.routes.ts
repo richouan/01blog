@@ -26,6 +26,8 @@ export const routes: Routes = [
   // Guest-only routes (redirects logged-in users to '/')
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
+  // Explicit 404 route
+  { path: '404', component: NotFoundComponent },
   // Wildcard 404 fallback page
   { path: '**', component: NotFoundComponent }
 ];
