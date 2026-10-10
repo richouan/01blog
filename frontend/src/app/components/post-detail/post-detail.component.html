@@ -1,0 +1,42 @@
+<div class="post-detail-container py-3 py-md-4">
+  <div class="container px-2 px-sm-3 max-w-post-detail">
+    
+    <!-- Top Bar: Back Button -->
+    <div class="d-flex align-items-center mb-3 px-1">
+      <button
+        type="button"
+        (click)="goBack()"
+        class="btn-nb-secondary py-1 px-3 d-inline-flex align-items-center gap-2"
+        title="Go back"
+      >
+        <i class="bi bi-arrow-left"></i>
+        <span>Back</span>
+      </button>
+    </div>
+
+    <!-- Error Alert if private or not found -->
+    <div *ngIf="errorMessage" class="card-nb alert-nb alert-nb-danger mb-3 p-3">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <span class="fw-bold">{{ errorMessage }}</span>
+      </div>
+      <div class="mt-2">
+        <a routerLink="/" class="btn-nb-primary py-1 px-3 small text-decoration-none d-inline-flex align-items-center gap-1">
+          <i class="bi bi-house-door-fill"></i>
+          <span>Return to Feed</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Reusable Post List Component (renders the single post) -->
+    <app-post-list
+      *ngIf="!errorMessage"
+      [posts]="posts"
+      [loading]="isLoading"
+      [showCreateButton]="false"
+      (postDeleted)="onPostDeleted()"
+      (postUpdated)="onPostUpdated($event)"
+    ></app-post-list>
+
+  </div>
+</div>

@@ -1,0 +1,7 @@
+.post-detail-container {
+  min-height: calc(100vh - 80px);
+}
+
+.max-w-post-detail {
+  max-width: 860px;
+}

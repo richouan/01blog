@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -170,6 +171,17 @@ public class PostService {
                 .filter(post -> isVisibleToUser(post, currentUser))
                 .map(post -> toPostResponse(post, currentUser))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PostResponse getPostById(Long postId, String currentUsername) {
+        User currentUser = (currentUsername != null) ? userRepository.findByUsername(currentUsername).orElse(null) : null;
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new NoSuchElementException("Post not found with ID: " + postId));
+        if (!isVisibleToUser(post, currentUser)) {
+            throw new SecurityException("This post is private or unavailable.");
+        }
+        return toPostResponse(post, currentUser);
     }
 
     @Transactional(readOnly = true)

@@ -95,7 +95,12 @@
                 @{{ post.authorUsername }}
               </a>
               <span class="post-dot-sep">·</span>
-              <span class="post-timestamp">{{ post.relativeTime }}</span>
+              <a
+                [routerLink]="['/posts', post.id]"
+                class="post-timestamp"
+              >
+                {{ post.relativeTime }}
+              </a>
             </div>
           </div>
 
@@ -157,10 +162,12 @@
 
         </header>
 
-        <!-- Prominent Post Title (Screenshot Style - Full Width Below Avatar) -->
-        <h3 *ngIf="post.title" class="post-title font-display fw-bold mb-2">
-          {{ post.title }}
-        </h3>
+        <!-- Prominent Post Title (Clickable Permalink) -->
+        <a *ngIf="post.title" [routerLink]="['/posts', post.id]" class="post-title-link">
+          <h3 class="post-title font-display fw-bold mb-2">
+            {{ post.title }}
+          </h3>
+        </a>
 
         <!-- Post Body Content -->
         <div class="post-body-content">

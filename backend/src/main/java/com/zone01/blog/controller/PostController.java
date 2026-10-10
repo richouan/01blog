@@ -66,6 +66,16 @@ public class PostController {
         return ResponseEntity.ok(postService.getAllPosts(currentUsername));
     }
 
+    // Get single post by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<PostResponse> getPostById(@PathVariable("id") @NonNull Long id, Authentication authentication) {
+        String currentUsername = null;
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+            currentUsername = authentication.getName();
+        }
+        return ResponseEntity.ok(postService.getPostById(id, currentUsername));
+    }
+
     @GetMapping("/user/{username}")
     public ResponseEntity<?> getUserPosts(@PathVariable("username") String username, Authentication authentication) {
         try {
