@@ -107,32 +107,73 @@
   color: #121214;
 }
 
-/* Feed Tabs Bar */
+/* Feed Tabs Bar (Clean Text with Highlighter Marker Pen Effect) */
 .feed-tabs-bar {
-  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
-.feed-tab-btn {
+.feed-tab-link {
   background: transparent;
   border: none;
-  font-family: var(--nb-font-display);
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--nb-text-muted);
-  padding: 6px 4px;
+  padding: 4px 0 6px 0;
   cursor: pointer;
   position: relative;
-  transition: color 0.15s ease;
+  font-family: var(--nb-font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--nb-black);
+  outline: none;
+  transition: opacity 0.2s ease;
 }
 
-.feed-tab-btn:hover {
-  color: var(--nb-black);
+/* Inactive Tab - High contrast readable state */
+.feed-tab-link:not(.active-tab) {
+  opacity: 0.75;
 }
 
-.feed-tab-btn.active-tab {
-  color: var(--nb-black);
-  border-bottom: 3.5px solid var(--nb-yellow);
+.feed-tab-link:not(.active-tab):hover {
+  opacity: 1;
+}
+
+/* Active Tab: Crisp & Bold */
+.feed-tab-link.active-tab {
+  opacity: 1;
   font-weight: 800;
+  color: var(--nb-black);
+}
+
+.feed-tab-link .marker-highlight {
+  position: relative;
+  display: inline-block;
+}
+
+/* Inactive Hover Hint: subtle yellow line trace under text */
+.feed-tab-link:not(.active-tab):hover .marker-highlight::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2.5px;
+  background-color: var(--nb-yellow);
+  opacity: 0.5;
+  border-radius: 2px;
+}
+
+/* Active Tab: Crisp Fluorescent Yellow Marker Line UNDER the text */
+.feed-tab-link.active-tab .marker-highlight::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: -4px;
+  height: 3.5px;
+  background-color: var(--nb-yellow);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 230, 0, 0.75), 0 0 3px rgba(255, 230, 0, 0.9);
 }
 
 /* Empty Feed Display */
