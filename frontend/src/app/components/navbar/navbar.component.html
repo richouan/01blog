@@ -300,6 +300,22 @@
               <span>{{ themeService.isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
             </button>
 
+            <!-- Avatar Accent Theme Sync Option -->
+            <button
+              (click)="toggleAvatarThemeSync()"
+              class="dropdown-item-nb w-100 text-start border-0 d-flex align-items-center justify-content-between"
+              type="button"
+              title="Sync website accent color to match your avatar character"
+            >
+              <div class="d-flex align-items-center">
+                <i class="bi bi-palette-fill me-2" [style.color]="themeService.isAvatarColorEnabled ? themeService.currentAvatarColor : 'inherit'"></i>
+                <span>Avatar Theme</span>
+              </div>
+              <span class="badge" [ngClass]="themeService.isAvatarColorEnabled ? 'badge-avatar-active' : 'badge-avatar-inactive'">
+                {{ themeService.isAvatarColorEnabled ? 'ON' : 'OFF' }}
+              </span>
+            </button>
+
             <div class="border-top border-dark border-opacity-10 my-1"></div>
 
             <button

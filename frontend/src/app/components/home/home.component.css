@@ -173,7 +173,7 @@
   height: 3.5px;
   background-color: var(--nb-yellow);
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(255, 230, 0, 0.75), 0 0 3px rgba(255, 230, 0, 0.9);
+  box-shadow: 0 0 10px var(--nb-yellow), 0 0 3px var(--nb-yellow);
 }
 
 /* Empty Feed Display */

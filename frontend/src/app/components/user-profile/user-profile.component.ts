@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { PostService } from '../../services/post.service';
+import { ThemeService } from '../../services/theme.service';
 import { CurrentUser, UserProfile, FollowRequestItem } from '../../models/auth.models';
 import { Post } from '../../models/post.models';
 import { PostListComponent } from '../post-list/post-list.component';
@@ -59,6 +60,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private userService: UserService,
     private postService: PostService,
+    private themeService: ThemeService,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) {}
@@ -459,6 +461,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.customAvatarFile = null;
     this.customAvatarPreview = '';
     this.avatarUploadError = '';
+    // Revert preview back to user's saved avatar if they cancelled without saving
+    this.themeService.applyAvatarThemeColor(this.profile?.avatarUrl);
   }
 
   selectPreset(url: string): void {
@@ -466,6 +470,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.customAvatarFile = null;
     this.customAvatarPreview = '';
     this.avatarUploadError = '';
+    // Instant live preview of the selected character's color theme
+    this.themeService.applyAvatarThemeColor(url);
   }
 
   rollRandomPreset(): void {
@@ -475,6 +481,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.customAvatarFile = null;
     this.customAvatarPreview = '';
     this.avatarUploadError = '';
+    // Instant live preview of the rolled character's color theme
+    this.themeService.applyAvatarThemeColor(this.selectedPreset);
   }
 
   onFileSelected(event: Event): void {

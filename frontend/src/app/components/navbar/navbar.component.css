@@ -779,4 +779,28 @@
   box-shadow: 1px 1px 0px var(--nb-shadow-color);
 }
 
+/* Avatar Theme Toggle Badges */
+.badge-avatar-active {
+  background-color: var(--nb-yellow);
+  color: #121214 !important;
+  border: 1.5px solid var(--nb-border-color);
+  font-family: var(--nb-font-display);
+  font-weight: 800;
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  box-shadow: 1.5px 1.5px 0px var(--nb-shadow-color);
+}
+
+.badge-avatar-inactive {
+  background-color: var(--nb-subtle-bg);
+  color: var(--nb-text-muted) !important;
+  border: 1.5px solid var(--nb-border-color);
+  font-family: var(--nb-font-display);
+  font-weight: 700;
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
 
