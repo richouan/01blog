@@ -56,12 +56,16 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Allow anyone to access registration, login, static uploads, preset avatars, and error dispatcher
                 .requestMatchers("/api/auth/**", "/uploads/**", "/error", "/api/users/avatars/presets").permitAll()
-                // Allow public read-only access for viewing posts and profiles (privacy checks enforced in service layer)
-                .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/users/profile/**").permitAll()
                 // Require ROLE_ADMIN for all admin dashboard and moderation endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                // All other endpoints require the user to be logged in
-                .anyRequest().authenticated()
+                // Sensitive personal user endpoints require authentication
+                .requestMatchers("/api/users/me/**", "/api/users/requests/**").authenticated()
+                // Allow public read-only access for viewing posts, student profiles, and search (privacy checks enforced in service layer)
+                .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/users/*", "/api/users/search").permitAll()
+                // All other real API endpoints (posts CRUD, user actions, reports, notifications) require authentication
+                .requestMatchers("/api/posts/**", "/api/users/**", "/api/reports/**", "/api/notifications/**").authenticated()
+                // Unknown API routes fall through so Spring MVC can cleanly return standard 404 JSON
+                .anyRequest().permitAll()
             )
 
             // Return clean JSON instead of HTML Whitelabel Error Pages for unauthenticated/unauthorized API requests

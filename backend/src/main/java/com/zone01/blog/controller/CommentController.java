@@ -67,7 +67,9 @@ public class CommentController {
             CommentResponse response = commentService.addComment(postId, request.getContent(), authentication.getName());
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            HttpStatus status = (e.getMessage() != null && e.getMessage().toLowerCase().contains("not found"))
+                    ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status)
                     .body(Map.of("message", e.getMessage()));
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
