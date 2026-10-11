@@ -5,6 +5,7 @@ import com.zone01.blog.dto.AuthResponse;
 import com.zone01.blog.dto.LoginRequest;
 import com.zone01.blog.dto.RegisterRequest;
 import com.zone01.blog.entity.User;
+import com.zone01.blog.entity.UserRole;
 import com.zone01.blog.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -75,8 +76,12 @@ public class AuthService {
         // Pick a random brutalist avatar preset for the new student
         String randomAvatar = avatarService.getRandomAvatarUrl();
 
-        // Create and persist the new user entity
+        // First registered user automatically becomes the platform administrator (ROLE_ADMIN)
+        boolean isFirstUser = userRepository.count() == 0;
         User user = new User(username, email, hashedPassword);
+        if (isFirstUser) {
+            user.setRole(UserRole.ROLE_ADMIN);
+        }
         user.setAvatarUrl(randomAvatar);
         userRepository.save(user);
 

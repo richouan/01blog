@@ -71,17 +71,27 @@ Before launching the project, verify that your environment has:
 
 ---
 
-## 🗄️ Database Setup
+## 🗄️ Database & Environment Setup
 
-The application connects to a PostgreSQL database named `blog_db` on port `5432` with credentials `user: blog_user`, `password: blog_pass` (or defaults configured in `application.properties`).
+The application supports 12-factor environment configuration (see [`.env.example`](file:///.env.example)). All sensitive values (database credentials, JWT secret, and initial admin password) can be configured via environment variables, or run seamlessly out-of-the-box using the Zone01 local defaults configured in `application.properties`:
+* `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` (defaults to local PostgreSQL `blog_db`)
+* `JWT_SECRET`, `JWT_EXPIRATION_MS`
+* `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` (initial platform administrator seed)
 
-### Option A: Standard PostgreSQL (System Service / Sudo)
+### ⚡ Quick Start: Universal Database Script
+Run our intelligent database manager which auto-detects whether you are in Zone01 (user-space `pg_ctl`) or on a machine with Docker:
 ```bash
-# Connect to PostgreSQL and create database
-sudo -u postgres psql -c "CREATE DATABASE blog_db;"
-sudo -u postgres psql -c "CREATE USER blog_user WITH PASSWORD 'blog_pass';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE blog_db TO blog_user;"
+./start_db.sh
 ```
+* **On Zone01 Student Workstations (No Sudo):** Starts user-space PostgreSQL 16 via `pg_ctl` under `~/pgdata`.
+* **On Personal Workstations with Docker:** Spins up the official PostgreSQL 16 container via [`docker-compose.yml`](file:///docker-compose.yml).
+* To stop the database when finished: `./stop_db.sh`
+
+### Manual Option A: Docker Compose
+```bash
+docker compose up -d
+```
+
 
 ### Option B: Zone01 Linux Environment (Non-Sudo / User-Space)
 On Zone01 student workstations without `sudo` access:

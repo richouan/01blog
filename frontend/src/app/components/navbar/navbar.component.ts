@@ -222,9 +222,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // Global Discord-style Keyboard Shortcuts (Ctrl+/ cheat sheet, Ctrl+K search, Alt+nav)
   @HostListener('document:keydown', ['$event'])
   handleKeyboardShortcut(event: KeyboardEvent): void {
+    if (!event || !event.key) {
+      return;
+    }
     const isCtrlOrCmd = event.metaKey || event.ctrlKey;
     const isSlash = event.key === '/' || event.code === 'Slash';
 

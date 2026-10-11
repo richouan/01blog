@@ -36,5 +36,8 @@ AGENTS.md
 RESUME_ON_LINUX.md
 ROADMAP.md
 # Environment / local configs
+.env
+.env.*
+!.env.example
 *.local
 *.log
