@@ -1,5 +1,6 @@
 package com.zone01.blog.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -115,6 +116,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found: " + ex.getResourcePath()));
+    }
+
+    // Handles database constraint and duplicate key violations (409 Conflict)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(buildErrorResponse(HttpStatus.CONFLICT, "CONFLICT", "A duplicate entry or database constraint violation occurred."));
     }
 
     // Fallback handler for uncaught server errors (500 Internal Server Error)

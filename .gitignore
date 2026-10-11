@@ -35,6 +35,8 @@ rules/
 AGENTS.md
 RESUME_ON_LINUX.md
 ROADMAP.md
+PROJECT_FLOW_AND_DEFENSE_GUIDE.md
+docs/
 # Environment / local configs
 .env
 .env.*
