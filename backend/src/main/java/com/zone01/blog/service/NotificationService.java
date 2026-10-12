@@ -106,7 +106,7 @@ public class NotificationService {
             return;
         }
 
-        String message = follower.getUsername() + " started following your block";
+        String message = follower.getUsername() + " started following you";
         Notification notification = new Notification(
                 followed,
                 follower,
@@ -115,5 +115,13 @@ public class NotificationService {
                 follower.getId()
         );
         notificationRepository.save(notification);
+    }
+
+    // Clean up notifications pointing to a post when it is deleted
+    @Transactional
+    public void deleteNotificationsForPost(Long postId) {
+        if (postId != null) {
+            notificationRepository.deleteAllByReferenceIdAndType(postId, NotificationType.NEW_POST);
+        }
     }
 }

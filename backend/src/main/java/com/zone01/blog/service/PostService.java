@@ -165,10 +165,11 @@ public class PostService {
             throw new SecurityException("You do not have permission to delete this post.");
         }
 
-        // Remove all likes, comments, and moderation reports for this post
+        // Remove all likes, comments, moderation reports, and notifications for this post
         likeRepository.deleteAllByPostId(postId);
         commentRepository.deleteAllByPostId(postId);
         reportRepository.deleteAllByReportedPost(post);
+        notificationService.deleteNotificationsForPost(postId);
 
         // Clean up uploaded media file from disk
         fileStorageService.deleteFile(post.getMediaUrl());

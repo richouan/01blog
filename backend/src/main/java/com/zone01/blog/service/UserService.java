@@ -164,6 +164,11 @@ public class UserService {
             throw new IllegalArgumentException("Please select an image file to upload.");
         }
 
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.toLowerCase().matches(".*\\.(png|jpg|jpeg|gif|webp)$")) {
+            throw new IllegalArgumentException("Avatars must be an image file (.png, .jpg, .jpeg, .gif, .webp).");
+        }
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 

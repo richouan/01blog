@@ -19,4 +19,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // Clean up notifications when deleting a user or clearing history
     void deleteAllByRecipient(User recipient);
     void deleteAllByActor(User actor);
+    void deleteAllByReferenceIdAndType(Long referenceId, com.zone01.blog.entity.NotificationType type);
 }
