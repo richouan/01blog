@@ -53,9 +53,15 @@ public class PostService {
         if (trimmedTitle == null || trimmedTitle.isEmpty()) {
             throw new IllegalArgumentException("Post title is required.");
         }
+        if (trimmedTitle.length() > 120) {
+            throw new IllegalArgumentException("Post title must not exceed 120 characters.");
+        }
 
         String trimmedText = (textContent != null) ? textContent.trim() : null;
         boolean hasText = trimmedText != null && !trimmedText.isEmpty();
+        if (hasText && trimmedText.length() > 20000) {
+            throw new IllegalArgumentException("Post content must not exceed 20,000 characters.");
+        }
         boolean hasFile = file != null && !file.isEmpty();
 
         if (!hasText && !hasFile) {
@@ -102,11 +108,17 @@ public class PostService {
 
         String trimmedTitle = (title != null) ? title.trim() : null;
         if (trimmedTitle != null && !trimmedTitle.isEmpty()) {
+            if (trimmedTitle.length() > 120) {
+                throw new IllegalArgumentException("Post title must not exceed 120 characters.");
+            }
             post.setTitle(trimmedTitle);
         }
 
         String trimmedText = (textContent != null) ? textContent.trim() : null;
         boolean hasText = trimmedText != null && !trimmedText.isEmpty();
+        if (hasText && trimmedText.length() > 20000) {
+            throw new IllegalArgumentException("Post content must not exceed 20,000 characters.");
+        }
 
         // Handle media updates
         if (file != null && !file.isEmpty()) {

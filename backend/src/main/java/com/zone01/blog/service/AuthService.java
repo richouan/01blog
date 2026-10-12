@@ -50,6 +50,9 @@ public class AuthService {
             throw new IllegalArgumentException("Email is required");
         }
         String email = request.getEmail().trim().toLowerCase();
+        if (email.length() > 100) {
+            throw new IllegalArgumentException("Email must not exceed 100 characters");
+        }
         if (!email.matches("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$")) {
             throw new IllegalArgumentException("Please provide a valid email address");
         }
@@ -60,6 +63,9 @@ public class AuthService {
         }
         if (request.getPassword().length() < 6) {
             throw new IllegalArgumentException("Password must be at least 6 characters long");
+        }
+        if (request.getPassword().length() > 72) {
+            throw new IllegalArgumentException("Password must not exceed 72 characters");
         }
 
         // Validate uniqueness
