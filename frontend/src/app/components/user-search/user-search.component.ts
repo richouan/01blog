@@ -98,11 +98,6 @@ export class UserSearchComponent implements OnInit, OnDestroy {
 
     this.userService.searchUsers(trimmed).subscribe({
       next: (users) => {
-        users.forEach(u => {
-          if (u.isFollowing === undefined && u.following !== undefined) {
-            u.isFollowing = u.following;
-          }
-        });
         this.results = users;
         this.isLoading = false;
         this.cdr.detectChanges();

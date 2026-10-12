@@ -44,16 +44,6 @@ public class Post {
         this.hidden = false;
     }
 
-    // Convenience constructor
-    public Post(String textContent, String mediaUrl, User author) {
-        this.title = "Untitled Post";
-        this.textContent = textContent;
-        this.mediaUrl = mediaUrl;
-        this.author = author;
-        this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
-        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
-    }
-
     public Post(String title, String textContent, String mediaUrl, User author) {
         this.title = title;
         this.textContent = textContent;

@@ -60,7 +60,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // Sensitive personal user endpoints require authentication
                 .requestMatchers("/api/users/me/**").authenticated()
-                // Allow public read-only access for viewing posts, student profiles, and search (privacy checks enforced in service layer)
+                // Allow public read-only access for viewing posts, student profiles, and search (hidden post checks enforced in service layer)
                 .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/users/*", "/api/users/search").permitAll()
                 // All other real API endpoints (posts CRUD, user actions, reports, notifications) require authentication
                 .requestMatchers("/api/posts/**", "/api/users/**", "/api/reports/**", "/api/notifications/**").authenticated()

@@ -43,10 +43,6 @@ export class PostService {
     return this.http.post<LikeResponse>(`${this.apiUrl}/${postId}/like`, {});
   }
 
-  getLikeStatus(postId: number): Observable<LikeResponse> {
-    return this.http.get<LikeResponse>(`${this.apiUrl}/${postId}/like`);
-  }
-
   updatePost(id: number, title?: string, textContent?: string, file?: File, removeMedia: boolean = false): Observable<Post> {
     const formData = new FormData();
     if (title !== undefined && title !== null) {

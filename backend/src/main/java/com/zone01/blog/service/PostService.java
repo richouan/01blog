@@ -179,14 +179,9 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchElementException("Post not found with ID: " + postId));
         if (!isVisibleToUser(post, currentUser)) {
-            throw new SecurityException("This post is private or unavailable.");
+            throw new SecurityException("This post is hidden or unavailable.");
         }
         return toPostResponse(post, currentUser);
-    }
-
-    @Transactional(readOnly = true)
-    public List<PostResponse> getAllPosts() {
-        return getAllPosts(null);
     }
 
     @Transactional(readOnly = true)
@@ -196,11 +191,6 @@ public class PostService {
                 .filter(post -> isVisibleToUser(post, currentUser))
                 .map(post -> toPostResponse(post, currentUser))
                 .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<PostResponse> getUserPosts(String username) {
-        return getUserPosts(username, null);
     }
 
     @Transactional(readOnly = true)

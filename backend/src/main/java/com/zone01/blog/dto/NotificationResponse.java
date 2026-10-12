@@ -21,11 +21,6 @@ public class NotificationResponse {
     public NotificationResponse() {
     }
 
-    public NotificationResponse(Long id, String type, String message, String actorUsername,
-                                Long referenceId, boolean isRead, LocalDateTime createdAt) {
-        this(id, type, message, actorUsername, null, referenceId, isRead, createdAt);
-    }
-
     public NotificationResponse(Long id, String type, String message, String actorUsername, String actorAvatarUrl,
                                 Long referenceId, boolean isRead, LocalDateTime createdAt) {
         this.id = id;

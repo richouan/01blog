@@ -18,10 +18,6 @@ public class CommentResponse {
     public CommentResponse() {
     }
 
-    public CommentResponse(Long id, Long postId, Long authorId, String authorUsername, String content, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this(id, postId, authorId, authorUsername, null, content, createdAt, updatedAt);
-    }
-
     public CommentResponse(Long id, Long postId, Long authorId, String authorUsername, String authorAvatarUrl, String content, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.postId = postId;

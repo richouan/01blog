@@ -34,5 +34,4 @@ export interface UserProfile {
   followingCount: number;
   avatarUrl?: string;
   isFollowing?: boolean;
-  following?: boolean;
 }

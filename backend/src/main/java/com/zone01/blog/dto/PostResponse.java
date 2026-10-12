@@ -43,13 +43,7 @@ public class PostResponse {
         this.commentsCount = commentsCount;
     }
 
-    public PostResponse(Long id, String title, String textContent, String mediaUrl, Long authorId, 
-                        String authorUsername, LocalDateTime createdAt, LocalDateTime updatedAt,
-                        long likesCount, boolean liked) {
-        this(id, title, textContent, mediaUrl, authorId, authorUsername, createdAt, updatedAt, likesCount, liked, 0L);
-    }
-
-    // Static helpers to map Post entity directly to PostResponse DTO
+    // Static helper to map Post entity directly to PostResponse DTO
     public static PostResponse fromEntity(Post post, long likesCount, boolean liked, long commentsCount) {
         PostResponse resp = new PostResponse(
                 post.getId(),
@@ -72,18 +66,6 @@ public class PostResponse {
         resp.setAuthorAvatarUrl(authorAvatar);
         resp.setHidden(post.isHidden());
         return resp;
-    }
-
-    public static PostResponse fromEntity(Post post, long likesCount, boolean liked) {
-        return fromEntity(post, likesCount, liked, 0L);
-    }
-
-    public static PostResponse fromEntity(Post post, long likesCount) {
-        return fromEntity(post, likesCount, false, 0L);
-    }
-
-    public static PostResponse fromEntity(Post post) {
-        return fromEntity(post, 0L, false, 0L);
     }
 
     public Long getId() {

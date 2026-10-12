@@ -21,9 +21,6 @@ export const routes: Routes = [
   // User profile page (own profile or another student's profile)
   { path: 'profile', component: UserProfileComponent, canActivate: [authGuard] },
   { path: 'profile/:username', component: UserProfileComponent, canActivate: [authGuard] },
-  // Block page aliases
-  { path: 'block', redirectTo: 'profile' },
-  { path: 'block/:username', redirectTo: 'profile/:username' },
   // Admin moderation dashboard (Role: ROLE_ADMIN only)
   { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard] },
   // Guest-only routes (redirects logged-in users to '/')

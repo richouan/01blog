@@ -65,7 +65,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
             this.router.navigate(['/404'], { replaceUrl: true });
             return;
           } else if (err.status === 403) {
-            this.errorMessage = err.error?.message || 'This post is private or unavailable.';
+            this.errorMessage = err.error?.message || 'This post is hidden or unavailable.';
             this.isLoading = false;
             this.cdr.detectChanges();
           } else {

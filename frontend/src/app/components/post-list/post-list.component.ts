@@ -54,8 +54,6 @@ export class PostListComponent implements OnInit, OnDestroy {
   @Input() showAuthor: boolean = true;
   @Input() showCreateButton: boolean = true;
 
-  @Output() postLiked = new EventEmitter<Post>();
-  @Output() postCommentClicked = new EventEmitter<Post>();
   @Output() triggerCreate = new EventEmitter<void>();
   @Output() postUpdated = new EventEmitter<Post>();
   @Output() postDeleted = new EventEmitter<number>();
@@ -305,7 +303,6 @@ export class PostListComponent implements OnInit, OnDestroy {
           originalPost.likesCount = res.likesCount;
         }
 
-        this.postLiked.emit(post);
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -353,7 +350,6 @@ export class PostListComponent implements OnInit, OnDestroy {
         this.loadComments(post.id);
       }
     }
-    this.postCommentClicked.emit(post);
     this.cdr.markForCheck();
   }
 

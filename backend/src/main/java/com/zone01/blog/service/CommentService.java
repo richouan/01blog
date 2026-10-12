@@ -91,12 +91,6 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
-    // Overload for backward compatibility
-    @Transactional(readOnly = true)
-    public List<CommentResponse> getCommentsByPost(@NonNull Long postId) {
-        return getCommentsByPost(postId, null);
-    }
-
     // Delete comment with author, post author, or admin permission check
     @Transactional
     public void deleteComment(@NonNull Long commentId, String requestingUsername) {
