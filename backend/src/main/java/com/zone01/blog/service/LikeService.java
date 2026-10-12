@@ -52,16 +52,6 @@ public class LikeService {
             }
         }
 
-        if (author.isPrivateProfile()) {
-            boolean isAuthor = author.getId().equals(user.getId());
-            boolean isAdmin = user.getRole() == UserRole.ROLE_ADMIN;
-            boolean isFollower = user.getFollowing().stream()
-                    .anyMatch(u -> Objects.equals(u.getId(), author.getId()));
-            if (!isAuthor && !isAdmin && !isFollower) {
-                throw new SecurityException("Cannot like a post from a private account you do not follow.");
-            }
-        }
-
         Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post);
 
         boolean isLiked;
@@ -95,18 +85,6 @@ public class LikeService {
             boolean isAuthor = (requestingUser != null) && post.getAuthor().getId().equals(requestingUser.getId());
             boolean isAdmin = (requestingUser != null) && requestingUser.getRole() == UserRole.ROLE_ADMIN;
             if (!isAuthor && !isAdmin) {
-                return new LikeResponse(postId, false, 0);
-            }
-        }
-
-        // If post author is private, non-followers cannot inspect like count
-        User author = post.getAuthor();
-        if (author.isPrivateProfile()) {
-            boolean isAuthor = (requestingUser != null) && author.getId().equals(requestingUser.getId());
-            boolean isAdmin = (requestingUser != null) && requestingUser.getRole() == UserRole.ROLE_ADMIN;
-            boolean isFollower = (requestingUser != null) && requestingUser.getFollowing().stream()
-                    .anyMatch(u -> Objects.equals(u.getId(), author.getId()));
-            if (!isAuthor && !isAdmin && !isFollower) {
                 return new LikeResponse(postId, false, 0);
             }
         }

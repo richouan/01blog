@@ -13,35 +13,16 @@ public class UserProfileResponse {
     private LocalDateTime createdAt;
     private int followersCount;
     private int followingCount;
-
     private String avatarUrl;
 
     @JsonProperty("isFollowing")
     private boolean isFollowing;
 
-    @JsonProperty("privateProfile")
-    private boolean privateProfile;
-
-    @JsonProperty("hasPendingRequest")
-    private boolean hasPendingRequest;
-
     public UserProfileResponse() {}
 
     public UserProfileResponse(Long id, String username, String email, UserRole role, 
                               LocalDateTime createdAt, int followersCount, int followingCount, 
-                              boolean isFollowing, boolean privateProfile) {
-        this(id, username, email, role, createdAt, followersCount, followingCount, isFollowing, privateProfile, false, null);
-    }
-
-    public UserProfileResponse(Long id, String username, String email, UserRole role, 
-                              LocalDateTime createdAt, int followersCount, int followingCount, 
-                              boolean isFollowing, boolean privateProfile, boolean hasPendingRequest) {
-        this(id, username, email, role, createdAt, followersCount, followingCount, isFollowing, privateProfile, hasPendingRequest, null);
-    }
-
-    public UserProfileResponse(Long id, String username, String email, UserRole role, 
-                              LocalDateTime createdAt, int followersCount, int followingCount, 
-                              boolean isFollowing, boolean privateProfile, boolean hasPendingRequest, String avatarUrl) {
+                              boolean isFollowing, String avatarUrl) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -50,8 +31,6 @@ public class UserProfileResponse {
         this.followersCount = followersCount;
         this.followingCount = followingCount;
         this.isFollowing = isFollowing;
-        this.privateProfile = privateProfile;
-        this.hasPendingRequest = hasPendingRequest;
         this.avatarUrl = avatarUrl;
     }
 
@@ -119,22 +98,6 @@ public class UserProfileResponse {
         isFollowing = following;
     }
 
-    public boolean isPrivateProfile() {
-        return privateProfile;
-    }
-
-    public void setPrivateProfile(boolean privateProfile) {
-        this.privateProfile = privateProfile;
-    }
-
-    public boolean isHasPendingRequest() {
-        return hasPendingRequest;
-    }
-
-    public void setHasPendingRequest(boolean hasPendingRequest) {
-        this.hasPendingRequest = hasPendingRequest;
-    }
-
     public String getAvatarUrl() {
         return avatarUrl;
     }
@@ -143,4 +106,3 @@ public class UserProfileResponse {
         this.avatarUrl = avatarUrl;
     }
 }
-

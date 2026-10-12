@@ -217,7 +217,7 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
-    // Ensures hidden posts and private profile posts are properly filtered
+    // Ensures hidden posts are properly filtered for admin or author
     private boolean isVisibleToUser(Post post, User currentUser) {
         if (post.isHidden()) {
             if (currentUser == null) {
@@ -226,20 +226,6 @@ public class PostService {
             boolean isAdmin = currentUser.getRole() == UserRole.ROLE_ADMIN;
             boolean isAuthor = post.getAuthor().getId().equals(currentUser.getId());
             if (!isAdmin && !isAuthor) {
-                return false;
-            }
-        }
-
-        User author = post.getAuthor();
-        if (author.isPrivateProfile()) {
-            if (currentUser == null) {
-                return false;
-            }
-            boolean isAuthor = author.getId().equals(currentUser.getId());
-            boolean isAdmin = currentUser.getRole() == UserRole.ROLE_ADMIN;
-            boolean isFollower = currentUser.getFollowing().stream()
-                    .anyMatch(u -> java.util.Objects.equals(u.getId(), author.getId()));
-            if (!isAuthor && !isAdmin && !isFollower) {
                 return false;
             }
         }

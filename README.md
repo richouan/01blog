@@ -141,8 +141,8 @@ The web application will open at **`http://localhost:4200`**.
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/auth/register` | Public | Register new student account |
 | `POST` | `/api/auth/login` | Public | Authenticate student and obtain JWT Bearer token |
-| `GET` | `/api/posts` | Public / Auth | Fetch active posts (enforces privacy & soft-hide rules) |
-| `GET` | `/api/posts/{id}` | Public / Auth | View single post permalink by ID (enforces author privacy) |
+| `GET` | `/api/posts` | Public / Auth | Fetch active posts (enforces soft-hide rules) |
+| `GET` | `/api/posts/{id}` | Public / Auth | View single post permalink by ID |
 | `POST` | `/api/posts` | Authenticated | Create post with text & media (multipart/form-data) |
 | `PUT` | `/api/posts/{id}` | Author / Admin | Update post text content or media |
 | `DELETE` | `/api/posts/{id}` | Author / Admin | Delete post, cascade delete likes, comments & disk media |
@@ -151,17 +151,14 @@ The web application will open at **`http://localhost:4200`**.
 | `GET` | `/api/posts/{id}/comments` | Public / Auth | Fetch comments on a post |
 | `POST` | `/api/posts/{id}/comments` | Authenticated | Add a comment to a post |
 | `DELETE` | `/api/posts/{id}/comments/{cid}` | Author / Admin | Remove comment |
-| `GET` | `/api/users/{username}` | Public / Auth | Retrieve student block/profile (respects private visibility) |
+| `GET` | `/api/users/{username}` | Public / Auth | Retrieve student profile and stats |
 | `GET` | `/api/users/search` | Public / Auth | Search users by partial username |
 | `GET` | `/api/users/avatars/presets` | Public | List default offline Neo-Brutalist character avatars |
 | `GET` | `/api/users/me` | Authenticated | Get current authenticated student's profile & settings |
-| `PUT` | `/api/users/me/privacy` | Authenticated | Toggle private profile status |
 | `POST` | `/api/users/me/avatar` | Authenticated | Upload custom avatar image (with Apache Tika inspection) |
 | `PUT` | `/api/users/me/avatar/preset` | Authenticated | Select default character avatar preset |
-| `POST` | `/api/users/{username}/follow` | Authenticated | Follow/unfollow user (or send follow request if private) |
-| `GET` | `/api/users/requests/pending` | Authenticated | List pending incoming follow requests |
-| `POST` | `/api/users/requests/{id}/accept`| Authenticated | Accept private follow request |
-| `POST` | `/api/users/requests/{id}/reject`| Authenticated | Reject private follow request |
+| `POST` | `/api/users/{username}/follow` | Authenticated | Subscribe to user profile |
+| `POST` | `/api/users/{username}/unfollow` | Authenticated | Unsubscribe from user profile |
 | `GET` | `/api/notifications` | Authenticated | Fetch notification feed (post alerts, new followers) |
 | `GET` | `/api/notifications/unread-count`| Authenticated | Get unread notification badge count |
 | `PUT` | `/api/notifications/{id}/read` | Authenticated | Mark single notification as read |

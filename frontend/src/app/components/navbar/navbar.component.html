@@ -179,8 +179,8 @@
                 [class.notification-read]="item.isRead"
               >
                 <!-- Event Icon Box -->
-                <div class="notif-type-icon-box" [ngClass]="item.isRead ? 'bg-read-muted' : (item.type === 'NEW_POST' ? 'bg-canary' : (item.type === 'FOLLOW_REQUEST' ? 'bg-coral' : 'bg-mint'))">
-                  <i class="bi" [ngClass]="item.type === 'NEW_POST' ? 'bi-file-earmark-post-fill' : (item.type === 'FOLLOW_REQUEST' ? 'bi-person-lines-fill' : 'bi-person-plus-fill')"></i>
+                <div class="notif-type-icon-box" [ngClass]="item.isRead ? 'bg-read-muted' : (item.type === 'NEW_POST' ? 'bg-canary' : 'bg-mint')">
+                  <i class="bi" [ngClass]="item.type === 'NEW_POST' ? 'bi-file-earmark-post-fill' : 'bi-person-plus-fill'"></i>
                 </div>
 
                 <!-- Content -->

@@ -26,28 +26,6 @@
   color: #121214;
 }
 
-/* Tab Navigation Buttons */
-.tab-btn-nb {
-  font-family: var(--nb-font-display);
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--nb-text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border-bottom: 3.5px solid transparent !important;
-}
-
-.tab-btn-nb:hover {
-  background-color: var(--nb-subtle-bg) !important;
-  color: var(--nb-black);
-}
-
-.tab-btn-nb.tab-active {
-  color: var(--nb-black) !important;
-  background-color: var(--nb-card-bg) !important;
-  border-bottom: 3.5px solid var(--nb-yellow) !important;
-}
-
 /* Empty Block State */
 .empty-block-icon {
   width: 56px;
@@ -65,56 +43,6 @@
 
 .max-w-450 {
   max-width: 450px;
-}
-
-
-
-/* Private Account Locked Banner */
-.private-account-locked {
-  background-color: var(--nb-subtle-bg);
-  border: var(--nb-border);
-  border-radius: 12px;
-  box-shadow: var(--nb-shadow);
-}
-
-.lock-icon-circle {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background-color: var(--nb-coral, #ff6b6b);
-  border: var(--nb-border);
-  box-shadow: 3px 3px 0px var(--nb-shadow-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #121214;
-}
-
-.user-avatar-sm {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background-color: var(--nb-yellow);
-  border: var(--nb-border-sm);
-  box-shadow: 2px 2px 0px var(--nb-shadow-color);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 1.1rem;
-  font-family: var(--nb-font-display);
-  color: #121214;
-}
-
-.spin-icon {
-  display: inline-block;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 /* =========================================================

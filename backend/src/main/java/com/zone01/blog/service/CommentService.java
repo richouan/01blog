@@ -60,16 +60,6 @@ public class CommentService {
             }
         }
 
-        if (postAuthor.isPrivateProfile()) {
-            boolean isAuthor = postAuthor.getId().equals(author.getId());
-            boolean isAdmin = author.getRole() == UserRole.ROLE_ADMIN;
-            boolean isFollower = author.getFollowing().stream()
-                    .anyMatch(u -> java.util.Objects.equals(u.getId(), postAuthor.getId()));
-            if (!isAuthor && !isAdmin && !isFollower) {
-                throw new SecurityException("Cannot comment on a post from a private account you do not follow.");
-            }
-        }
-
         Comment comment = new Comment(trimmed, post, author);
         Comment saved = commentRepository.save(comment);
 
@@ -93,21 +83,6 @@ public class CommentService {
             boolean isAdmin = currentUser.getRole() == UserRole.ROLE_ADMIN;
             if (!isAuthor && !isAdmin) {
                 throw new SecurityException("This post has been hidden by moderators.");
-            }
-        }
-
-        // Verify private profile visibility
-        User postAuthor = post.getAuthor();
-        if (postAuthor.isPrivateProfile()) {
-            if (currentUser == null) {
-                throw new SecurityException("Cannot view comments on a private account's post.");
-            }
-            boolean isAuthor = postAuthor.getId().equals(currentUser.getId());
-            boolean isAdmin = currentUser.getRole() == UserRole.ROLE_ADMIN;
-            boolean isFollower = currentUser.getFollowing().stream()
-                    .anyMatch(u -> java.util.Objects.equals(u.getId(), postAuthor.getId()));
-            if (!isAuthor && !isAdmin && !isFollower) {
-                throw new SecurityException("Cannot view comments on a private account's post.");
             }
         }
 

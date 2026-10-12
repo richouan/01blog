@@ -36,10 +36,6 @@ public class User {
     @Column(name = "banned", nullable = false)
     private boolean banned = false;
 
-    // Profile privacy: private profiles only reveal their posts to confirmed followers
-    @Column(name = "private_profile", nullable = false)
-    private boolean privateProfile = false;
-
     // Profile avatar URL (defaults to a random brutalist avatar preset or custom uploaded image)
     @Column(name = "avatar_url")
     private String avatarUrl;
@@ -157,14 +153,6 @@ public class User {
 
     public void setBanned(boolean banned) {
         this.banned = banned;
-    }
-
-    public boolean isPrivateProfile() {
-        return privateProfile;
-    }
-
-    public void setPrivateProfile(boolean privateProfile) {
-        this.privateProfile = privateProfile;
     }
 
     public String getAvatarUrl() {

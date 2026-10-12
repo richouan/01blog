@@ -42,31 +42,6 @@ public class UserController {
         }
     }
 
-    @PutMapping("/me/privacy")
-    public ResponseEntity<?> updatePrivacy(
-            @RequestBody(required = false) Map<String, Boolean> body,
-            Authentication authentication
-    ) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User is not authenticated"));
-        }
-
-        try {
-            Boolean explicitPrivacy = (body != null && body.containsKey("privateProfile")) 
-                    ? body.get("privateProfile") 
-                    : null;
-            UserProfileResponse updated = userService.updateProfilePrivacy(authentication.getName(), explicitPrivacy);
-            return ResponseEntity.ok(updated);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", e.getMessage()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", e.getMessage()));
-        }
-    }
-
     // Get list of all available default brutalist avatars for student selection
     @GetMapping("/avatars/presets")
     public ResponseEntity<List<String>> getPresetAvatars() {
@@ -152,51 +127,6 @@ public class UserController {
         }
     }
 
-    @GetMapping("/requests/pending")
-    public ResponseEntity<?> getPendingRequests(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User is not authenticated"));
-        }
-        return ResponseEntity.ok(userService.getPendingRequests(authentication.getName()));
-    }
-
-    @PostMapping("/requests/{id}/accept")
-    public ResponseEntity<?> acceptFollowRequest(@PathVariable Long id, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User is not authenticated"));
-        }
-        try {
-            userService.acceptFollowRequest(id, authentication.getName());
-            return ResponseEntity.ok(Map.of("message", "Follow request accepted"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", e.getMessage()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/requests/{id}/reject")
-    public ResponseEntity<?> rejectFollowRequest(@PathVariable Long id, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User is not authenticated"));
-        }
-        try {
-            userService.rejectFollowRequest(id, authentication.getName());
-            return ResponseEntity.ok(Map.of("message", "Follow request rejected"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", e.getMessage()));
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", e.getMessage()));
-        }
-    }
-
     @PostMapping({"/{username}/follow", "/{username}/subscribe"})
     public ResponseEntity<?> followUser(@PathVariable String username, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -225,7 +155,7 @@ public class UserController {
 
         try {
             userService.unsubscribe(authentication.getName(), username);
-            return ResponseEntity.ok(Map.of("message", "Unsubscribed from @" + username, "following", false, "requested", false));
+            return ResponseEntity.ok(Map.of("message", "Unsubscribed from @" + username, "following", false));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));

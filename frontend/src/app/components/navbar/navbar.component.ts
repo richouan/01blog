@@ -177,10 +177,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
     this.isNotificationDropdownOpen = false;
 
-    // Navigate to target student profile or pending requests tab
-    if (item.type === 'FOLLOW_REQUEST') {
-      this.router.navigate(['/profile'], { queryParams: { tab: 'requests' } });
-    } else if (item.actorUsername) {
+    // Navigate to target student profile
+    if (item.actorUsername) {
       this.router.navigate(['/profile', item.actorUsername]);
     }
   }

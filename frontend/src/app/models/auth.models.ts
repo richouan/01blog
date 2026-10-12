@@ -35,17 +35,4 @@ export interface UserProfile {
   avatarUrl?: string;
   isFollowing?: boolean;
   following?: boolean;
-  privateProfile?: boolean;
-  hasPendingRequest?: boolean;
 }
-
-export interface FollowRequestItem {
-  id: number;
-  requesterId: number;
-  requesterUsername: string;
-  requesterAvatarUrl?: string;
-  createdAt: string;
-}
-
-
-

@@ -59,7 +59,7 @@ public class SecurityConfig {
                 // Require ROLE_ADMIN for all admin dashboard and moderation endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // Sensitive personal user endpoints require authentication
-                .requestMatchers("/api/users/me/**", "/api/users/requests/**").authenticated()
+                .requestMatchers("/api/users/me/**").authenticated()
                 // Allow public read-only access for viewing posts, student profiles, and search (privacy checks enforced in service layer)
                 .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/users/*", "/api/users/search").permitAll()
                 // All other real API endpoints (posts CRUD, user actions, reports, notifications) require authentication

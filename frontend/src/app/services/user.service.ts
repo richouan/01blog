@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserProfile, FollowRequestItem } from '../models/auth.models';
+import { UserProfile } from '../models/auth.models';
 
 // Service to fetch user profile details and handle social interactions from Spring Boot backend
 @Injectable({
@@ -22,12 +22,12 @@ export class UserService {
     return this.http.get<UserProfile>(`${this.apiUrl}/${username}`);
   }
 
-  followUser(username: string): Observable<{ message: string; following: boolean; requested?: boolean }> {
-    return this.http.post<{ message: string; following: boolean; requested?: boolean }>(`${this.apiUrl}/${username}/follow`, {});
+  followUser(username: string): Observable<{ message: string; following: boolean }> {
+    return this.http.post<{ message: string; following: boolean }>(`${this.apiUrl}/${username}/follow`, {});
   }
 
-  unfollowUser(username: string): Observable<{ message: string; following: boolean; requested?: boolean }> {
-    return this.http.post<{ message: string; following: boolean; requested?: boolean }>(`${this.apiUrl}/${username}/unfollow`, {});
+  unfollowUser(username: string): Observable<{ message: string; following: boolean }> {
+    return this.http.post<{ message: string; following: boolean }>(`${this.apiUrl}/${username}/unfollow`, {});
   }
 
   // Search users by partial username
@@ -35,27 +35,6 @@ export class UserService {
     return this.http.get<UserProfile[]>(`${this.apiUrl}/search`, {
       params: { q: query }
     });
-  }
-
-  // Toggle or explicitly set profile privacy (public vs private)
-  togglePrivacy(privateProfile?: boolean): Observable<UserProfile> {
-    const body = privateProfile !== undefined ? { privateProfile } : {};
-    return this.http.put<UserProfile>(`${this.apiUrl}/me/privacy`, body);
-  }
-
-  // Fetch pending follow requests received by the current user
-  getPendingFollowRequests(): Observable<FollowRequestItem[]> {
-    return this.http.get<FollowRequestItem[]>(`${this.apiUrl}/requests/pending`);
-  }
-
-  // Accept a pending follow request
-  acceptFollowRequest(requestId: number): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/requests/${requestId}/accept`, {});
-  }
-
-  // Reject a pending follow request
-  rejectFollowRequest(requestId: number): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/requests/${requestId}/reject`, {});
   }
 
   // Fetch list of all preset brutalist avatars

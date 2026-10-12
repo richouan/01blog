@@ -1,7 +1,7 @@
 // Model definition for student notifications
 export interface NotificationItem {
   id: number;
-  type: 'NEW_POST' | 'NEW_FOLLOWER' | 'FOLLOW_REQUEST' | 'FOLLOW_ACCEPTED';
+  type: 'NEW_POST' | 'NEW_FOLLOWER';
   message: string;
   actorUsername: string;
   actorAvatarUrl?: string | null;
