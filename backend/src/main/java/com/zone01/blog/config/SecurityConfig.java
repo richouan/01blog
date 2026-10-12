@@ -28,10 +28,12 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final RateLimitFilter rateLimitFilter;
 
-    // Inject our custom JWT filter
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    // Inject our custom filters
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, RateLimitFilter rateLimitFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
     @Bean
@@ -82,7 +84,8 @@ public class SecurityConfig {
                 })
             )
 
-            // Execute our JWT filter before the standard username/password filter
+            // Rate limit incoming requests before authentication processing
+            .addFilterBefore(rateLimitFilter, org.springframework.security.web.authentication.logout.LogoutFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
