@@ -87,6 +87,7 @@
     - [Q7: How Does RateLimitFilter Prevent Memory Leaks in JVM RAM When Tracking Client IPs?](#q7-how-does-ratelimitfilter-prevent-memory-leaks-in-jvm-ram-when-tracking-client-ips)
     - [Q8: How Does VirtualFilterChain Physically Pass the Baton in Memory? (The currentPosition Counter)](#q8-how-does-virtualfilterchain-physically-pass-the-baton-in-memory-the-currentposition-counter)
     - [Q9: Why Does doFilterInternal Declare "throws ServletException, IOException"? (throw vs throws)](#q9-why-does-dofilterinternal-declare-throws-servletexception-ioexception-throw-vs-throws)
+    - [Q10: Where Does GlobalExceptionHandler Run in Our Security Journey? (Filter Pipeline vs DispatcherServlet Exception Handling)](#q10-where-does-globalexceptionhandler-run-in-our-security-journey-filter-pipeline-vs-dispatcherservlet-exception-handling)
 
 ---
 
@@ -2333,6 +2334,164 @@ protected void doFilterInternal(
 3. **Clean Architecture:**
    - By declaring `throws ServletException, IOException`, our filter logic remains clean and readable without redundant try-catch clutter.
    - If an unexpected network break occurs, the exception cleanly bubbles up to Apache Tomcat to safely terminate and recycle the worker thread socket.
+
+---
+
+### Q10: Where Does `GlobalExceptionHandler` Run in Our Security Journey? (Filter Pipeline vs DispatcherServlet Exception Handling)
+
+One of the most critical architectural questions in enterprise Spring Boot is understanding the separation of powers between **Servlet Filters** and **Spring MVC Controllers/Advice**.
+
+#### The Evaluator's Trap Question:
+*"If an attacker sends a corrupted JWT token, gets blocked by `RateLimitFilter`, or attempts to access an endpoint without logging in, does `GlobalExceptionHandler` catch that exception and return the error JSON? If not, why? Where is the physical dividing line in JVM memory?"*
+
+#### The Ground-Zero Architecture (The Two Security Zones):
+
+```
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│ ZONE 1: THE TOMCAT FILTER GAUNTLET (Outside Spring MVC)                           │
+│ - Physical Layer: Runs in Apache Tomcat's servlet pipeline BEFORE DispatcherServlet│
+│ - Components: DelegatingFilterProxy, FilterChainProxy, RateLimitFilter,           │
+│   JwtAuthFilter, UsernamePasswordAuthenticationFilter                             │
+│ - Exception Handlers:                                                             │
+│   * RateLimitFilter (direct HTTP 429 write)                                       │
+│   * SecurityConfig: authenticationEntryPoint (HTTP 401 write)                     │
+│   * SecurityConfig: accessDeniedHandler (HTTP 403 write)                          │
+│   ==> GlobalExceptionHandler CANNOT HEAR OR CATCH THESE EXCEPTIONS! <==           │
+└────────────────────────────────────────┬──────────────────────────────────────────┘
+                                         │ (Request passes all filters)
+                                         ▼
+======================= THE GREAT DIVIDING LINE (Entry to Spring MVC) ===============
+                                         │
+                                         ▼
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│ ZONE 2: THE SPRING MVC DISPATCHER SANCTUM (Inside Spring MVC)                     │
+│ - Physical Layer: Runs inside DispatcherServlet.doDispatch() call stack           │
+│ - Components: PostController, AdminController, PostService, AuthService,          │
+│   CGLIB Security Proxies (@PreAuthorize)                                          │
+│ - Master Exception Engine: HandlerExceptionResolver                               │
+│   ==> GlobalExceptionHandler (@RestControllerAdvice) RULES HERE! <==              │
+└───────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Under-the-Hood Engine Mechanics:
+
+1. **Why `@RestControllerAdvice` Cannot Catch Filter Exceptions:**
+   - `@RestControllerAdvice` is an interceptor registered as a Spring MVC Bean inside `DispatcherServlet`'s internal `HandlerExceptionResolverComposite`.
+   - Tomcat's Filter Chain executes **before** `DispatcherServlet` is ever invoked.
+   - When an exception occurs inside `RateLimitFilter` or `JwtAuthFilter`, `DispatcherServlet` is **not yet on the thread's call stack**. Therefore, Spring MVC's exception handler is physically blind to it.
+   - That is why [`SecurityConfig.java`](backend/src/main/java/com/zone01/blog/config/SecurityConfig.java) configures dedicated filter-level gatekeepers using direct HTTP response stream writes:
+     ```java
+     .exceptionHandling(exceptions -> exceptions
+         // Catches unauthenticated requests in the filter chain (HTTP 401)
+         .authenticationEntryPoint((request, response, authException) -> {
+             response.setContentType("application/json");
+             response.setStatus(HttpStatus.UNAUTHORIZED.value());
+             response.getWriter().write("{\"timestamp\":\"" + LocalDateTime.now() + "\",\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Authentication required to access this resource.\"}");
+         })
+         // Catches unauthorized requests at the filter URL level (HTTP 403)
+         .accessDeniedHandler((request, response, accessDeniedException) -> {
+             response.setContentType("application/json");
+             response.setStatus(HttpStatus.FORBIDDEN.value());
+             response.getWriter().write("{\"timestamp\":\"" + LocalDateTime.now() + "\",\"status\":403,\"error\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource.\"}");
+         })
+     )
+     ```
+
+2. **How `DispatcherServlet` Catches and Delegates Inside Spring MVC:**
+   - Once a request passes all security filters, it reaches `DispatcherServlet.doDispatch()`.
+   - `DispatcherServlet` wraps the entire execution of controllers, services, and dynamic proxies inside a master `try-catch` block:
+     ```java
+     try {
+         // Dispatches to Controller / Service
+         ha.handle(processedRequest, response, mappedHandler.getHandler());
+     } catch (Exception ex) {
+         // Catches ANY uncaught exception and queries HandlerExceptionResolver
+         processHandlerException(processedRequest, response, mappedHandler.getHandler(), ex);
+     }
+     ```
+   - `processHandlerException` searches registered `HandlerExceptionResolver` beans, discovers **`GlobalExceptionHandler`**, uses Java Reflection to find the matching `@ExceptionHandler(...)` method, and executes it.
+
+---
+
+#### The 4 Critical Security Checkpoints Handled by `GlobalExceptionHandler.java`:
+
+Inside [`GlobalExceptionHandler.java`](backend/src/main/java/com/zone01/blog/exception/GlobalExceptionHandler.java), four distinct security scenarios are intercepted and translated into clean JSON API contracts:
+
+##### Checkpoint 1: Method-Level Access Control (`AccessDeniedException` ➔ 403 Forbidden)
+```java
+@ExceptionHandler(AccessDeniedException.class)
+public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(buildErrorResponse(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "You do not have permission to access this resource."));
+}
+```
+* **How it triggers:** In [`AdminController.java`](backend/src/main/java/com/zone01/blog/controller/AdminController.java), the class is annotated with `@PreAuthorize("hasRole('ADMIN')")`.
+* **The Magic:** Spring AOP wraps `AdminController` in a **CGLIB Dynamic Security Proxy**. When a regular student (`ROLE_USER`) calls an admin route, the method call hits the proxy *inside* `DispatcherServlet`. The proxy checks `SecurityContextHolder`, discovers the lack of `ROLE_ADMIN`, and immediately throws `org.springframework.security.access.AccessDeniedException`.
+* **The Outcome:** `DispatcherServlet` catches it and delegates to `GlobalExceptionHandler`, cleanly returning HTTP 403 without the controller method ever executing!
+
+##### Checkpoint 2: Business Logic Security & Ban Violations (`SecurityException` ➔ 403 Forbidden)
+```java
+@ExceptionHandler(SecurityException.class)
+public ResponseEntity<Map<String, Object>> handleSecurity(SecurityException ex) {
+    String code = (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("banned"))
+            ? "ACCOUNT_BANNED" : "FORBIDDEN";
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(buildErrorResponse(HttpStatus.FORBIDDEN, code, ex.getMessage()));
+}
+```
+* **How it triggers:** In the Service Layer ([`UserService.java`](backend/src/main/java/com/zone01/blog/service/UserService.java) or [`PostService.java`](backend/src/main/java/com/zone01/blog/service/PostService.java)), business rules enforce ownership and status invariants:
+  ```java
+  // Resource ownership guard:
+  if (!post.getAuthor().getId().equals(currentUser.getId()) && currentUser.getRole() != UserRole.ROLE_ADMIN) {
+      throw new SecurityException("You do not have permission to delete this post");
+  }
+  // Banned account guard:
+  if (user.isBanned()) {
+      throw new SecurityException("Your account is banned. Contact administration.");
+  }
+  ```
+* **The Outcome:** `GlobalExceptionHandler` converts this Java exception into a structured HTTP 403 JSON response with error code `"ACCOUNT_BANNED"`, enabling the Angular client to intercept it and display the banned user modal.
+
+##### Checkpoint 3: Authentication Bad Credentials (`IllegalArgumentException` ➔ 400 Bad Request)
+```java
+@ExceptionHandler(IllegalArgumentException.class)
+public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+    if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage()));
+    }
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(buildErrorResponse(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage()));
+}
+```
+* **How it triggers:** Inside [`AuthService.java`](backend/src/main/java/com/zone01/blog/service/AuthService.java) when verifying login credentials:
+  ```java
+  if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+      throw new IllegalArgumentException("Invalid username or password");
+  }
+  ```
+* **The Outcome:** Masks internal verification mechanics and returns a safe HTTP 400 `BAD_REQUEST`.
+
+##### Checkpoint 4: Database Constraint Protection & SQL Tampering (`DataIntegrityViolationException` ➔ 409 Conflict)
+```java
+@ExceptionHandler(DataIntegrityViolationException.class)
+public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(buildErrorResponse(HttpStatus.CONFLICT, "CONFLICT", "A duplicate entry or database constraint violation occurred."));
+}
+```
+* **How it triggers:** When an attacker attempts to insert duplicate unique keys (such as duplicate usernames or emails) or violate foreign key constraints in PostgreSQL.
+* **The Outcome:** Intercepts low-level PostgreSQL driver exceptions, preventing raw database schema details and SQL query strings from leaking to the client.
+
+---
+
+#### The Defense Pitch (Your Auditor Speech):
+
+*"Our architecture strictly separates exception handling based on the physical boundary of the servlet request lifecycle:*
+
+*1. **Outside Spring MVC (Servlet Filter Pipeline):** Exceptions occurring before `DispatcherServlet` (e.g. rate-limiting in `RateLimitFilter` or missing/invalid JWT tokens) are handled directly in the filter chain by `SecurityConfig`'s `authenticationEntryPoint` (401) and `accessDeniedHandler` (403). `GlobalExceptionHandler` cannot catch these because `DispatcherServlet` is not yet on the thread's call stack.*
+
+*2. **Inside Spring MVC (Controllers, Services & Dynamic Proxies):** Once the request enters `DispatcherServlet`, any security exception—such as method security failures (`@PreAuthorize` throwing `AccessDeniedException`), business ownership violations (`SecurityException` for banned users or unauthorized deletions), or invalid login credentials—bubbles up to `DispatcherServlet`. `DispatcherServlet` routes the error to **`GlobalExceptionHandler`** (`@RestControllerAdvice`), which translates raw Java exceptions into standardized, secure JSON API contracts with appropriate HTTP status codes (400, 403, 404, 409)."*
 
 
 
