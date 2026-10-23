@@ -2,7 +2,9 @@
 
 > **The Living Master Study Book for 01Blog**  
 > Written from absolute ground zero for students preparing to defend their fullstack project during peer evaluation at Zone01.  
-> Every concept is explained without hand-waving or unexplained jargon—starting from network bytes, operating system sockets, and JVM memory, leading all the way up to Spring Boot, Angular, and PostgreSQL.
+> Every concept is explained without hand-waving or unexplained jargon—starting from network bytes, operating system sockets, and JVM memory, leading all the way up to Spring Boot, Angular, and PostgreSQL.  
+>  
+> 🔗 **Companion Flow Guide:** For the complete chronological breakdown of all 36 HTTP endpoints across all 7 controllers, see [REQUEST_FLOWS_ENCYCLOPEDIA.md](REQUEST_FLOWS_ENCYCLOPEDIA.md).
 
 ---
 
@@ -88,6 +90,74 @@
     - [Q8: How Does VirtualFilterChain Physically Pass the Baton in Memory? (The currentPosition Counter)](#q8-how-does-virtualfilterchain-physically-pass-the-baton-in-memory-the-currentposition-counter)
     - [Q9: Why Does doFilterInternal Declare "throws ServletException, IOException"? (throw vs throws)](#q9-why-does-dofilterinternal-declare-throws-servletexception-ioexception-throw-vs-throws)
     - [Q10: Where Does GlobalExceptionHandler Run in Our Security Journey? (Filter Pipeline vs DispatcherServlet Exception Handling)](#q10-where-does-globalexceptionhandler-run-in-our-security-journey-filter-pipeline-vs-dispatcherservlet-exception-handling)
+- [Session 3: The Persistence Layer — Deep Dive into PostgreSQL 16, Hibernate ORM 6 & Spring Data JPA](#session-3-the-persistence-layer--deep-dive-into-postgresql-16-hibernate-orm-6--spring-data-jpa)
+  - [Part 0: The Missing Foundations (Ground Zero)](#part-0-the-missing-foundations-ground-zero-1)
+    - [1. The Physical Reality of Data: RAM vs. Hard Drive](#1-the-physical-reality-of-data-ram-vs-hard-drive)
+    - [2. What Physically is PostgreSQL 16 on Your Operating System?](#2-what-physically-is-postgresql-16-on-your-operating-system)
+    - [3. The 1990s Nightmare: What is JDBC and Why Did Engineers Suffer?](#3-the-1990s-nightmare-what-is-jdbc-and-why-did-engineers-suffer)
+    - [4. The Object-Relational Impedance Mismatch](#4-the-object-relational-impedance-mismatch)
+  - [Part 1: The 4-Tier Persistence Architecture (The Big Picture)](#part-1-the-4-tier-persistence-architecture-the-big-picture)
+    - [1. Spring Data JPA (The Convenience Wrapper)](#1-spring-data-jpa-the-convenience-wrapper)
+    - [2. Jakarta Persistence API / JPA (The Specification Standard)](#2-jakarta-persistence-api--jpa-the-specification-standard)
+    - [3. Hibernate ORM 6 (The Heavy Engine & Master Craftsman)](#3-hibernate-orm-6-the-heavy-engine--master-craftsman)
+    - [4. PostgreSQL JDBC Driver (The Network Transport Cable)](#4-postgresql-jdbc-driver-the-network-transport-cable)
+    - [5. The Restaurant & Construction Real-World Mental Models](#5-the-restaurant--construction-real-world-mental-models)
+  - [Part 2: The Entity in RAM & The Persistence Context (The 4 Lifecycle States)](#part-2-the-entity-in-ram--the-persistence-context-the-4-lifecycle-states)
+    - [1. What Physically is an @Entity in JVM Heap?](#1-what-physically-is-an-entity-in-jvm-heap)
+    - [2. What is the Persistence Context and L1 Cache in RAM?](#2-what-is-the-persistence-context-and-l1-cache-in-ram)
+    - [3. The 4 Lifecycle States: Transient, Managed, Detached, Removed](#3-the-4-lifecycle-states-transient-managed-detached-removed)
+  - [Part 3: Automatic Dirty Checking (The Secret Snapshot in RAM)](#part-3-automatic-dirty-checking-the-secret-snapshot-in-ram)
+    - [1. Why There is No repository.update() Method in Spring Data JPA](#1-why-there-is-no-repositoryupdate-method-in-spring-data-jpa)
+    - [2. Microsecond-by-Microsecond Sequence of Dirty Checking (The Polaroid Analogy)](#2-microsecond-by-microsecond-sequence-of-dirty-checking-the-polaroid-analogy)
+    - [3. Zero-Query Optimization on Unchanged Fields](#3-zero-query-optimization-on-unchanged-fields)
+  - [Part 4: Dynamic Proxies, Lazy Loading & The N+1 Query Problem](#part-4-dynamic-proxies-lazy-loading--the-n1-query-problem)
+    - [1. FetchType.EAGER vs. FetchType.LAZY: The Memory Trap](#1-fetchtypeeager-vs-fetchtypelazy-the-memory-trap)
+    - [2. The Byte Buddy Proxy: The Empty Amazon Box in RAM](#2-the-byte-buddy-proxy-the-empty-amazon-box-in-ram)
+    - [3. The Catastrophic N+1 Query Problem (The Supermarket Disaster)](#3-the-catastrophic-n1-query-problem-the-supermarket-disaster)
+    - [4. How We Prevented N+1 in 01Blog](#4-how-we-prevented-n1-in-01blog)
+  - [Part 5: Line-by-Line Code Breakdown of 01Blog](#part-5-line-by-line-code-breakdown-of-01blog)
+    - [Anatomy of Report.java](#anatomy-of-reportjava)
+    - [Anatomy of Post.java & Comment.java](#anatomy-of-postjava--commentjava)
+    - [Anatomy of User.java (Self-Referencing Subscriptions ManyToMany)](#anatomy-of-userjava-self-referencing-subscriptions-manytomany)
+    - [Anatomy of Like.java (Composite Unique Constraint Defense)](#anatomy-of-likejava-composite-unique-constraint-defense)
+    - [Anatomy of PostRepository.java & Dynamic Query Method Derivation](#anatomy-of-postrepositoryjava--dynamic-query-method-derivation)
+  - [Part 6: Summary to Explain to Others (Your Auditor Pitch)](#part-6-summary-to-explain-to-others-your-auditor-pitch-1)
+  - [Part 7: Zone01 Auditor Defense Drill: 5 Tough Evaluator Questions & Precision Answers](#part-7-zone01-auditor-defense-drill-5-tough-evaluator-questions--precision-answers)
+  - [Part 8: The DTO Mystery Solved — Why We NEVER Return Entities](#part-8-the-dto-mystery-solved--why-we-never-return-entities)
+    - [The 4 Disasters of Returning an @Entity Directly](#the-4-disasters-of-returning-an-entity-directly)
+    - [The DTO Firewall Pattern & PostResponse.fromEntity Breakdown](#the-dto-firewall-pattern--postresponsefromentity-breakdown)
+  - [Part 9: Request Flow 1 (Reading Data) — The Chronological Journey of GET /api/posts/10](#part-9-request-flow-1-reading-data--the-chronological-journey-of-get-apiposts10)
+    - [The Complete Layer-by-Layer Request Highway](#the-complete-layer-by-layer-request-highway)
+    - [Microsecond-by-Microsecond Timeline in RAM](#microsecond-by-microsecond-timeline-in-ram)
+  - [Part 10: Request Flow 2 (Writing Data) — POST /api/posts/10/like & Concurrency Defense](#part-10-request-flow-2-writing-data--post-apiposts10like--concurrency-defense)
+    - [Entity Lifecycle in RAM: Transient to Managed to Removed](#entity-lifecycle-in-ram-transient-to-managed-to-removed)
+    - [The Double-Click Concurrency Race & Database B-Tree Index Defense](#the-double-click-concurrency-race--database-b-tree-index-defense)
+- [Session 4: Media Uploads & OS Safety — Apache Tika, Magic Bytes & Path Traversal Guards](#session-4-media-uploads--os-safety--apache-tika-magic-bytes--path-traversal-guards)
+  - [Part 0: The Missing Foundations (Ground Zero)](#part-0-the-missing-foundations-ground-zero-2)
+    - [1. The Physical Reality of Files: Inodes, Disk Blocks & File Descriptors](#1-the-physical-reality-of-files-inodes-disk-blocks--file-descriptors)
+    - [2. What is multipart/form-data at the Raw Network Byte Level?](#2-what-is-multipartform-data-at-the-raw-network-byte-level)
+    - [3. The Extension Illusion: Why .png vs .exe is Just a String Lie](#3-the-extension-illusion-why-png-vs-exe-is-just-a-string-lie)
+    - [4. The Path Traversal Attack: How ../../etc/passwd Breaks Out of Jail](#4-the-path-traversal-attack-how-etcpasswd-breaks-out-of-jail)
+  - [Part 1: The Big Picture (How Everything Connects)](#part-1-the-big-picture-how-everything-connects-1)
+    - [The Media Upload & OS Safety Architecture Diagram](#the-media-upload--os-safety-architecture-diagram)
+    - [The 4 Core Upload Components & The Border Checkpoint Analogy](#the-4-core-upload-components--the-border-checkpoint-analogy)
+  - [Part 2: Step-by-Step Flow (End-to-End Life of a Media Upload Request)](#part-2-step-by-step-flow-end-to-end-life-of-a-media-upload-request)
+    - [Flow 1: Uploading Media via POST /api/posts (From Multipart Wire to Disk)](#flow-1-uploading-media-via-post-apiposts-from-multipart-wire-to-disk)
+    - [Microsecond-by-Microsecond Upload Sequence Diagram](#microsecond-by-microsecond-upload-sequence-diagram)
+    - [Flow 2: Serving Media via GET /uploads/{uuid}.png (Direct OS File Streaming)](#flow-2-serving-media-via-get-uploadsuuidpng-direct-os-file-streaming)
+  - [Part 3: How the Framework & Security "Magic" Works](#part-3-how-the-framework--security-magic-works)
+    - [1. Apache Tika Magic Byte Inspection: Reading Physical Header Bytes](#1-apache-tika-magic-byte-inspection-reading-physical-header-bytes)
+    - [2. UUID v4 Mathematics: Why Random Identifiers Neutralize Attacks](#2-uuid-v4-mathematics-why-random-identifiers-neutralize-attacks)
+    - [3. Path Traversal Neutralization: Paths.normalize() & startsWith()](#3-path-traversal-neutralization-pathsnormalize--startswith)
+    - [4. The Architectural Debate: Why We Never Store Images in PostgreSQL (BLOB vs. Filesystem)](#4-the-architectural-debate-why-we-never-store-images-in-postgresql-blob-vs-filesystem)
+    - [5. High-Performance Static Resource Handlers: Zero-Copy Streaming & HTTP 304 Caching](#5-high-performance-static-resource-handlers-zero-copy-streaming--http-304-caching)
+    - [6. Denial of Service (DoS) Defense: Multipart File Size Clamps](#6-denial-of-service-dos-defense-multipart-file-size-clamps)
+  - [Part 4: Line-by-Line Code Breakdown of 01Blog](#part-4-line-by-line-code-breakdown-of-01blog-1)
+    - [Anatomy of FileStorageService.java](#anatomy-of-filestorageservicejava)
+    - [Anatomy of WebMvcConfig.java](#anatomy-of-webmvcconfigjava)
+    - [Anatomy of application.properties (Multipart Limits)](#anatomy-of-applicationproperties-multipart-limits)
+  - [Part 5: Summary to Explain to Others (Your Auditor Pitch)](#part-5-summary-to-explain-to-others-your-auditor-pitch-2)
+  - [Part 6: Zone01 Auditor Defense Drill: 5 Tough Evaluator Questions & Precision Answers](#part-6-zone01-auditor-defense-drill-5-tough-evaluator-questions--precision-answers-1)
 
 ---
 
@@ -97,9 +167,9 @@
 |---|---|---|---|
 | **Session 1** | **The Engine Under the Hood** | Sockets, Tomcat, IoC Container, Beans, DI, Reflection, DispatcherServlet | **COMPLETED & DOCUMENTED** |
 | **Session 2** | **The Security Fortress** | Spring Security Architecture, ThreadLocal Context, Stateless JWT, BCrypt, CORS, CSRF, Ban Lockdown | **COMPLETED & DOCUMENTED** |
-| **Session 3** | **The Persistence Layer** | JPA, Hibernate, @ManyToMany Subscriptions, Composite Keys, N+1 Prevention | *NEXT UP* |
-| **Session 4** | **Media Uploads & OS Safety** | Apache Tika Magic Bytes, UUID File Renaming, Path Traversal Guards | *PENDING* |
-| **Session 5** | **The Angular Client Machine** | Standalone Components, RxJS State, Interceptors, Optimistic UI | *PENDING* |
+| **Session 3** | **The Persistence Layer** | PostgreSQL 16, Spring Data JPA, Hibernate ORM 6, Dirty Checking, Byte Buddy Proxies, N+1 Prevention | **COMPLETED & DOCUMENTED** |
+| **Session 4** | **Media Uploads & OS Safety** | Apache Tika Magic Bytes, UUID File Renaming, Path Traversal Guards | **COMPLETED & DOCUMENTED** |
+| **Session 5** | **The Angular Client Machine** | Standalone Components, RxJS State, Interceptors, Optimistic UI | *NEXT UP* |
 | **Session 6** | **System Governance & Defense** | Cascade Deletions, Global Error Contracts, Mock Audit Defense Drill | *PENDING* |
 
 ---
@@ -2493,5 +2563,1899 @@ public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataInte
 
 *2. **Inside Spring MVC (Controllers, Services & Dynamic Proxies):** Once the request enters `DispatcherServlet`, any security exception—such as method security failures (`@PreAuthorize` throwing `AccessDeniedException`), business ownership violations (`SecurityException` for banned users or unauthorized deletions), or invalid login credentials—bubbles up to `DispatcherServlet`. `DispatcherServlet` routes the error to **`GlobalExceptionHandler`** (`@RestControllerAdvice`), which translates raw Java exceptions into standardized, secure JSON API contracts with appropriate HTTP status codes (400, 403, 404, 409)."*
 
+---
 
+# Session 3: The Persistence Layer — Deep Dive into PostgreSQL 16, Hibernate ORM 6 & Spring Data JPA
+
+![01Blog Persistence Lifecycle, 4-Tier Stack & Byte Buddy Proxy](docs/images/01blog_persistence_lifecycle_and_orm.jpg)
+
+> **Context & Mission for the Zone01 Peer Audit:**  
+> The data layer is the exact meeting point between two fundamentally different universes:
+> 1. **The Object-Oriented Universe (Java / JVM Heap):** A dynamic graph of interconnected objects, memory pointers, polymorphism, and inheritance.
+> 2. **The Relational Universe (PostgreSQL 16 / Disk):** Rigid, flat, two-dimensional tables made of rows, columns, and foreign key numbers stored permanently on an SSD or hard drive.
+>
+> In this session, we dissect every layer of the persistence stack—from the physical micro-capacitors of DRAM and network TCP sockets on port 5432, all the way to Hibernate's Persistence Context, Dirty Checking snapshots, Byte Buddy Lazy Loading proxies, and Spring Data JPA dynamic repositories.
+
+![01Blog Database Schema Architecture](docs/images/05_database_schema_architecture.jpg)
+
+---
+
+## Part 0: The Missing Foundations (Ground Zero)
+
+### 1. The Physical Reality of Data: RAM vs. Hard Drive
+
+To understand why databases and ORMs exist, we must examine the physical silicon inside the computer:
+
+```
++-----------------------------------------------------------------------------------------+
+|                                    YOUR COMPUTER                                        |
+|                                                                                         |
+|   +---------------------------------------+   +-------------------------------------+   |
+|   |         DRAM (RAM MEMORY)             |   |        NVMe / SSD (HARD DISK)       |   |
+|   +---------------------------------------+   +-------------------------------------+   |
+|   | • Billions of tiny electrical         |   | • Millions of floating-gate         |   |
+|   |   micro-capacitors.                   |   |   transistors / flash cells.        |   |
+|   | • 1 bit = Charged with electrons.     |   | • 1 bit = Trapped electrons behind  |   |
+|   | • 0 bit = Discharged (empty).         |   |   an insulating oxide barrier.      |   |
+|   | • Speed: Blazing fast (~100 ns).      |   | • Speed: Slower (~50,000 to         |   |
+|   | • CATCH: Capacitors leak! Needs       |   |   100,000 ns).                      |   |
+|   |   constant electrical power to        |   | • SUPERPOWER: Non-volatile! Turn    |   |
+|   |   recharge every 64 milliseconds.     |   |   the power OFF for 10 years, and   |   |
+|   | • POWER OFF = ALL DATA DIES!          |   |   the data is still safely there!   |   |
+|   +---------------------------------------+   +-------------------------------------+   |
++-----------------------------------------------------------------------------------------+
+```
+
+#### What Happens in Java When You Create an Entity?
+When a student creates a blog post in 01Blog:
+```java
+Post post = new Post("My First Post", "Hello Zone01!", null, author);
+```
+1. The Java Virtual Machine (JVM) allocates a tiny chunk of bytes inside **DRAM (RAM Heap)**.
+2. The title string `"My First Post"` exists purely as tiny packets of electrical charge inside micro-capacitors on your motherboard.
+3. If you shut down Spring Boot, restart your laptop, or lose electrical power: **all electrical charges dissipate within milliseconds**. The `post` object is obliterated.
+
+#### Why Can't Java Just Write the Object Directly to a Text File on Disk?
+1. **Concurrency Collisions:** If User A edits a comment while User B deletes the post at the exact same microsecond, both threads write to `post.txt` simultaneously. The file becomes corrupt garbage bytes.
+2. **Crash Disasters (Atomicity Failure):** If the server loses power midway through writing a file, you get half a post. The data is broken with no recovery mechanism.
+3. **Search Inefficiency:** If you have 500,000 posts and want to find posts written by `"alice"`, a file system has to read every single file from the slow disk into memory. It takes 30 seconds!
+
+To solve this, computer scientists created **Relational Database Management Systems (RDBMS)** like **PostgreSQL**.
+
+---
+
+### 2. What Physically is PostgreSQL 16 on Your Operating System?
+
+PostgreSQL is **not** a Java library. It is **not** inside Spring Boot.
+
+**PostgreSQL is an independent, dedicated Operating System daemon process written in the C programming language.**
+
+```
++------------------------------------+           +------------------------------------+
+|       SPRING BOOT (JVM)            |           |        POSTGRESQL 16 (C PROCESS)   |
+|                                    |           |                                    |
+|   Runs inside: Java Virtual Mach.  |           |   Runs as an OS Daemon Process     |
+|   Owns: Java Objects in RAM Heap   |           |   Owns: Disk Files on SSD/HardDrive|
+|                                    |           |                                    |
+|   +----------------------------+   |  TCP Pipe |   +----------------------------+   |
+|   | TCP Socket (Client Port)   |===|===========|==>| TCP Socket (Port 5432)     |   |
+|   +----------------------------+   | Port 5432 |   +----------------------------+   |
++------------------------------------+           +------------------------------------+
+```
+
+#### How Does PostgreSQL Work on Your Computer?
+When you run `./start_db.sh` or when PostgreSQL runs on Linux/Windows:
+1. The OS starts a master daemon process called `postgres`.
+2. PostgreSQL asks the Linux Kernel: *"Give me exclusive ownership of **Port 5432**."*
+3. PostgreSQL manages a folder on disk (in our project, `~/pgdata` or standard Postgres data directory).
+4. Inside that folder, PostgreSQL organizes data into **8-Kilobyte Binary Pages** on disk, protected by a **Write-Ahead Log (WAL)**. Every write is guaranteed: even if lightning strikes your computer, PostgreSQL can replay the WAL on reboot and restore every single committed transaction with zero corruption.
+
+#### The PostgreSQL Wire Protocol:
+Spring Boot and PostgreSQL communicate over a **TCP/IP Network Socket** connected to `localhost:5432`.
+Across this TCP pipe flows the **PostgreSQL Frontend/Backend Protocol 3.0**—a stream of raw ASCII text and binary bytes:
+
+```
+SPRING BOOT (JVM)                                                   POSTGRESQL 16 (C)
+       |                                                                    |
+       | --- Binary Packet: ['Q', length, "SELECT * FROM posts WHERE id=1"] -> |
+       |                                                                    | (Postgres reads 8KB disk page,
+       |                                                                    |  locates row, serializes to bytes)
+       | <-- Binary Packet: ['D', col_count, "1", "My First Post", ...] ---- |
+       |                                                                    |
+```
+
+---
+
+### 3. The 1990s Nightmare: What is JDBC and Why Did Engineers Suffer?
+
+Java provides a built-in low-level network API called **JDBC (Java Database Connectivity)**.
+
+Here is what developers had to write in 2002 **just to fetch a single blog post and its author**:
+
+```java
+// 💀 THE OLD 2002 JDBC PLUMBING CODE:
+Connection connection = null;
+PreparedStatement statement = null;
+ResultSet resultSet = null;
+Post post = null;
+
+try {
+    // Step 1: Open a low-level TCP connection to port 5432
+    connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/01blog", "postgres", "secret");
+
+    // Step 2: Manually write raw SQL query as a string
+    String sql = "SELECT p.id, p.title, p.text_content, p.created_at, u.id AS author_id, u.username " +
+                 "FROM posts p JOIN users u ON p.user_id = u.id WHERE p.id = ?";
+    statement = connection.prepareStatement(sql);
+    statement.setLong(1, 10L);
+
+    // Step 3: Transmit query bytes across the TCP socket
+    resultSet = statement.executeQuery();
+
+    // Step 4: Manually unpack every single column from the raw byte stream!
+    if (resultSet.next()) {
+        post = new Post();
+        post.setId(resultSet.getLong("id"));
+        post.setTitle(resultSet.getString("title"));
+        post.setTextContent(resultSet.getString("text_content"));
+        post.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
+
+        User author = new User();
+        author.setId(resultSet.getLong("author_id"));
+        author.setUsername(resultSet.getString("username"));
+        post.setAuthor(author);
+    }
+} catch (SQLException e) {
+    e.printStackTrace();
+} finally {
+    // Step 5: Close all resources in REVERSE order, or cause a fatal OS socket leak!
+    try { if (resultSet != null) resultSet.close(); } catch (SQLException e) {}
+    try { if (statement != null) statement.close(); } catch (SQLException e) {}
+    try { if (connection != null) connection.close(); } catch (SQLException e) {}
+}
+```
+
+#### Why Raw JDBC Drove Developers Insane:
+1. **80% Boilerplate Plumbing:** You wrote 35 lines of code just to read one row. If your table had 20 columns, you had to type 20 lines of `resultSet.getString(...)` by hand.
+2. **Zero Compile-Time Safety (Typo Traps):** If you typed `resultSet.getString("textcontent")` (missing underscore) instead of `"text_content"`, the Java compiler could not warn you. The program compiled cleanly, and then crashed in production with: `SQLException: Column 'textcontent' not found`.
+3. **The Connection Leak Disaster:** If an unhandled exception occurred before `connection.close()`, the TCP socket remained open in the OS kernel. After a few hundred visitors, PostgreSQL ran out of connection slots and threw: `FATAL: remaining connection slots are reserved for non-replication superuser connections`.
+4. **No Relationship Traversal:** In Java, you want to write `post.getAuthor().getUsername()`. In JDBC, you had to manually write complex multi-table SQL joins and nest while-loops to stitch objects together.
+
+This fundamental challenge is called the **Object-Relational Impedance Mismatch**.
+
+---
+
+### 4. The Object-Relational Impedance Mismatch
+
+Why is mapping Java to SQL so fundamentally difficult? Because they operate on incompatible paradigms:
+
+| Concept | Java (Object-Oriented Universe) | PostgreSQL (Relational Universe) | The Conflict |
+|---|---|---|---|
+| **Data Structure** | Dynamic Graph of Pointers (`post.getAuthor().getUsername()`) | Flat 2D Tables with Rows & Columns | Tables don't have pointers; they only have foreign key integers. |
+| **Relationships** | Directional References (Object A references Object B) | Foreign Keys (`user_id` in `posts` table) | In Java, `post.getAuthor()` doesn't mean `user` knows about `post`. In SQL, a Foreign Key can be queried from either side. |
+| **Identity** | Memory address (`a == b`) or `.equals()` | Primary Key: Unique column value (`id = 1`) | Two distinct Java objects in Heap might represent the exact same database row! |
+| **Inheritance** | Class hierarchies (`class Admin extends User`) | Relational tables have **no concept of inheritance** | How do you store subclass fields in a flat table? |
+
+To bridge this gap, engineers created **ORM (Object-Relational Mapping)**. And in the Java ecosystem, the premier ORM engine is **Hibernate**.
+
+---
+
+## Part 1: The 4-Tier Persistence Architecture (The Big Picture)
+
+When someone says *"Spring handles the database"*, they are grouping together 4 distinct software layers:
+
+```
++-----------------------------------------------------------------------------------------+
+| 1. Spring Data JPA (The Convenience Wrapper)                                            |
+|    - Provides JpaRepository<Post, Long>.                                                |
+|    - Dynamically generates implementations at runtime via Java Dynamic Proxies in RAM.  |
++---------------------------------------------------------+-------------------------------+
+                                                          | calls
+                                                          v
++-----------------------------------------------------------------------------------------+
+| 2. Jakarta Persistence API (JPA) (The Official Specification Standard)                  |
+|    - Defines: @Entity, @Table, @Id, @ManyToOne, EntityManager.                          |
+|    - Contains ZERO executable code! (Just interfaces and annotations).                  |
++---------------------------------------------------------+-------------------------------+
+                                                          | implemented by
+                                                          v
++-----------------------------------------------------------------------------------------+
+| 3. Hibernate ORM 6 (The Heavy Engine & Master Craftsman)                                |
+|    - The actual executable engine that implements JPA.                                  |
+|    - Translates HQL/JPQL to PostgreSQL SQL, manages the Persistence Context (L1 Cache), |
+|      performs Dirty Checking, and generates Byte Buddy Lazy Loading Proxies.            |
++---------------------------------------------------------+-------------------------------+
+                                                          | uses
+                                                          v
++-----------------------------------------------------------------------------------------+
+| 4. PostgreSQL JDBC Driver (org.postgresql.Driver)                                       |
+|    - The Low-Level Network Conduit.                                                     |
+|    - Manages TCP Sockets to Port 5432, serializes SQL into PG Wire Protocol bytes.      |
++---------------------------------------------------------+-------------------------------+
+                                                          | TCP Socket (Port 5432)
+                                                          v
++-----------------------------------------------------------------------------------------+
+| 5. PostgreSQL 16 Database Server (Permanent Disk Storage Engine)                        |
++-----------------------------------------------------------------------------------------+
+```
+
+### The Real-World Mental Models:
+
+#### 1. The Restaurant Analogy:
+* **JPA** is the **Culinary Standard Guidelines**: The official written menu rules describing what a dish must contain.
+* **Hibernate** is the **Master Chef in the Kitchen**: The actual worker chopping vegetables, managing pots on the stove, and plating food.
+* **Spring Data JPA** is the **Waiter's Digital Ordering Tablet**: You tap *"Table 4: Post #10"*, and you don't even have to know which chef cooked it.
+* **JDBC Driver** is the **Food Delivery Van**: Transporting raw ingredients across the city streets (network packets).
+* **PostgreSQL** is the **Refrigerated Warehouse**: Where ingredients are safely stored in cold vaults (disk pages).
+
+#### 2. The Construction Analogy:
+* **JPA** is the **Architectural Blueprint**: Inanimate lines on paper describing where doors and columns go.
+* **Hibernate** is the **Construction Crew**: Real humans pouring concrete, laying bricks, and fitting pipes.
+* **Spring Data JPA** is the **Smart Home Automation System**: You press one button and the whole house configures itself.
+
+---
+
+## Part 2: The Entity in RAM & The Persistence Context (The 4 Lifecycle States)
+
+### 1. What Physically is an `@Entity` in JVM Heap?
+An entity class (such as [`Post.java`](backend/src/main/java/com/zone01/blog/entity/Post.java) or [`User.java`](backend/src/main/java/com/zone01/blog/entity/User.java)) is a standard Java class decorated with `@Entity`.
+It instructs Hibernate:
+> *"Every instance of this class in JVM RAM maps directly to one specific row in a database table."*
+
+### 2. What is the Persistence Context and L1 Cache in RAM?
+When Spring Boot opens a database transaction (`@Transactional`), Hibernate initializes an internal manager called the **`EntityManager`**.
+
+Inside the `EntityManager` lives the **Persistence Context** (also called the **First-Level / L1 Cache**).
+
+Physically, the Persistence Context consists of **two Java `HashMap` instances in JVM Heap**:
+
+```
++---------------------------------------------------------------------------------------+
+|                       PERSISTENCE CONTEXT (L1 Cache in JVM RAM)                       |
+|                                                                                       |
+|  Map 1: entitiesByKey                                                                 |
+|  Key: [Class: Post, ID: 10]  --->  Value: Post@0x4A1F (The live Java object in Heap)  |
+|                                                                                       |
+|  Map 2: entitySnapshots (The Hidden Photocopy)                                        |
+|  Key: [Class: Post, ID: 10]  --->  Value: [title="Hello", text="Zone01", authorId=3] |
++---------------------------------------------------------------------------------------+
+```
+
+### 3. The 4 Lifecycle States: Transient, Managed, Detached, Removed
+
+```
+               new Post()
+                   |
+                   v
+          +-----------------+
+          |    TRANSIENT    |  Object exists in RAM Heap only.
+          +--------+--------+  Postgres has never heard of it. Has no ID.
+                   |
+        postRepository.save(post)
+                   |
+                   v
+          +-----------------+
+          |     MANAGED     | <---+  Attached to the Persistence Context!
+          +--------+--------+     |  Hibernate watches every single field change.
+                   |              |
+       Transaction |              |  postRepository.save(detachedPost)
+       Finishes /  |              |  (Merge back into context)
+       Session     v              |
+       Closes     +---------------+
+          |       |    DETACHED   +
+          +-----> +---------------+  Still in Heap, has an ID, but NO LONGER monitored.
+                   |
+        postRepository.delete(post)
+                   |
+                   v
+          +-----------------+
+          |     REMOVED     |  Marked for SQL DELETE. Will be wiped from DB on commit.
+          +-----------------+
+```
+
+#### Detailed Breakdown of Each State:
+
+1. **`TRANSIENT`**:
+   ```java
+   Post post = new Post();
+   post.setTitle("Zone01 Rocks");
+   ```
+   * Object is in JVM Heap memory.
+   * `post.getId() == null`.
+   * Not in the Persistence Context. PostgreSQL knows nothing about it.
+   * If the method finishes, the Garbage Collector deletes it.
+
+2. **`MANAGED` (Persistent)**:
+   ```java
+   Post savedPost = postRepository.save(post);
+   ```
+   * Object enters the **Persistence Context**.
+   * PostgreSQL assigns it an ID (e.g., `42L`).
+   * **Hibernate actively watches every field change in memory.**
+
+3. **`DETACHED`**:
+   * Occurs when the transaction commits or the controller finishes.
+   * The `EntityManager` closes and clears its Persistence Context.
+   * The object is still in JVM Heap memory with `id = 42L`.
+   * **Hibernate is NO LONGER watching it.** Any call to `post.setTitle(...)` will NOT be sent to PostgreSQL!
+
+4. **`REMOVED`**:
+   ```java
+   postRepository.delete(savedPost);
+   ```
+   * Marked for deletion inside the Persistence Context.
+   * On transaction commit, Hibernate emits: `DELETE FROM posts WHERE id = 42;`.
+
+---
+
+## Part 3: Automatic Dirty Checking (The Secret Snapshot in RAM)
+
+### 1. Why There is No `repository.update()` Method in Spring Data JPA
+
+Notice that in [`PostRepository.java`](backend/src/main/java/com/zone01/blog/repository/PostRepository.java), we have `.save()`, `.findById()`, and `.delete()`. **There is no `.update()` method!**
+
+Why? Because in JPA, updates are not imperative commands—they are an automatic byproduct of **Dirty Checking**.
+
+### 2. Microsecond-by-Microsecond Sequence of Dirty Checking (The Polaroid Analogy)
+
+Look at this update method in [`PostService.java`](backend/src/main/java/com/zone01/blog/service/PostService.java):
+
+```java
+@Transactional
+public Post updatePost(Long id, String newTitle, String newContent) {
+    // Step 1: Fetch entity from database
+    Post post = postRepository.findById(id).orElseThrow();
+
+    // Step 2: Mutate fields in RAM
+    post.setTitle(newTitle);
+    post.setTextContent(newContent);
+
+    // WE DO NOT CALL postRepository.save(post)!
+    return post;
+}
+```
+
+Here is what physically occurs under the hood:
+
+```
+At 0.0ms: postRepository.findById(10L) executes.
+          Hibernate sends: SELECT * FROM posts WHERE id = 10;
+          PostgreSQL returns row: title = "Old Title", content = "Old Content".
+
+At 0.5ms: Hibernate creates the Post object in Heap:
+          Post@0x123 { id: 10, title: "Old Title", textContent: "Old Content" }
+          It places this instance into the Persistence Context (MANAGED).
+
+At 0.6ms: Hibernate takes a SECRET SNAPSHOT (Polaroid photo) of its fields:
+          Snapshot: [id: 10, title: "Old Title", textContent: "Old Content"]
+
+At 1.2ms: Your Java code executes:
+          post.setTitle("Brand New Title");
+          The live object in Heap updates its field:
+          Post@0x123 { id: 10, title: "Brand New Title", textContent: "Old Content" }
+          (The hidden snapshot remains: "Old Title").
+
+At 2.0ms: The method reaches the end. @Transactional tells Spring: COMMIT!
+          Before committing, Hibernate triggers FLUSH:
+          Hibernate loops over every Managed entity in the Persistence Context.
+          It compares Live Entity vs. Snapshot:
+          - Live title:     "Brand New Title"
+          - Snapshot title: "Old Title"
+          DIFFERENCE DETECTED! Entity is marked DIRTY!
+
+At 2.2ms: Hibernate AUTOMATICALLY crafts the SQL statement:
+          UPDATE posts SET title = 'Brand New Title', updated_at = NOW() WHERE id = 10;
+          Hibernate transmits the query bytes across the TCP socket to PostgreSQL.
+
+At 2.5ms: PostgreSQL executes the update and commits the transaction to disk.
+```
+
+### 3. Zero-Query Optimization on Unchanged Fields
+If a user submits an update form without changing any text:
+* Hibernate's snapshot comparison sees: `Live.title.equals(Snapshot.title) && Live.content.equals(Snapshot.content)`.
+* Zero differences detected!
+* Hibernate sends **ZERO SQL queries** to PostgreSQL! This saves network bandwidth, database CPU time, and locks automatically.
+
+---
+
+## Part 4: Dynamic Proxies, Lazy Loading & The N+1 Query Problem
+
+### 1. `FetchType.EAGER` vs. `FetchType.LAZY`: The Memory Trap
+
+Look at [`Report.java`](backend/src/main/java/com/zone01/blog/entity/Report.java), [`Post.java`](backend/src/main/java/com/zone01/blog/entity/Post.java), and [`Comment.java`](backend/src/main/java/com/zone01/blog/entity/Comment.java). Every relationship in 01Blog uses:
+```java
+fetch = FetchType.LAZY
+```
+
+* **`FetchType.EAGER` (The Trap):** When you query 1 Report, Hibernate immediately issues SQL joins to load the `User` reporter. But that `User` has a list of `posts`, each `Post` has 50 `comments`, and each `Comment` has another `User`! Loading 1 single report could trigger a chain reaction that loads **thousands of objects into RAM**, crashing the server with `java.lang.OutOfMemoryError`.
+* **`FetchType.LAZY` (The Professional Standard):** When you load a Report, Hibernate loads **ONLY the report table columns**. It does NOT load the reporter's user data until your code explicitly asks for it.
+
+### 2. The Byte Buddy Proxy: The Empty Amazon Box in RAM
+
+If `post.getAuthor()` is lazy, what does the getter return before the database is queried? In Java, a reference cannot point to thin air.
+
+**Hibernate returns a FAKE DECOY OBJECT: A Bytecode Dynamic Proxy!**
+
+Hibernate uses the **Byte Buddy** library to synthesize a subclass in JVM memory at runtime:
+`class User$ByteBuddy$aB12cD extends User`
+
+```
++-----------------------------------------------------------------------------------------+
+|                  THE BYTE BUDDY PROXY (The Empty Amazon Box in RAM)                     |
+|                                                                                         |
+|  post.getAuthor() points to: User$ByteBuddy$aB12cD                                      |
+|                                                                                         |
+|  Inside this fake decoy object:                                                         |
+|  • id: 5                      <-- Known from the post's user_id foreign key column!     |
+|  • username: null             <-- EMPTY!                                                |
+|  • email: null                <-- EMPTY!                                                |
+|  • role: null                 <-- EMPTY!                                                |
+|  • isInitialized: false       <-- Flag indicating data is not yet loaded                |
+|  • targetSession: SessionImpl <-- Active pointer to Hibernate's TCP database session    |
++-----------------------------------------------------------------------------------------+
+```
+
+#### What Happens When You Call `post.getAuthor().getUsername()`?
+1. The method call enters the Byte Buddy proxy.
+2. The proxy sees `isInitialized == false`.
+3. The proxy intercepts the call, pauses your Java thread, and uses its `targetSession` to secretly execute:
+   ```sql
+   SELECT * FROM users WHERE id = 5;
+   ```
+4. PostgreSQL returns the row bytes (`"alice"`, `"alice@zone01.com"`).
+5. The proxy populates its internal fields and flips `isInitialized = true`.
+6. It returns `"alice"` to your code! This is **Lazy Initialization**.
+
+---
+
+### 3. The Catastrophic N+1 Query Problem (The Supermarket Disaster)
+
+#### The Supermarket Analogy:
+* You need **10 ingredients** for dinner.
+* **The Smart Way (1 Single Trip):** You drive to the supermarket once, put all 10 items in your shopping cart, pay at the checkout, and drive home. Total round trips: **1**.
+* **The N+1 Disaster:** You drive to the supermarket, buy 1 onion, and drive home. Then you drive back to buy 1 carrot, and drive home. Then you drive back to buy 1 potato... You made **1 + 10 = 11 separate round trips!**
+
+#### How the N+1 Bug Occurs in Code:
+
+```java
+// ⚠️ THE N+1 DISASTER CODE:
+List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(); // Fetches 10 posts
+
+for (Post post : posts) {
+    // Each post has a LAZY Byte Buddy proxy for its author!
+    System.out.println(post.getTitle() + " written by " + post.getAuthor().getUsername());
+}
+```
+
+Look at the SQL queries that flood across the TCP socket to PostgreSQL:
+
+1. **Query 1 (The "1" Initial Query):**
+   ```sql
+   SELECT * FROM posts ORDER BY created_at DESC;
+   ```
+   PostgreSQL returns 10 post rows. Hibernate creates 10 `Post` objects in RAM, each holding an uninitialized Byte Buddy proxy for `author`.
+
+2. **Queries 2 to 11 (The "N" = 10 Extra Queries!):**
+   * **Loop iteration 1 (`post[0].getAuthor().getUsername()`):**  
+     Proxy 1 awakens: `SELECT * FROM users WHERE id = 4;`
+   * **Loop iteration 2 (`post[1].getAuthor().getUsername()`):**  
+     Proxy 2 awakens: `SELECT * FROM users WHERE id = 8;`
+   * **Loop iteration 3 (`post[2].getAuthor().getUsername()`):**  
+     Proxy 3 awakens: `SELECT * FROM users WHERE id = 2;`
+   * ...and this repeats for **every single post in the list!**
+
+#### The Math of the Disaster:
+* For 10 posts = **11 queries**.
+* For 1,000 posts = **1,001 queries**!
+* For 10,000 posts = **10,001 queries**!
+PostgreSQL CPU utilization hits 100%, TCP sockets saturate, latency spikes into seconds, and the server freezes.
+
+### 4. How We Prevented N+1 in 01Blog
+In our service layer ([`PostService.java`](backend/src/main/java/com/zone01/blog/service/PostService.java)):
+1. **Batch In-Queries:** For friend feeds, instead of looping through each followed author individually, we use:
+   ```java
+   List<Post> findByAuthorInOrderByCreatedAtDesc(Collection<User> authors);
+   ```
+   This generates a single optimized SQL query:
+   ```sql
+   SELECT * FROM posts WHERE user_id IN (1, 5, 8, 12) ORDER BY created_at DESC;
+   ```
+2. **DTO Projections:** In our endpoints, we immediately transform entities into lightweight DTOs within a controlled transaction boundary, avoiding lazy loading traps in controllers or Jackson JSON serializers.
+
+---
+
+## Part 5: Line-by-Line Code Breakdown of 01Blog
+
+Let's dissect our actual project files so you can defend every single annotation line to the auditors.
+
+---
+
+### Anatomy of [`Report.java`](backend/src/main/java/com/zone01/blog/entity/Report.java)
+
+```java
+8:  @Entity
+9:  @Table(name = "reports")
+10: public class Report {
+```
+* **Line 8 (`@Entity`):** Marks this class as a persistent entity. Hibernate registers it in the `EntityManager` and maps it to a database table.
+* **Line 9 (`@Table(name = "reports")`):** Explicitly defines the table name as `reports` (plural), overriding Hibernate's default singular `report`.
+
+```java
+12:     @Id
+13:     @GeneratedValue(strategy = GenerationType.IDENTITY)
+14:     private Long id;
+```
+* **Line 12 (`@Id`):** Declares the field as the table's Primary Key.
+* **Line 13 (`GenerationType.IDENTITY`):** Delegates primary key generation to PostgreSQL's native `IDENTITY` column (or `BIGSERIAL`). PostgreSQL generates the unique integer on disk upon insertion.
+
+```java
+17:     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+18:     @JoinColumn(name = "reporter_id", nullable = false)
+19:     private User reporter;
+```
+* **Line 17 (`@ManyToOne`):** Defines the cardinality: many moderation reports can be submitted by one student.
+* **`fetch = FetchType.LAZY`:** Prevents loading the reporter's full user record until explicitly called, placing a Byte Buddy proxy in RAM.
+* **Line 18 (`@JoinColumn(name = "reporter_id", nullable = false)`):**
+  * `name = "reporter_id"`: Designates the physical foreign key column in PostgreSQL (`BIGINT REFERENCES users(id)`).
+  * `nullable = false`: Enforces database-level integrity. PostgreSQL rejects any row where `reporter_id IS NULL`.
+
+```java
+22:     @Enumerated(EnumType.STRING)
+23:     @Column(name = "target_type", nullable = false)
+24:     private ReportTargetType targetType;
+```
+* **Line 22 (`@Enumerated(EnumType.STRING)`):**  
+  * **Why `STRING` instead of `ORDINAL`?**  
+    If omitted, JPA defaults to `ORDINAL` (storing integers `0`, `1`, `2`). If you later add a new enum value at the top of the enum file, all historical database rows silently change their meaning! Storing `"USER"` and `"POST"` as explicit text strings in PostgreSQL ensures backward compatibility.
+
+```java
+37:     @Column(name = "reason", columnDefinition = "TEXT", nullable = false)
+38:     private String reason;
+```
+* **Line 37 (`columnDefinition = "TEXT"`):**  
+  Java `String` defaults to SQL `VARCHAR(255)`. A detailed report reason could easily exceed 255 characters. `TEXT` allows unlimited length in PostgreSQL.
+
+```java
+44:     public Report() {
+45:         this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
+46:     }
+```
+* **Line 44 (No-Argument Constructor):**  
+  **Mandatory for JPA.** When Hibernate reconstructs objects from database rows, it invokes `Report.class.getDeclaredConstructor().newInstance()` via Java Reflection. Without this default constructor, Hibernate crashes on startup with an `InstantiationException`.
+
+---
+
+### Anatomy of [`User.java`](backend/src/main/java/com/zone01/blog/entity/User.java) (Self-Referencing Subscriptions)
+
+Look at lines 43 to 55 in [`User.java`](backend/src/main/java/com/zone01/blog/entity/User.java):
+
+```java
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "user_subscriptions",
+        joinColumns = @JoinColumn(name = "subscriber_id"),
+        inverseJoinColumns = @JoinColumn(name = "target_id")
+    )
+    private Set<User> following = new HashSet<>();
+
+    @ManyToMany(mappedBy = "following", fetch = FetchType.LAZY)
+    private Set<User> followers = new HashSet<>();
+```
+
+#### Why Can't PostgreSQL Store Followers Directly in the `users` Table?
+Relational databases operate on **first normal form (1NF)**: each cell must contain a single atomic value. A table cell cannot store a list of 500 follower IDs.
+
+To represent Many-to-Many relationships, relational databases **require an intermediate Join Table (Junction Table)**:
+
+```
+                      TABLE: user_subscriptions
+                   +---------------+-----------+
+                   | subscriber_id | target_id |
+                   +---------------+-----------+
+                   |       1       |     2     |  (User 1 follows User 2)
+                   |       1       |     3     |  (User 1 follows User 3)
+                   |       2       |     1     |  (User 2 follows User 1)
+                   +---------------+-----------+
+```
+* `joinColumns = @JoinColumn(name = "subscriber_id")`: The user initiating the follow (the subscriber).
+* `inverseJoinColumns = @JoinColumn(name = "target_id")`: The author being followed.
+* `mappedBy = "following"`: Instructs Hibernate: *"The `followers` set is the reverse mirror of `following`. Do NOT create a second join table! Query the existing `user_subscriptions` table in reverse (`WHERE target_id = ?`)."*
+
+---
+
+### Anatomy of [`Like.java`](backend/src/main/java/com/zone01/blog/entity/Like.java) (Composite Unique Constraint Defense)
+
+```java
+@Entity
+@Table(name = "likes", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "post_id"})
+})
+public class Like {
+```
+* **Auditor Question:** *"What prevents a user from double-clicking the Like button rapidly and inflating a post's like counter?"*
+* **Your Defense:** *"We enforce integrity at the lowest physical level: PostgreSQL schema unique constraints via `@UniqueConstraint(columnNames = {"user_id", "post_id"})`. PostgreSQL builds a composite unique B-Tree index on disk. If two concurrent HTTP requests attempt to insert the same `(user_id, post_id)` pair, PostgreSQL's WAL engine rejects the second transaction with a unique constraint violation (`DataIntegrityViolationException`), which our `GlobalExceptionHandler` converts into an HTTP 409 Conflict."*
+
+---
+
+### Anatomy of [`PostRepository.java`](backend/src/main/java/com/zone01/blog/repository/PostRepository.java) & Dynamic Query Method Derivation
+
+Look at [`PostRepository.java`](backend/src/main/java/com/zone01/blog/repository/PostRepository.java):
+```java
+@Repository
+public interface PostRepository extends JpaRepository<Post, Long> {
+    List<Post> findByAuthorUsernameOrderByCreatedAtDesc(String username);
+}
+```
+
+#### How Does Spring Execute This With ZERO Implementation Code?
+1. At application boot, Spring Data scans for all interfaces extending `JpaRepository`.
+2. It uses `java.lang.reflect.Proxy` to manufacture a **Dynamic Proxy class directly in bytecode in JVM RAM**.
+3. It assigns Spring's built-in **`SimpleJpaRepository`** as the default delegate for `save()`, `findById()`, and `delete()`.
+4. For custom methods like `findByAuthorUsernameOrderByCreatedAtDesc`, Spring Data's **`PartTree`** engine parses the method name tokens:
+   * `findBy`: Generates a `SELECT` query.
+   * `AuthorUsername`: Inspects `Post.author` ➔ finds `User.username`. Generates `INNER JOIN users u ON p.user_id = u.id WHERE u.username = ?`.
+   * `OrderByCreatedAtDesc`: Appends `ORDER BY p.created_at DESC`.
+5. If you misspell any field name (e.g. `findByAuthorUsernaaame`), **Spring Boot refuses to start and fails fast on boot**, protecting you from runtime SQL errors!
+
+---
+
+## Part 6: Summary to Explain to Others (Your Auditor Pitch)
+
+When an evaluator asks:
+**"Explain how the data layer works in 01Blog and why you chose this design."**
+
+Deliver this exact pitch:
+
+> *"In 01Blog, our persistence architecture is built on a clean 4-tier stack: Spring Data JPA on top, Jakarta Persistence (JPA) as the standard contract, Hibernate 6 as the ORM engine, and the PostgreSQL JDBC Driver connecting over a TCP socket to PostgreSQL 16 on port 5432.*
+>
+> *We map our relational tables directly to Java entities using `@Entity`, `@Table`, and `@Id`. To prevent performance bottlenecks, all entity associations—including `@ManyToOne` on posts and comments, and our `@ManyToMany` self-referencing user subscriptions join table—are strictly configured with `FetchType.LAZY`. This ensures Hibernate uses Byte Buddy dynamic proxies to defer loading until fields are explicitly requested, avoiding catastrophic N+1 query cascades.*
+>
+> *Furthermore, we take full advantage of Hibernate's Persistence Context and L1 Cache. Inside `@Transactional` service methods, we rely on Hibernate's automatic **Dirty Checking**: during transaction commit, Hibernate diffs the managed entity against its initial snapshot in memory and automatically flushes optimized SQL `UPDATE` statements only when fields have actually changed, guaranteeing both data integrity and optimal database throughput."*
+
+---
+
+## Part 7: Zone01 Auditor Defense Drill: 5 Tough Evaluator Questions & Precision Answers
+
+### ❓ Question 1: "What is the difference between JPA and Hibernate, and why does our `pom.xml` declare `spring-boot-starter-data-jpa` instead of Hibernate directly?"
+
+**Your Defense Speech:**
+> *"JPA (Jakarta Persistence API) is merely an official Java specification standard—a collection of interfaces and annotations such as `@Entity`, `@Table`, and `EntityManager` with zero executable code. Hibernate is the actual ORM engine that implements JPA's interfaces, generates the PostgreSQL dialect SQL, manages the Persistence Context, and performs dirty checking.*
+>
+> *We declare `spring-boot-starter-data-jpa` because it provides Spring Data's repository abstraction on top of JPA, and transitively pulls in Hibernate 6 as the default JPA provider along with HikariCP for connection pooling. This allows us to code against vendor-independent JPA standards while benefiting from Hibernate's mature runtime engine."*
+
+---
+
+### ❓ Question 2: "Why don't we have a `postRepository.update(post)` method in our codebase? How does modifying an object in Java actually update PostgreSQL?"
+
+**Your Defense Speech:**
+> *"Because Hibernate uses automatic **Dirty Checking**. When an entity is retrieved inside a `@Transactional` service method via `findById()`, Hibernate registers it as a **Managed** entity inside the Persistence Context (L1 Cache) and takes an internal snapshot of its fields.*
+>
+> *When we mutate the entity's fields using setters (`post.setTitle(...)`), the object in JVM heap changes while the hidden snapshot remains unchanged. At transaction commit, Hibernate flushes the Persistence Context, diffs the live entity against its snapshot, detects the modified fields, and automatically crafts and sends the optimized SQL `UPDATE` statement over the TCP socket to PostgreSQL. If no fields were modified, Hibernate sends zero SQL queries, saving network overhead."*
+
+---
+
+### ❓ Question 3: "Explain what happens in memory when an entity relationship is marked `fetch = FetchType.LAZY`. What does the getter return if the database hasn't been queried yet?"
+
+**Your Defense Speech:**
+> *"With `FetchType.LAZY`, Hibernate avoids loading associated entities upfront. Instead of assigning `null` or the real entity to the reference, Hibernate uses the **Byte Buddy** library to instantiate a dynamic bytecode proxy subclass—a hollow decoy object that knows the foreign key ID and holds a reference to the active database session.*
+>
+> *The moment our code invokes any business getter on that proxy (such as `post.getAuthor().getUsername()`), the proxy intercepts the method invocation, checks if it is initialized, and transparently executes a SQL query across the TCP socket to fetch the author's record from PostgreSQL. It populates its internal fields and returns the requested value seamlessly."*
+
+---
+
+### ❓ Question 4: "What is the N+1 query problem, why is it dangerous, and how did you prevent it in 01Blog?"
+
+**Your Defense Speech:**
+> *"The N+1 query problem occurs when an application executes 1 initial query to fetch N parent records (e.g. 10 posts), and then, inside a loop, accesses a lazy-loaded child association (e.g. `post.getAuthor().getUsername()`). Because the association is lazy, Hibernate executes 1 separate query for each of the N records, resulting in 1 + N total network round-trips to the database.*
+>
+> *For 1,000 posts, this triggers 1,001 individual network queries, saturating database connections and causing severe latency spikes. In 01Blog, we prevent this by transforming entities into DTOs within controlled transactional boundaries, utilizing batch queries with `IN` clauses (such as `findByAuthorInOrderByCreatedAtDesc`), and avoiding lazy navigation loops in our controllers."*
+
+---
+
+### ❓ Question 5: "How does our database enforce that a user cannot like the same post more than once, and what happens at the framework level if they try?"
+
+**Your Defense Speech:**
+> *"We enforce uniqueness at the database level in [Like.java](file:///home/richouan/Desktop/01blog/backend/src/main/java/com/zone01/blog/entity/Like.java) using `@Table(name = "likes", uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "post_id"})})`. PostgreSQL builds a composite unique B-Tree index on `(user_id, post_id)`.*
+>
+> *If a user double-clicks or an attacker sends concurrent like requests, PostgreSQL's storage engine detects the constraint violation and aborts the transaction, causing the JDBC driver to throw a PostgreSQL error. Spring translates this into a `DataIntegrityViolationException`, which our `GlobalExceptionHandler` intercepts and converts into a clean, standardized HTTP 409 Conflict JSON response."*
+
+---
+
+## Part 8: The DTO Mystery Solved — Why We NEVER Return Entities
+
+![01Blog Spring Request Lifecycle](docs/images/02_spring_request_lifecycle.jpg)
+
+In our project codebase, you will notice two parallel sets of data structures:
+* In `com.zone01.blog.entity`: We have [`Post.java`](backend/src/main/java/com/zone01/blog/entity/Post.java) and [`User.java`](backend/src/main/java/com/zone01/blog/entity/User.java).
+* In `com.zone01.blog.dto`: We have [`PostResponse.java`](backend/src/main/java/com/zone01/blog/dto/PostResponse.java) and [`AuthResponse.java`](backend/src/main/java/com/zone01/blog/dto/AuthResponse.java).
+
+Beginners often wonder:  
+*"Why write `PostResponse` if `Post` already has `id`, `title`, and `textContent`? Why not just return `public Post getPost()` directly from the Controller?"*
+
+Returning an `@Entity` directly to a client triggers **four catastrophic architectural disasters**:
+
+```
++-----------------------------------------------------------------------------------------+
+|                  THE 4 DISASTERS OF RETURNING AN @ENTITY DIRECTLY                      |
+|                                                                                         |
+|  1. SECURITY LEAK:                                                                      |
+|     Your User entity has `password` (BCrypt hash) and `banned`.                         |
+|     Returning User directly serializes the password hash into public JSON!              |
+|                                                                                         |
+|  2. INFINITE RECURSION CRASH (StackOverflowError):                                     |
+|     Post points to Author User. User points to list of Posts.                           |
+|     Jackson JSON serializer loops forever: Post -> User -> Post -> User -> CRASH!      |
+|                                                                                         |
+|  3. LazyInitializationException:                                                        |
+|     Outside the @Transactional service, Hibernate's Session is closed.                  |
+|     When Jackson tries to read a lazy relationship, Hibernate crashes with 500 error!   |
+|                                                                                         |
+|  4. COMPUTED DATA MISMATCH:                                                             |
+|     The frontend needs `likesCount: 15` and `liked: true` (for the current student).   |
+|     The `posts` database table DOES NOT HAVE those columns! They must be computed.      |
++-----------------------------------------------------------------------------------------+
+```
+
+### The 4 Disasters of Returning an @Entity Directly:
+
+#### Disaster 1: The BCrypt Password Hash Security Leak
+Look at [`User.java`](backend/src/main/java/com/zone01/blog/entity/User.java):
+```java
+@Entity
+public class User {
+    private Long id;
+    private String username;
+    private String email;
+    private String password; // <-- SENSITIVE BCRYPT HASH!
+    private boolean banned;
+}
+```
+If `PostController` returns the raw `Post` entity, Spring Boot's JSON serializer (Jackson) inspects all getter methods on `Post`, sees `post.getAuthor()`, and serializes the author object.
+**The Result:** The author's BCrypt password hash and private email are serialized directly into public JSON bytes! Anyone opening Chrome DevTools Network tab can inspect other students' password hashes.
+
+#### Disaster 2: The Infinite Loop & `StackOverflowError`
+* A `Post` has an author `User`.
+* A `User` has `following` and `followers` (`Set<User>`).
+When Jackson attempts to serialize `Post` into JSON:
+1. It writes `{ "id": 1, "author": { "username": "alice", "following": [ ... `
+2. Inside `following`, it finds Bob, who is following Alice, who is following Bob...
+3. The serializer executes `getAuthor() ➔ getFollowing() ➔ getFollowers() ➔ getFollowing()` until the JVM thread exhausts its stack frame memory and **crashes the entire Spring Boot application with a fatal `java.lang.StackOverflowError`!**
+
+#### Disaster 3: The `LazyInitializationException`
+All associations in 01Blog are configured with `fetch = FetchType.LAZY`.
+* Inside `PostService`, the `@Transactional` method finishes. The database transaction commits and the Hibernate Session **closes**.
+* The Controller receives the `Post` entity and hands it to Jackson to serialize into JSON.
+* Jackson invokes `post.getAuthor().getUsername()`.
+* The Byte Buddy proxy wakes up, discovers the Hibernate Session is already closed, and throws:
+  `org.hibernate.LazyInitializationException: could not initialize proxy - no Session`.
+* The client receives an unhandled HTTP 500 Internal Server Error.
+
+#### Disaster 4: Computed UI Data Mismatch
+When an Angular feed card renders a post, it needs:
+* `likesCount`: How many total students liked this post (e.g., `12`).
+* `liked`: Did **I** (the currently logged-in student) like this post? (`true` or `false`).
+* `commentsCount`: How many comments exist on this post (e.g., `4`).
+
+The PostgreSQL `posts` table **does not store these values**. Why?
+Because `liked` is different for every single user looking at the screen! If Alice browses the feed, `liked` is `true`. If Bob views the same post, `liked` is `false`. These values must be calculated dynamically in RAM.
+
+---
+
+### The DTO Firewall Pattern & `PostResponse.fromEntity` Breakdown
+
+A **DTO (Data Transfer Object)** is a plain, decoupled Java object with **no JPA annotations, no Byte Buddy proxies, and no circular references**. It serves as a secure firewall between your internal database schema and the outside world.
+
+Look at lines 47-69 in [`PostResponse.java`](backend/src/main/java/com/zone01/blog/dto/PostResponse.java):
+
+```java
+// Static helper to map Post entity directly to PostResponse DTO
+public static PostResponse fromEntity(Post post, long likesCount, boolean liked, long commentsCount) {
+    PostResponse resp = new PostResponse(
+            post.getId(),
+            post.getTitle(),
+            post.getTextContent(),
+            post.getMediaUrl(),
+            post.getAuthor().getId(),       // Unpack author ID safely (no proxy leak)
+            post.getAuthor().getUsername(), // Unpack author username safely
+            post.getCreatedAt(),
+            post.getUpdatedAt(),
+            likesCount,                     // Inject computed metric
+            liked,                          // Inject user-specific boolean flag
+            commentsCount                   // Inject computed metric
+    );
+    String authorAvatar = post.getAuthor().getAvatarUrl();
+    if (authorAvatar == null || authorAvatar.isBlank()) {
+        int idx = (Math.abs(post.getAuthor().getUsername().hashCode()) % 10) + 1;
+        authorAvatar = "/uploads/avatars/brutalist-" + idx + ".svg";
+    }
+    resp.setAuthorAvatarUrl(authorAvatar);
+    resp.setHidden(post.isHidden());
+    return resp;
+}
+```
+
+#### Why This Pattern is Bulletproof:
+1. **Security:** The password hash never enters `PostResponse`. It is physically impossible to leak.
+2. **Cycle-Free:** The circular graph is flattened into simple primitive and String fields (`authorUsername`, `authorId`).
+3. **Lazy Safe:** The author proxy is initialized **inside the service transaction boundary** while the database connection is still open.
+4. **Decoupled API Contract:** If you rename a database column in PostgreSQL, you only update the `@Column` annotation in `Post.java`. Your Angular frontend JSON contract remains 100% stable and intact.
+
+---
+
+## Part 9: Request Flow 1 (Reading Data) — The Chronological Journey of `GET /api/posts/10`
+
+Let's trace a student opening Post #10 in their browser. Watch how each component passes the baton in memory:
+
+```
+[ Angular 18 Client ]
+        |
+        | 1. HTTP GET /api/posts/10 (Bearer JWT)
+        v
+[ Tomcat Thread & Security Filter Chain ]
+        |
+        | 2. Authenticates JWT, puts Authentication token in ThreadLocal
+        v
+[ PostController.java ]
+        |
+        | 3. postService.getPostById(10L, currentUsername)
+        v
+[ PostService.java (@Transactional readOnly=true) ]
+        |
+        | 4. Opens EntityManager & Persistence Context in RAM
+        | 5. postRepository.findById(10L)
+        v
+[ Spring Data JpaRepository Dynamic Proxy ]
+        |
+        | 6. Sends SQL over TCP Socket Port 5432
+        v
+[ PostgreSQL 16 (Port 5432) ]
+        |
+        | 7. Reads 8KB disk page, returns row bytes
+        v
+[ Hibernate ORM Engine in RAM ]
+        |
+        | 8. Constructs Post entity (Managed) + Byte Buddy Lazy Proxy for Author
+        v
+[ PostService.java ]
+        |
+        | 9. Checks visibility, queries like/comment counts
+        | 10. PostResponse.fromEntity(post, likesCount, liked, commentsCount)
+        v
+[ PostController.java ]
+        |
+        | 11. Returns ResponseEntity.ok(postResponse)
+        v
+[ Jackson JSON Converter ]
+        |
+        | 12. Serializes DTO into JSON ASCII bytes
+        v
+[ Angular 18 Client ] (Renders Neo-Brutalist UI card)
+```
+
+---
+
+### Microsecond-by-Microsecond Timeline in RAM:
+
+#### Phase 1: At the Network & Controller Boundary
+1. **At 0.0ms (TCP Connection):** The browser transmits raw ASCII text over an OS socket to Tomcat on Port 8080:
+   `GET /api/posts/10 HTTP/1.1\r\nAuthorization: Bearer eyJhbGci...`
+2. **At 0.4ms (Security Filter Chain):**
+   * `JwtAuthFilter` intercepts the request.
+   * Validates the HMAC-SHA256 signature, extracts username `"youssef"`.
+   * Sets `SecurityContextHolder.getContext().setAuthentication(...)` inside the worker thread's `ThreadLocal`.
+3. **At 0.8ms (`DispatcherServlet` to Controller):**
+   * `DispatcherServlet` queries `HandlerMapping` ($O(1)$ Hash Map) and routes to [`PostController.java`](backend/src/main/java/com/zone01/blog/controller/PostController.java#L70):
+   ```java
+   @GetMapping("/{id}")
+   public ResponseEntity<PostResponse> getPostById(@PathVariable("id") Long id, Authentication authentication) {
+       String currentUsername = authentication.getName(); // "youssef"
+       return ResponseEntity.ok(postService.getPostById(id, currentUsername));
+   }
+   ```
+
+#### Phase 2: Inside the Service & Persistence Layer
+4. **At 1.0ms (Transaction Boundary):**
+   * The call reaches [`PostService.java`](backend/src/main/java/com/zone01/blog/service/PostService.java#L190):
+   ```java
+   @Transactional(readOnly = true)
+   public PostResponse getPostById(Long postId, String currentUsername) {
+   ```
+   * Spring's Transaction Interceptor checks `@Transactional(readOnly = true)`.
+   * Borrows a database connection from the HikariCP pool and starts a read-only session.
+   * Hibernate initializes the **Persistence Context (L1 Cache)** in JVM Heap.
+
+5. **At 1.2ms (The Database Query):**
+   * Service executes:
+   ```java
+   Post post = postRepository.findById(postId).orElseThrow(...);
+   ```
+   * The call hits Spring Data's `JdkDynamicAopProxy` ➔ delegates to `SimpleJpaRepository.findById()` ➔ calls `entityManager.find(Post.class, 10L)`.
+   * Hibernate checks the L1 Cache: is `Post#10` already in RAM? **No**.
+   * Hibernate uses the PostgreSQL JDBC driver to send SQL over TCP port 5432:
+     ```sql
+     SELECT id, title, text_content, media_url, user_id, created_at, updated_at, hidden 
+     FROM posts WHERE id = 10;
+     ```
+
+6. **At 2.0ms (PostgreSQL Disk to Heap):**
+   * PostgreSQL's storage engine finds the row on disk, packages the binary packets, and transmits them back across the TCP socket.
+   * Hibernate parses the column bytes:
+     * `id`: 10
+     * `title`: "Zone01 Evaluation Tips"
+     * `text_content`: "Always explain from the socket level..."
+     * `user_id`: 4 (Foreign key pointing to author)
+   * Hibernate creates the `Post` object in JVM Heap.
+   * **Crucial Lazy Detail:** What does Hibernate put in `post.author`?  
+     Because of `@ManyToOne(fetch = FetchType.LAZY)`, Hibernate **DOES NOT query the `users` table yet!**  
+     Hibernate creates a **Byte Buddy dynamic proxy decoy**:
+     `User$ByteBuddy$7x9Q { id: 4, isInitialized: false }`.
+   * Hibernate registers `Post#10` in the Persistence Context as **MANAGED**.
+
+#### Phase 3: Business Logic & DTO Construction
+7. **At 2.5ms (Visibility Check):**
+   * Service calls `isVisibleToUser(post, currentUser)`. The post is not hidden, so check passes.
+8. **At 2.8ms (Computing Social Metrics):**
+   * The Service queries the social state:
+   ```java
+   long likesCount = likeRepository.countByPost(post);
+   boolean liked = (currentUser != null) && likeRepository.existsByUserAndPost(currentUser, post);
+   long commentsCount = commentRepository.countByPost(post);
+   ```
+   * Spring Data executes indexed count queries against PostgreSQL:
+     ```sql
+     SELECT COUNT(*) FROM likes WHERE post_id = 10;
+     SELECT COUNT(*) > 0 FROM likes WHERE user_id = 2 AND post_id = 10;
+     SELECT COUNT(*) FROM comments WHERE post_id = 10;
+     ```
+9. **At 3.5ms (The DTO Transformation):**
+   * Service calls `PostResponse.fromEntity(post, likesCount, liked, commentsCount)`.
+   * Inside `fromEntity`:
+     * It calls `post.getAuthor().getId()`. **Notice:** Hibernate does NOT fire SQL for this, because the ID (`4`) was already known from the `user_id` column of the `posts` table!
+     * It calls `post.getAuthor().getUsername()`. **The Byte Buddy Proxy triggers!** Hibernate sends `SELECT * FROM users WHERE id = 4;`. The proxy populates `"amine"`.
+     * The `PostResponse` DTO is instantiated in Heap with pure primitives and strings:
+       `PostResponse@0x88 { id: 10, title: "Zone01...", authorUsername: "amine", likesCount: 5, liked: true }`.
+
+#### Phase 4: Teardown & Response Delivery
+10. **At 4.0ms (Transaction Commit & Session Closure):**
+    * The service method returns `PostResponse`.
+    * `@Transactional` completes.
+    * Hibernate closes the `EntityManager`.
+    * The `Post` entity moves from **`MANAGED`** to **`DETACHED`**.
+11. **At 4.2ms (Jackson JSON Serialization):**
+    * Controller returns `ResponseEntity.ok(postResponse)`.
+    * Jackson inspects the DTO fields. **There are no proxies, no circular pointers, and no password hashes.**
+    * Jackson serializes into clean JSON:
+      ```json
+      {
+        "id": 10,
+        "title": "Zone01 Evaluation Tips",
+        "authorUsername": "amine",
+        "authorAvatarUrl": "/uploads/avatars/brutalist-3.svg",
+        "likesCount": 5,
+        "liked": true,
+        "commentsCount": 2
+      }
+      ```
+12. **At 4.5ms (Network Delivery):**
+    * Tomcat flushes the HTTP 200 ASCII bytes across the TCP socket back to the browser.
+    * Angular receives the JSON, updates its signal/observable, and renders the post card!
+
+---
+
+## Part 10: Request Flow 2 (Writing Data) — `POST /api/posts/10/like` & Concurrency Defense
+
+![01Blog Social Interactions Flow](docs/images/04_social_interactions_flow.jpg)
+
+Now let's trace a write operation that showcases **all 4 entity states (`Transient`, `Managed`, `Removed`)** and **database-level unique constraint collision defense**.
+
+Suppose student `"youssef"` clicks the "Like" button on Post #10.
+
+Look at [`LikeService.java`](backend/src/main/java/com/zone01/blog/service/LikeService.java#L32):
+
+```java
+@Transactional
+public LikeResponse toggleLike(@NonNull Long postId, String username) {
+    Post post = postRepository.findById(postId).orElseThrow(...);
+    User user = userRepository.findByUsername(username).orElseThrow(...);
+
+    Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post);
+
+    boolean isLiked;
+    if (existingLike.isPresent()) {
+        Like toDelete = existingLike.get();
+        likeRepository.delete(toDelete);
+        likeRepository.flush();
+        isLiked = false;
+    } else {
+        Like newLike = new Like(user, post);
+        likeRepository.saveAndFlush(newLike);
+        isLiked = true;
+    }
+
+    long count = likeRepository.countByPost(post);
+    return new LikeResponse(postId, isLiked, count);
+}
+```
+
+---
+
+### Entity Lifecycle in RAM: Transient to Managed to Removed
+
+```
+Scenario A: Yousef likes a post for the first time
+
+1. Like newLike = new Like(user, post);
+   [ STATE: TRANSIENT ]
+   - Created in JVM Heap via "new".
+   - ID is null.
+   - Postgres knows nothing. Not in L1 Cache.
+
+2. likeRepository.saveAndFlush(newLike);
+   [ STATE: MANAGED ]
+   - Enters Persistence Context (L1 Cache).
+   - Hibernate generates SQL INSERT:
+     INSERT INTO likes (user_id, post_id, created_at) VALUES (2, 10, NOW());
+   - Sends query over TCP socket port 5432.
+   - PostgreSQL generates ID = 99.
+   - newLike.setId(99L).
+   - Entity is now MANAGED.
+
+-------------------------------------------------------------
+
+Scenario B: Yousef clicks "Unlike"
+
+1. Optional<Like> existingLike = likeRepository.findByUserAndPost(user, post);
+   [ STATE: MANAGED ]
+   - Loaded from PostgreSQL into L1 Cache.
+   - ID is 99.
+
+2. likeRepository.delete(toDelete);
+   [ STATE: REMOVED ]
+   - Hibernate marks entity for deletion in L1 Cache.
+
+3. likeRepository.flush();
+   - Hibernate sends SQL over TCP socket:
+     DELETE FROM likes WHERE id = 99;
+   - PostgreSQL wipes the row from disk pages.
+```
+
+---
+
+### The Double-Click Concurrency Race & Database B-Tree Index Defense
+
+Imagine an evaluator asks you:
+> *"What if Youssef is on a slow 3G network and furiously double-clicks the 'Like' button in 5 milliseconds? Both HTTP requests hit Tomcat simultaneously on two separate threads! What prevents two identical likes from being inserted?"*
+
+Here is your exact defense, tracing both threads through RAM and the database:
+
+```
+Thread A (Request 1)                         Thread B (Request 2)
+--------------------                         --------------------
+1. Checks DB: No like found.                1. Checks DB: No like found.
+2. Creates new Like(user, post).            2. Creates new Like(user, post).
+3. Sends:                                   3. Sends:
+   INSERT INTO likes (user_id, post_id)...     INSERT INTO likes (user_id, post_id)...
+   
+              \                               /
+               \                             /
+                v                           v
+         +-----------------------------------------+
+         |     POSTGRESQL 16 DISK ENGINE           |
+         |                                         |
+         | Table: likes                            |
+         | UNIQUE INDEX: (user_id, post_id)        |
+         +-----------------------------------------+
+```
+
+1. **Thread A reaches PostgreSQL first:**
+   * PostgreSQL inserts the row: `user_id = 2, post_id = 10`.
+   * It updates the **Unique B-Tree Index on `(user_id, post_id)`**.
+   * Transaction commits successfully!
+2. **Thread B reaches PostgreSQL 2 milliseconds later:**
+   * Thread B tries to insert: `user_id = 2, post_id = 10`.
+   * PostgreSQL's index engine looks at the B-Tree:
+     *"ERROR: duplicate key value violates unique constraint 'likes_user_id_post_id_key'!"*
+   * PostgreSQL immediately aborts Thread B's transaction.
+3. **What happens in Spring Boot?**
+   * The PostgreSQL JDBC driver receives the error bytes and throws `org.postgresql.util.PSQLException`.
+   * Spring catches it and translates it into `DataIntegrityViolationException`.
+   * Our [`GlobalExceptionHandler.java`](backend/src/main/java/com/zone01/blog/exception/GlobalExceptionHandler.java#L58) catches `DataIntegrityViolationException`:
+     ```java
+     @ExceptionHandler(DataIntegrityViolationException.class)
+     public ResponseEntity<?> handleDataIntegrityViolation(...) {
+         return ResponseEntity.status(HttpStatus.CONFLICT)
+                 .body(Map.of("error", "CONFLICT", "message", "A duplicate entry or constraint violation occurred."));
+     }
+     ```
+   * Thread B cleanly returns HTTP 409 Conflict.
+   * **Result:** Zero data corruption, zero duplicate likes, perfectly guarded by the database schema!
+
+---
+
+### 🎯 Summary Mental Model (Your Persistence Cheat Sheet)
+
+| Concept | What It Physically Is | Why It Exists in 01Blog |
+|---|---|---|
+| **`@Entity`** | Java class mapped to a SQL table row | Bridges Java objects in Heap with SQL rows on disk |
+| **`DTO`** | Plain data package without database bindings | Prevents password leaks, stops infinite JSON loops, and provides computed fields |
+| **`Persistence Context`** | Two HashMaps in RAM (`entitiesByKey` and `entitySnapshots`) | Tracks Managed objects and detects changes without manual SQL |
+| **`Dirty Checking`** | Automated snapshot comparison on transaction commit | Auto-generates optimized SQL `UPDATE` only for changed fields |
+| **`Byte Buddy Proxy`** | Hollow subclass with empty fields and a session pointer | Enables `FetchType.LAZY` so we don't accidentally load thousands of rows |
+| **`UniqueConstraint`** | Composite B-Tree index in PostgreSQL | Hard stop against race conditions and duplicate likes |
+
+---
+
+# Session 4: Media Uploads & OS Safety — Apache Tika, Magic Bytes & Path Traversal Guards
+
+Handling file uploads is one of the most perilous frontiers in backend engineering. When an application accepts binary files from the open internet, it directly bridges the gap between untrusted external network packets and the **host Operating System's file system kernel**.
+
+A single mistake in handling media uploads can lead to **Remote Code Execution (RCE)** (e.g., executing a PHP or shell script on the server), **Host Takeover via Path Traversal** (overwriting system files like `/etc/passwd` or `authorized_keys`), or **Denial of Service (DoS)** (exhausting server RAM and storage blocks).
+
+In **01Blog**, we designed an ironclad, multi-layered file defense perimeter that treats every uploaded byte as hostile until proven innocent.
+
+---
+
+## Part 0: The Missing Foundations (Ground Zero)
+
+Before examining the Java code in `FileStorageService.java` or Spring's `WebMvcConfig.java`, we must understand how an Operating System stores files and how web browsers transmit binary media over the wire.
+
+### 1. The Physical Reality of Files: Inodes, Disk Blocks & File Descriptors
+
+When you save a file on Linux or Windows, what actually happens?
+
+```
+                     +-----------------------------------+
+                     |        DIRECTORY ENTRY            |
+                     |  Filename: "cat.png"              |
+                     |  Inode Number: 489214             |
+                     +-----------------+-----------------+
+                                       |
+                                       v
+                     +-----------------------------------+
+                     |         INODE #489214             |
+                     |  File Size: 1,420,184 bytes       |
+                     |  Owner / Permissions: -rw-r--r--  |
+                     |  Pointers to Physical Blocks:     |
+                     |    [Block #1024, #1025, #1026...] |
+                     +-----------------+-----------------+
+                                       |
+                                       v
++-------------------------------------------------------------------------+
+|                       HARD DISK / SSD SECTORS                           |
+| [Block 1024: Raw Bytes] [Block 1025: Raw Bytes] [Block 1026: Raw Bytes] |
++-------------------------------------------------------------------------+
+```
+
+1. **The Inode (Index Node):**
+   * On POSIX filesystems (Linux, macOS), a file is **not** identified by its name. It is identified by an integer called an **inode number**.
+   * The inode stores file metadata: physical byte size, creation/modification timestamps, file permissions (`rwxr-xr-x`), owner UID/GID, and an array of pointers to the actual data blocks on the disk platter or NVMe flash chips.
+   * **Crucial Insight:** The filename (`cat.png`) is merely an entry inside a directory table that maps a human string to an inode number. Multiple directory entries can point to the same inode (hard links).
+2. **Disk Blocks:**
+   * Disk storage is divided into fixed-size chunks (typically 4 KB sectors/blocks). If an image is 10 KB, the OS allocates three 4 KB blocks (12 KB of physical storage).
+3. **File Descriptors in RAM:**
+   * When a Java program opens a file (`FileInputStream`), the Linux kernel creates an integer index in the process's file descriptor table (e.g., FD `3`). The JVM communicates with this integer handle through kernel system calls (`read()`, `write()`, `close()`).
+
+---
+
+### 2. What is `multipart/form-data` at the Raw Network Byte Level?
+
+Standard REST API requests pass JSON payloads:
+```http
+POST /api/auth/login HTTP/1.1
+Content-Type: application/json
+
+{"username":"youssef","password":"password123"}
+```
+
+However, JSON is text-based (UTF-8). If you try to send a 5 MB binary video file inside JSON, you must encode every byte into Base64, inflating the payload size by **33%** and consuming massive CPU cycles converting bytes to ASCII and back.
+
+To solve this, HTTP defines the **`multipart/form-data`** wire protocol (RFC 7578).
+
+#### The Multipart Wire Protocol Anatomy
+
+When an Angular client uploads a post with text and a photo, the browser opens a TCP socket and streams raw bytes segmented by a random **boundary string**:
+
+```http
+POST /api/posts HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsIn...
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryX7gK8L9mP2qR4sT
+Content-Length: 154829
+
+------WebKitFormBoundaryX7gK8L9mP2qR4sT
+Content-Disposition: form-data; name="title"
+
+My Awesome Trip to Oujda
+------WebKitFormBoundaryX7gK8L9mP2qR4sT
+Content-Disposition: form-data; name="textContent"
+
+Had an incredible time coding at Zone01 today!
+------WebKitFormBoundaryX7gK8L9mP2qR4sT
+Content-Disposition: form-data; name="file"; filename="photo.png"
+Content-Type: image/png
+
+<RAW BINARY BYTES OF THE PNG FILE: 89 50 4E 47 0D 0A 1A 0A ...>
+------WebKitFormBoundaryX7gK8L9mP2qR4sT--
+```
+
+* **The Boundary Marker (`----WebKitFormBoundary...`):** A unique string that cannot occur inside the payload data, acting as a physical fence separating the different parts of the request.
+* **Each Part Has Its Own Mini-Headers:** Each sub-section defines its own `Content-Disposition`, `name`, and optional `Content-Type`.
+* **Zero Encoding Overhead:** The file bytes are streamed across the TCP socket as raw, unencoded 8-bit octets.
+
+---
+
+### 3. The Extension Illusion: Why `.png` vs `.exe` is Just a String Lie
+
+A common rookie mistake is trusting the file extension or the client-sent `Content-Type` header:
+
+```java
+// ❌ CATASTROPHIC SECURITY FLAW:
+String filename = file.getOriginalFilename();
+if (filename.endsWith(".png")) {
+    saveFile(file); // An attacker will pwn your server in 10 seconds!
+}
+```
+
+#### Why is this dangerous?
+
+1. **The Filename is Untrusted User Input:**
+   * Anyone using Postman, `curl`, or a Python script can rename `malicious_script.php` or `backdoor.sh` or an executable ELF binary to `cat.png`.
+2. **The `Content-Type` Header is Client-Controlled:**
+   * When the browser sends `Content-Type: image/png`, that header was constructed by the client. An attacker sending a malicious POST request can set `Content-Type: image/png` while transmitting a compiled C virus payload.
+3. **The Web Shell Danger:**
+   * If an attacker uploads a script disguised as an image into a web-accessible directory on a misconfigured server, accessing that file over HTTP can trigger the server to execute it, granting the attacker a root shell on the operating system!
+
+**Rule of Thumb:** File extensions are just human-readable labels; they have zero connection to what the file actually is.
+
+---
+
+### 4. The Path Traversal Attack: How `../../etc/passwd` Breaks Out of Jail
+
+Consider a naive file deletion or storage routine:
+
+```java
+// ❌ CATASTROPHIC PATH TRAVERSAL VULNERABILITY:
+public void deleteImage(String filename) {
+    File file = new File("/var/www/uploads/" + filename);
+    file.delete();
+}
+```
+
+What happens if an attacker sends an HTTP DELETE request with:
+```http
+filename = "../../../etc/passwd"
+```
+
+The operating system resolves the path:
+```
+/var/www/uploads/../../../etc/passwd
+  ├── /var/www/uploads/..  -> /var/www
+  ├── /var/www/..          -> /var
+  ├── /var/..              -> / (Root Directory)
+  └── /etc/passwd          -> /etc/passwd (DELETED!)
+```
+
+The attacker just deleted the system password file and rendered the Linux server unusable! This is called **Directory Traversal (or Path Traversal)** (CWE-22).
+
+---
+
+## Part 1: The Big Picture (How Everything Connects)
+
+In 01Blog, we enforce a strict 4-tier media processing pipeline:
+
+```
+[ Angular Client ]
+       │  (1) multipart/form-data POST over TCP
+       ▼
+[ Tomcat StandardServletMultipartResolver ]
+       │  (2) Enforces max-file-size=30MB clamp (DoS Guard)
+       ▼
+[ PostController.java ]
+       │  (3) Extracts @RequestParam MultipartFile
+       ▼
+[ FileStorageService.java ]
+  ┌────────────────────────────────────────────────────────┐
+  │ 1. Apache Tika Magic Byte Inspection                   │
+  │    Reads first 512-1024 bytes -> True MIME Detection   │
+  │                                                        │
+  │ 2. Strict Media Whitelist (image/*, video/*, mp4)      │
+  │                                                        │
+  │ 3. Extension Secondary Whitelist                       │
+  │                                                        │
+  │ 4. UUID v4 Randomization (Discards client filename)    │
+  │                                                        │
+  │ 5. Atomic Storage to Host Disk (uploads/{uuid}.ext)    │
+  └────────────────────────┬───────────────────────────────┘
+                           │ (4) Returns "/uploads/{uuid}.ext"
+                           ▼
+                 [ PostgreSQL 16 ]
+                 Stores URI string in posts.media_url
+```
+
+![Media Upload & OS Safety Architecture](docs/images/01blog_media_upload_and_os_safety.jpg)
+
+### The 4 Core Upload Components & The Border Checkpoint Analogy
+
+| Component | Real-World Analogy | Physical Role in 01Blog |
+|---|---|---|
+| **`StandardServletMultipartResolver`** | The Border Weigh Station | Intercepts incoming TCP bytes at the Tomcat gate; immediately rejects any payload exceeding 30 MB before it can consume JVM heap memory. |
+| **`FileStorageService (Tika)`** | The Customs X-Ray Scanner | Disregards luggage tags (filenames) and inspects the atomic molecular structure (hexadecimal magic bytes) inside the package to verify it is genuinely a PNG, JPEG, GIF, WebP, or MP4. |
+| **`UUID Generator`** | The High-Security Evidence Locker Tag | Destroys the original user-supplied name and stamps the file with a 128-bit cryptographically random identifier, eliminating name collisions and path traversal in one stroke. |
+| **`WebMvcConfig (Static Resource Handler)`** | The Direct Delivery Dock | Connects the `/uploads/**` web route directly to the OS disk directory with non-blocking NIO streaming, HTTP 304 caching, and HTTP 206 video range seeking. |
+
+---
+
+## Part 2: Step-by-Step Flow (End-to-End Life of a Media Upload Request)
+
+Let us trace the complete chronological journey of a user uploading a photo with a post.
+
+### Flow 1: Uploading Media via `POST /api/posts` (From Multipart Wire to Disk)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Angular Browser
+    participant Tomcat as Embedded Tomcat
+    participant Filter as Security & RateLimit
+    participant Ctrl as PostController
+    participant Svc as PostService
+    participant Storage as FileStorageService
+    participant Tika as Apache Tika Engine
+    participant Disk as OS Filesystem (uploads/)
+    participant DB as PostgreSQL 16
+
+    User->>Tomcat: POST /api/posts (multipart/form-data boundary)
+    Tomcat->>Tomcat: Check size <= 30MB (application.properties clamp)
+    Tomcat->>Filter: Route through JwtAuthFilter (Verify Token)
+    Filter->>Ctrl: invoke createPost(title, textContent, MultipartFile file)
+    Ctrl->>Svc: createPost(title, textContent, file, "youssef")
+    Svc->>Storage: storeFile(MultipartFile file)
+    Storage->>Tika: tika.detect(file.getInputStream())
+    Tika->>Tika: Read first 512 bytes (Look for Magic Hex Signatures)
+    Tika-->>Storage: Return detected MIME: "image/png"
+    Storage->>Storage: Validate MIME is image/* or video/*
+    Storage->>Storage: Whitelist extension (.png, .jpg, .mp4, etc.)
+    Storage->>Storage: Generate UUID: "a81f3b20-7c22-4d51-9e11-123456789abc.png"
+    Storage->>Disk: Files.copy(stream, uploads/a81f3b20..., REPLACE_EXISTING)
+    Storage-->>Svc: Return URI: "/uploads/a81f3b20-7c22-4d51-9e11-123456789abc.png"
+    Svc->>DB: INSERT INTO posts (title, media_url, author_id) VALUES (...)
+    DB-->>Svc: Persisted Post Record
+    Svc-->>Ctrl: Return PostResponse DTO
+    Ctrl-->>User: HTTP 201 Created (JSON Response)
+```
+
+#### Microsecond-by-Microsecond Timeline in RAM
+
+1. **$T_0$ — Angular initiates upload:**  
+   The user selects `oujda_sunset.png` (4.2 MB) in the file picker. Angular builds a `FormData` object and executes `POST /api/posts`.
+2. **$T_{15\text{ms}}$ — Tomcat Multipart Gatekeeper:**  
+   Tomcat's `StandardServletMultipartResolver` inspects the HTTP header `Content-Length: 4404019`. It checks `application.properties`:
+   `spring.servlet.multipart.max-file-size=30MB`. Because 4.2 MB < 30 MB, Tomcat begins streaming the bytes into a temporary buffer.
+3. **$T_{22\text{ms}}$ — Security Filter Chain passes:**  
+   `JwtAuthFilter` extracts the Bearer token, validates the HMAC-SHA256 signature, ensures the user is not banned in PostgreSQL, and populates `SecurityContextHolder`.
+4. **$T_{25\text{ms}}$ — DispatcherServlet routes to PostController:**  
+   DispatcherServlet binds the multipart fields to `@RequestParam("title")`, `@RequestParam("textContent")`, and `@RequestParam("file") MultipartFile file`.
+5. **$T_{27\text{ms}}$ — FileStorageService executes Apache Tika Inspection:**  
+   `storeFile()` opens `file.getInputStream()`. Apache Tika reads the first 512 bytes into a byte array in RAM. It detects `89 50 4E 47 0D 0A 1A 0A` (PNG Magic Number). It returns `"image/png"`.
+6. **$T_{30\text{ms}}$ — Sanitization & UUID Renaming:**  
+   The user-supplied filename `oujda_sunset.png` is discarded. A new UUID is generated:
+   `uniqueFilename = UUID.randomUUID().toString() + ".png"`  
+   $\rightarrow$ `"d3b07384-d113-4632-9599-231a498b965f.png"`.
+7. **$T_{35\text{ms}}$ — Disk Write via Java NIO:**  
+   `Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING)` executes a native OS system call (`write()` on Linux). The bytes are flushed from JVM RAM to the OS page cache and onto disk blocks in `./uploads/`.
+8. **$T_{40\text{ms}}$ — Database Storage:**  
+   The relative web URI `"/uploads/d3b07384-d113-4632-9599-231a498b965f.png"` is saved to the `posts.media_url` column in PostgreSQL.
+9. **$T_{45\text{ms}}$ — Response Delivered:**  
+   HTTP 201 Created is returned to Angular containing the clean `PostResponse` DTO.
+
+---
+
+### Flow 2: Serving Media via `GET /uploads/{uuid}.png` (Direct OS File Streaming)
+
+Once an image is saved, how does the frontend display it?
+
+```
+[ Angular Browser: <img src="http://localhost:8080/uploads/uuid.png"> ]
+                               │
+                               ▼
+        [ Embedded Tomcat -> ResourceHttpRequestHandler ]
+                               │
+               (Configured in WebMvcConfig.java)
+                               │
+            ┌──────────────────┴──────────────────┐
+            │ 1. Checks Cache Headers (ETag)      │
+            │    If match -> Return HTTP 304       │
+            │                                     │
+            │ 2. Direct OS NIO Zero-Copy Stream   │
+            │    Linux sendfile(2) system call    │
+            └──────────────────┬──────────────────┘
+                               ▼
+                   [ Host Disk / NVMe Drive ]
+```
+
+When Angular renders `<img [src]="post.mediaUrl">`, the browser sends `GET /uploads/d3b07384-d113-4632-9599-231a498b965f.png`.
+
+1. The request enters Tomcat on port 8080.
+2. Spring's `DispatcherServlet` checks its `HandlerMapping` table. It finds a match registered by `WebMvcConfig.java`:
+   `registry.addResourceHandler("/uploads/**").addResourceLocations("file:/absolute/path/uploads/")`.
+3. Spring bypasses all controllers and hands the request to **`ResourceHttpRequestHandler`**.
+4. **Kernel Zero-Copy Streaming:** `ResourceHttpRequestHandler` leverages Java NIO `FileChannel.transferTo()`. Under Linux, this translates directly to the **`sendfile(2)` system call**: the kernel transfers data blocks directly from the disk page cache to the network card socket buffer **without copying bytes into user-space JVM RAM!**
+5. **HTTP 304 Not Modified Support:** If the browser sends `If-None-Match: "W/...""`, Spring detects the file has not changed and immediately returns `304 Not Modified` with zero body bytes, saving network bandwidth.
+
+---
+
+## Part 3: How the Framework & Security "Magic" Works
+
+### 1. Apache Tika Magic Byte Inspection: Reading Physical Header Bytes
+
+How does Apache Tika know what a file is without trusting its extension?
+
+Every standardized binary file format reserves its **very first bytes** as a unique, immutable hexadecimal signature known as **Magic Bytes** or **File Signatures**.
+
+| File Type | Magic Bytes (Hexadecimal) | ASCII Equivalent | What It Means |
+|---|---|---|---|
+| **PNG** | `89 50 4E 47 0D 0A 1A 0A` | `.PNG....` | Standard Portable Network Graphics header |
+| **JPEG** | `FF D8 FF` | `ÿØÿ` | Joint Photographic Experts Group SOI marker |
+| **GIF** | `47 49 46 38 37 61` or `47 49 46 38 39 61` | `GIF87a` / `GIF89a` | Graphics Interchange Format header |
+| **WebP** | `52 49 46 46 ... 57 45 42 50` | `RIFF....WEBP` | Resource Interchange File Format / WebP container |
+| **MP4** | `00 00 00 ... 66 74 79 70` | `....ftyp` | ISO Base Media File Format box |
+| **Windows EXE / DLL** | `4D 5A` | `MZ` | Mark Zbikowski DOS executable header (MALICIOUS) |
+| **Linux ELF Binary** | `7F 45 4C 46` | `.ELF` | Executable and Linkable Format (MALICIOUS) |
+| **Bash Shell Script** | `23 21 2F 62 69 6E 2F` | `#!/bin/` | Shell interpreter directive (MALICIOUS) |
+
+#### How `tika.detect()` Works Under the Hood:
+
+When we execute:
+```java
+try (InputStream inputStream = file.getInputStream()) {
+    String detectedMime = tika.detect(inputStream);
+}
+```
+
+1. Apache Tika reads the first 512 to 1024 bytes of the input stream into a byte buffer in RAM.
+2. It evaluates these bytes against its internal dictionary of known byte signatures (the MIME repository).
+3. If an attacker renames a malicious Linux executable (`backdoor.elf`) to `cute_dog.jpg` and uploads it:
+   * Client claims: `Content-Type: image/jpeg`
+   * Filename claims: `cute_dog.jpg`
+   * Tika reads byte 0 to 3: `7F 45 4C 46` $\rightarrow$ Tika returns: `"application/x-executable"`.
+   * Our validation executes:
+     ```java
+     boolean isImage = detectedMime != null && detectedMime.startsWith("image/");
+     boolean isVideo = detectedMime != null && (detectedMime.startsWith("video/") || detectedMime.equals("application/mp4"));
+     if (!isImage && !isVideo) {
+         throw new IllegalArgumentException("Invalid file type (" + detectedMime + "). Only images and videos are allowed.");
+     }
+     ```
+   * Result: Immediate HTTP 400 Bad Request! The malicious file is rejected before a single byte touches the disk!
+
+---
+
+### 2. UUID v4 Mathematics: Why Random Identifiers Neutralize Attacks
+
+In `FileStorageService.java`, line 61:
+```java
+String uniqueFilename = UUID.randomUUID().toString() + extension;
+```
+
+A **UUID version 4 (Universally Unique Identifier)** is a 128-bit number generated using cryptographically strong pseudo-random numbers (CSPRNG).
+
+It is formatted as 32 hexadecimal characters separated by four hyphens:
+```
+xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+```
+*(where 4 indicates version 4, and y is 8, 9, A, or B).*
+
+#### The Mathematics of Collisions:
+The total number of possible UUID v4 values is:
+$$2^{122} \approx 5.3 \times 10^{36} \text{ combinations}$$
+
+If 01Blog uploaded **1 billion files per second for 100 consecutive years**, the probability of generating a duplicate filename is approximately **1 in 1 billion**.
+
+#### The 3 Huge Security Benefits of UUID Renaming:
+1. **Filename Collision Elimination:** If 500 different students all upload an image named `avatar.png` or `screenshot.png`, they will never overwrite each other's files.
+2. **Path Traversal Destruction:** By completely ignoring the client's original filename during disk storage, characters like `../`, `..\\`, or null bytes `%00` never reach the target filename string.
+3. **Insecure Direct Object Reference (IDOR) & Enumeration Prevention:** If files were named sequentially (`1.png`, `2.png`, `3.png`), an attacker could easily write a crawler to download all private user media. With UUIDs, guessing a file URL is mathematically impossible.
+
+---
+
+### 3. Path Traversal Neutralization: `Paths.normalize()` & `startsWith()`
+
+In `FileStorageService.java`, our `deleteFile` method handles the removal of media when a user updates their avatar or deletes a post:
+
+```java
+public void deleteFile(String fileUrl) {
+    if (fileUrl == null || fileUrl.isBlank()) {
+        return;
+    }
+
+    try {
+        String filename = fileUrl.replace("/uploads/", "").trim();
+        Path filePath = this.uploadDir.resolve(filename).normalize();
+
+        // Prevent path traversal
+        if (filePath.startsWith(this.uploadDir)) {
+            Files.deleteIfExists(filePath);
+        }
+    } catch (IOException e) {
+        System.err.println("Could not delete file: " + fileUrl);
+    }
+}
+```
+
+Let's dissect how this prevents directory traversal:
+
+1. **`this.uploadDir.resolve(filename)`:**
+   Combines `./uploads` with the incoming filename. If filename is `"../../etc/passwd"`, the raw path becomes `./uploads/../../etc/passwd`.
+2. **`.normalize()`:**
+   The `normalize()` method computes path navigation mathematically in RAM **without accessing the disk**. It resolves all `.` (current directory) and `..` (parent directory) elements:
+   `./uploads/../../etc/passwd` $\rightarrow$ `../etc/passwd` (or on absolute paths: `/etc/passwd`).
+3. **`filePath.startsWith(this.uploadDir)` (The Jail Cell Guard):**
+   * This check verifies whether the normalized path is still physically a descendant of the sandboxed `./uploads` folder.
+   * For `../etc/passwd`, `filePath.startsWith(this.uploadDir)` evaluates to **`false`**!
+   * The deletion is aborted silently, and `Files.deleteIfExists()` is never invoked!
+   * The attacker cannot delete any file outside the `./uploads` directory!
+
+---
+
+### 4. The Architectural Debate: Why We Never Store Images in PostgreSQL (BLOB vs. Filesystem)
+
+A classic question evaluators love to ask:
+> *"Why did you save images to the server's hard drive instead of storing them directly inside PostgreSQL using a `BYTEA` or `BLOB` column?"*
+
+Here is why storing media files in a relational database is an anti-pattern for web applications:
+
+| Metric / Aspect | Database Storage (`BYTEA` / BLOB) | Operating System Filesystem (01Blog Choice) |
+|---|---|---|
+| **RAM Consumption** | **Catastrophic.** Hibernate must load the entire multi-megabyte binary byte array into JVM heap memory. 20 concurrent users loading posts can trigger an `OutOfMemoryError`. | **Minimal.** Spring only holds a small string URI (`"/uploads/uuid.png"`). Binary bytes never sit in JVM heap. |
+| **Database Bloat & Backups** | **Horrendous.** A 50 MB database balloons to 50 GB. `pg_dump` and database replication grind to a halt. | **Clean & Lightweight.** The SQL database backup stays minuscule (< 5 MB of pure text and relations). Media folders can be backed up or synced independently (e.g. AWS S3). |
+| **Write-Ahead Logging (WAL)** | **Severe Thrashing.** PostgreSQL writes all data to WAL logs for durability before committing. Writing video files doubles database disk I/O. | **Zero DB Disk Overhead.** Database only writes the 45-character URL string. |
+| **Serving Performance** | **Slow.** Every image request requires a database connection from the HikariCP pool, a SQL query, and JVM serialization. | **Lightning Fast.** OS kernel serves files directly via `sendfile(2)` zero-copy transfer. |
+| **Media Seeking (HTTP 206)** | **Difficult.** Implementing byte-range partial seeking for video scrubbing inside SQL BLOBs requires complex manual cursor code. | **Automatic.** The web server/static handler natively supports HTTP `Range: bytes=0-1048576` headers out of the box! |
+
+**Conclusion:** Databases are built for structured relational queries; filesystems are built for streaming binary blocks. 01Blog strictly respects this separation.
+
+---
+
+### 5. High-Performance Static Resource Handlers: Zero-Copy Streaming & HTTP 304 Caching
+
+In `WebMvcConfig.java`:
+
+```java
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
+        Path uploadDir = Paths.get("uploads").toAbsolutePath().normalize();
+        String uploadPath = uploadDir.toUri().toString();
+
+        if (!uploadPath.endsWith("/")) {
+            uploadPath += "/";
+        }
+
+        // Expose uploads directory as static web resources
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(uploadPath);
+    }
+}
+```
+
+#### What does `addResourceHandlers` physically do?
+1. It registers an entry in Spring MVC's **`SimpleUrlHandlerMapping`** with the URL pattern `/uploads/**`.
+2. When a GET request matches `/uploads/**`, it routes directly to Spring's internal **`ResourceHttpRequestHandler`**.
+3. It maps the URL suffix directly to files residing on the disk at `uploadPath` (e.g., `file:/home/richouan/Desktop/01blog/backend/uploads/`).
+
+#### The Power of `ResourceHttpRequestHandler`:
+* **HTTP 206 Partial Content (Video Streaming):** When an Angular user plays an MP4 video uploaded to a post and skips to minute 2:30, the browser sends:
+  ```http
+  GET /uploads/video-uuid.mp4 HTTP/1.1
+  Range: bytes=1048576-2097151
+  ```
+  Spring's static resource handler automatically reads only those requested byte offsets from disk and responds with `HTTP 206 Partial Content`. You get full video scrubbing support with zero custom code!
+* **HTTP 304 Not Modified Caching:** It automatically calculates and returns HTTP `ETag` and `Last-Modified` headers. When the browser reloads the feed, it asks the server: *"Has this image changed since yesterday?"* Spring responds with `304 Not Modified` and zero body bytes, making page reloads instantaneous!
+
+---
+
+### 6. Denial of Service (DoS) Defense: Multipart File Size Clamps
+
+In `application.properties`:
+
+```properties
+spring.servlet.multipart.max-file-size=30MB
+spring.servlet.multipart.max-request-size=35MB
+```
+
+#### What do these two properties do?
+1. **`max-file-size=30MB`:**  
+   Limits the maximum size of any single uploaded file in the request. If a user tries to upload an 80 MB 4K video, Tomcat terminates the connection and throws `MaxUploadSizeExceededException`.
+2. **`max-request-size=35MB`:**  
+   Limits the cumulative size of the **entire multipart request** (including multiple files, text content, and boundary overhead).
+
+#### Why are both needed?
+If an attacker crafts a multipart request containing 100 files of 25 MB each, every single file is under the 30 MB limit, but the total payload is **2.5 Gigabytes**! The `max-request-size=35MB` clamp stops this attack in its tracks.
+
+---
+
+## Part 4: Line-by-Line Code Breakdown of 01Blog
+
+Let us inspect every single line of our project's media upload and security code.
+
+### Anatomy of `FileStorageService.java`
+
+```java
+// Line 1: Package declaration placing this service in the business logic tier
+package com.zone01.blog.service;
+
+// Line 3-13: Necessary imports for Apache Tika, Spring @Service, MultipartFile, and Java NIO
+import org.apache.tika.Tika;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+
+// Line 15-16: Spring marks this class as a Singleton Bean to be managed in the IoC Container
+@Service
+public class FileStorageService {
+
+    // Line 18: Defines relative storage directory path "uploads" using Java NIO Path API
+    private final Path uploadDir = Paths.get("uploads");
+
+    // Line 19: Instantiates Apache Tika detector engine in memory
+    private final Tika tika = new Tika();
+
+    // Line 21-29: Service constructor - ensures the "uploads" folder exists on disk on server startup
+    public FileStorageService() {
+        try {
+            // Checks if the directory exists on the host filesystem
+            if (!Files.exists(uploadDir)) {
+                // If not, creates the directory (including any missing parent directories)
+                Files.createDirectories(uploadDir);
+            }
+        } catch (IOException e) {
+            // If disk permissions prevent directory creation, fail-fast on startup
+            throw new RuntimeException("Could not create uploads folder: " + e.getMessage());
+        }
+    }
+
+    // Line 31: Primary method for safely inspecting and persisting an uploaded file
+    public String storeFile(MultipartFile file) {
+        // Line 32-34: Guard clause - if no file was uploaded, return null safely
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        // Line 36-47: Layer 1 Defense - Apache Tika Magic Byte Inspection
+        // Try-with-resources ensures the InputStream is automatically closed after inspection
+        try (InputStream inputStream = file.getInputStream()) {
+            // Tika reads the first 512 bytes and identifies the true binary MIME type
+            String detectedMime = tika.detect(inputStream);
+
+            // Verifies that the MIME type begins with "image/" (e.g. image/png, image/jpeg)
+            boolean isImage = detectedMime != null && detectedMime.startsWith("image/");
+
+            // Verifies that the MIME type is a recognized video format
+            boolean isVideo = detectedMime != null && (detectedMime.startsWith("video/") || detectedMime.equals("application/mp4"));
+
+            // If it is neither an image nor a video, reject the payload immediately
+            if (!isImage && !isVideo) {
+                throw new IllegalArgumentException("Invalid file type (" + detectedMime + "). Only images and videos are allowed.");
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not inspect file format: " + e.getMessage());
+        }
+
+        // Line 49-53: Extracts the user-provided filename extension
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            // Extracts substring from last dot: "photo.PNG" -> ".png"
+            extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+        }
+
+        // Line 55-58: Layer 2 Defense - Secondary Extension Whitelist Regex
+        // Enforces that the file extension strictly matches permitted formats
+        if (!extension.matches("^\\.(png|jpg|jpeg|gif|webp|mp4|webm)$")) {
+            throw new IllegalArgumentException("Only images (.png, .jpg, .jpeg, .gif, .webp) and videos (.mp4, .webm) are allowed.");
+        }
+
+        // Line 60-61: Layer 3 Defense - UUID Filename Generation
+        // Completely discards original filename to prevent collisions and path traversal
+        String uniqueFilename = UUID.randomUUID().toString() + extension;
+
+        // Line 62: Resolves target path: "uploads/4f1e9c...png"
+        Path targetLocation = this.uploadDir.resolve(uniqueFilename);
+
+        // Line 64-69: Layer 4 Defense - Atomic Stream Copy to OS Disk
+        try {
+            // Copies the raw bytes from MultipartFile InputStream to the host disk
+            // REPLACE_EXISTING ensures clean write semantics
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            // Returns the public web URI prefix to be stored in PostgreSQL
+            return "/uploads/" + uniqueFilename;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store file: " + e.getMessage(), e);
+        }
+    }
+
+    // Line 72: Safe file deletion method with Path Traversal Jail Guard
+    public void deleteFile(String fileUrl) {
+        // Line 73-75: Guard clause - do nothing if URI is empty
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+
+        try {
+            // Strips the web route prefix: "/uploads/cat.png" -> "cat.png"
+            String filename = fileUrl.replace("/uploads/", "").trim();
+
+            // Line 79: Resolves path and normalizes away any "../" or "..\\" sequences
+            Path filePath = this.uploadDir.resolve(filename).normalize();
+
+            // Line 81-84: The Jail Guard - Verifies the file is strictly inside "uploads"
+            if (filePath.startsWith(this.uploadDir)) {
+                // Deletes file if it exists, avoids throwing exception if file was already gone
+                Files.deleteIfExists(filePath);
+            }
+        } catch (IOException e) {
+            System.err.println("Could not delete file: " + fileUrl);
+        }
+    }
+}
+```
+
+---
+
+### Anatomy of `WebMvcConfig.java`
+
+```java
+// Line 1: Package declaration for Spring configuration classes
+package com.zone01.blog.config;
+
+// Line 3-6: Spring Web MVC configuration imports
+import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+// Line 11-12: Marks class as Spring Configuration and implements WebMvcConfigurer callback
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    // Line 14-15: Overrides the method to register custom static resource handlers
+    @Override
+    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
+        // Line 16: Resolves the "uploads" directory to an absolute normalized filesystem path
+        // e.g. "/home/richouan/Desktop/01blog/backend/uploads"
+        Path uploadDir = Paths.get("uploads").toAbsolutePath().normalize();
+
+        // Line 17: Converts the OS path to a file URI: "file:/home/.../uploads/"
+        String uploadPath = uploadDir.toUri().toString();
+
+        // Line 19-21: Ensures the URI terminates with a trailing slash as required by Spring
+        if (!uploadPath.endsWith("/")) {
+            uploadPath += "/";
+        }
+
+        // Line 23-25: Direct HTTP Route Mapping
+        // Any request matching "/uploads/**" is served directly from the disk file URI
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(uploadPath);
+    }
+}
+```
+
+---
+
+### Anatomy of `application.properties` (Multipart Limits)
+
+```properties
+# ---------------------------------------------------
+# Multipart File Upload Limits (DoS Guard)
+# ---------------------------------------------------
+# Maximum size allowed for any single uploaded file
+spring.servlet.multipart.max-file-size=30MB
+
+# Maximum total size allowed for an entire multipart request
+spring.servlet.multipart.max-request-size=35MB
+```
+
+---
+
+## Part 5: Summary to Explain to Others (Your Auditor Pitch)
+
+When an evaluator asks:
+> *"How does your application handle media uploads, and how do you ensure the server is safe from malicious files?"*
+
+You can deliver this confident, structured answer:
+
+> *"In 01Blog, we treat every uploaded file as untrusted binary data and enforce a four-layer defense perimeter:*
+>
+> 1. *First, at the network gate, Spring Boot enforces a **`max-file-size` limit of 30 MB** and a **`max-request-size` of 35 MB** in `application.properties` to eliminate Denial of Service (DoS) memory exhaustion attacks.*
+> 2. *Second, in `FileStorageService.java`, we never trust the client's file extension or `Content-Type` header because they are user-controlled strings. Instead, we use **Apache Tika to inspect the physical magic bytes** in the file header (e.g., `89 50 4E 47` for PNG), ensuring only genuine `image/*` and `video/*` formats are accepted.*
+> 3. *Third, we completely discard the user's original filename and generate a **cryptographically random UUID v4 identifier** (`UUID.randomUUID().toString() + extension`). This eliminates filename collisions between users and permanently neutralizes directory traversal injection attacks.*
+> 4. *Fourth, for file deletion, we use **`Path.normalize()` and `filePath.startsWith()`** to mathematically guarantee that no operation can ever escape our sandboxed `uploads/` directory to delete host system files.*
+> 5. *Finally, we serve media using Spring's **`ResourceHandlerRegistry`** in `WebMvcConfig.java`, which maps `/uploads/**` directly to the filesystem. This leverages native OS zero-copy file streaming, HTTP 304 caching, and HTTP 206 video range seeking without incurring controller or database overhead."*
+
+---
+
+## Part 6: Zone01 Auditor Defense Drill: 5 Tough Evaluator Questions & Precision Answers
+
+### Q1: Why not just check `file.getOriginalFilename().endsWith(".png")`? Why did you add the Apache Tika dependency?
+
+**Evaluator Trap:** The evaluator thinks you added an external library unnecessarily when a simple string check would work.
+
+**Your Precision Defense:**
+> *"Checking the filename extension with `.endsWith(".png")` is a critical security vulnerability. The filename sent in an HTTP request is untrusted client text. An attacker can take a compiled Linux binary (`backdoor.elf`), a PHP shell script, or a Windows executable (`trojan.exe`) and simply rename it to `avatar.png` before uploading it.*
+>
+> *We added **Apache Tika** because it performs **magic byte inspection**. Tika reads the first 512 to 1024 bytes of the physical stream in RAM and checks the underlying file signature against standardized hexadecimal specifications. For instance, a genuine PNG must start with `89 50 4E 47 0D 0A 1A 0A`. If an executable disguised as an image is uploaded, Tika detects its true MIME type as `application/x-executable` or `text/x-php`, and our service immediately rejects it with HTTP 400 Bad Request before it can ever touch the server's disk."*
+
+---
+
+### Q2: What happens if an attacker uploads a file named `../../../../etc/passwd`? Walk me through how your code catches it.
+
+**Evaluator Trap:** The evaluator is testing your understanding of Path Traversal (Directory Traversal / CWE-22).
+
+**Your Precision Defense:**
+> *"Our codebase defends against this at two distinct stages:*
+>
+> 1. *During file creation in `storeFile()`: The attacker's malicious filename is **completely discarded**. We only extract the file extension and generate a brand-new random UUID v4:  
+>    `String uniqueFilename = UUID.randomUUID().toString() + extension;`  
+>    The path passed to the operating system is strictly `uploads/{uuid}.png`. The `../../../../etc/passwd` string is never used in the file write call, making traversal during upload physically impossible.*
+> 2. *During file deletion in `deleteFile()`: If someone passes a forged URL containing traversal characters, we execute:  
+>    `Path filePath = this.uploadDir.resolve(filename).normalize();`  
+>    `normalize()` resolves the `..` sequences in RAM. Then we check:  
+>    `if (filePath.startsWith(this.uploadDir))`  
+>    Because the normalized path points outside the `uploads` directory, `startsWith()` returns `false`, and the deletion is immediately aborted without touching any system files."*
+
+---
+
+### Q3: Why did you rename the file to a UUID instead of keeping the user's original filename?
+
+**Evaluator Trap:** The evaluator wants to see if you thought about concurrency, storage architecture, and data isolation.
+
+**Your Precision Defense:**
+> *"We use UUID v4 for three fundamental reasons:*
+>
+> 1. **Concurrency and Collision Prevention:** If student A uploads `screenshot.png` and student B uploads a different `screenshot.png`, using the original filename would cause student B's file to overwrite student A's image on disk. UUID v4 provides $2^{122}$ possible values, guaranteeing zero collisions across billions of uploads.
+> 2. **Security Sandboxing:** Discarding user-supplied filenames eliminates hidden path traversal sequences, control characters, null bytes (`%00`), and special shell characters (`|`, `;`, `&`, `$`) that could be exploited in OS shell interactions.
+> 3. **Enumeration Prevention (IDOR):** Sequential or predictable names like `image_1.png` and `image_2.png` allow attackers to scrape all platform media by iterating integers. UUIDs make media endpoints completely unguessable."*
+
+---
+
+### Q4: Why did you implement `WebMvcConfigurer.addResourceHandlers` instead of writing a `@GetMapping("/uploads/{filename}")` inside a `@RestController`?
+
+**Evaluator Trap:** The evaluator wants to know if you understand JVM memory overhead and HTTP streaming performance.
+
+**Your Precision Defense:**
+> *"Writing a `@GetMapping` in a `@RestController` would require reading the file into a Java `byte[]` in JVM heap memory and returning it inside a `ResponseEntity<byte[]>`. This causes three severe problems:*
+>
+> 1. **JVM Heap Garbage Collection Pressure:** Loading 10 MB images into byte arrays across dozens of concurrent requests rapidly exhausts the JVM heap and triggers heavy GC pauses.
+> 2. **Loss of Zero-Copy Performance:** With `addResourceHandlers`, Spring uses `ResourceHttpRequestHandler`, which leverages Java NIO `FileChannel.transferTo()`. Under Linux, this translates directly to the `sendfile(2)` system call, streaming bytes directly from the OS disk cache to the network socket without copying data into user-space JVM memory.
+> 3. **Automatic HTTP Feature Support:** Spring's static resource handler natively provides `HTTP 304 Not Modified` via `ETag` and `Last-Modified` headers, as well as `HTTP 206 Partial Content` for video seeking and range requests. Replicating that inside a custom REST controller would require hundreds of lines of complex, error-prone manual code."*
+
+---
+
+### Q5: What happens in JVM RAM if a malicious user uploads a 50 GB file? How does Spring Boot protect against memory exhaustion DoS?
+
+**Evaluator Trap:** The evaluator is probing your understanding of Tomcat's multipart streaming and memory safety.
+
+**Your Precision Defense:**
+> *"If an attacker attempts to stream a 50 GB file, it never reaches our controllers or business services.
+>
+> In `application.properties`, we configured:  
+> `spring.servlet.multipart.max-file-size=30MB`  
+> `spring.servlet.multipart.max-request-size=35MB`  
+>
+> When the HTTP request arrives, Tomcat's `StandardServletMultipartResolver` inspects the `Content-Length` header in the HTTP request line. If the header indicates a size greater than 35 MB, Tomcat immediately rejects the request. Even if the attacker omits the `Content-Length` header or uses chunked transfer encoding, Tomcat counts the incoming bytes as they stream across the TCP socket. The moment the 30 MB threshold is breached, Tomcat cuts the stream, discards the temporary buffer, and throws a `MaxUploadSizeExceededException`, returning an HTTP error.
+>
+> Furthermore, Tomcat never buffers entire large files in RAM; it streams chunks through temporary disk files on the host OS (`java.io.tmpdir`), ensuring our JVM heap memory stays clean and responsive for other users."*
 
