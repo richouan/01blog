@@ -77,6 +77,8 @@
     - [Anatomy of JwtAuthFilter.java & The Banned User Lockdown](#anatomy-of-jwtauthfilterjava--the-banned-user-lockdown)
     - [Anatomy of JwtUtil.java](#anatomy-of-jwtutiljava)
     - [Anatomy of AuthService.java (Bootstrap Admin & Password Verification)](#anatomy-of-authservicejava-bootstrap-admin--password-verification)
+    - [Anatomy of AuthController.java & The DTO Deserialization Engine](#anatomy-of-authcontrollerjava--the-dto-deserialization-engine)
+      - [The Complete Round-Trip Highway (Visual Master Diagram)](#5-the-complete-round-trip-highway-incoming-request--outgoing-response)
   - [Part 6: Summary to Explain to Others (Your Auditor Pitch)](#part-6-summary-to-explain-to-others-your-auditor-pitch)
   - [Interactive Q&A & Self-Check for Session 2](#interactive-qa--self-check-for-session-2)
   - [🔬 Deep-Dive Q&A: Filter Ordering Mechanics, ThreadLocal Lifecycles & Integer Sorting](#-deep-dive-qa-filter-ordering-mechanics-threadlocal-lifecycles--integer-sorting)
@@ -90,6 +92,21 @@
     - [Q8: How Does VirtualFilterChain Physically Pass the Baton in Memory? (The currentPosition Counter)](#q8-how-does-virtualfilterchain-physically-pass-the-baton-in-memory-the-currentposition-counter)
     - [Q9: Why Does doFilterInternal Declare "throws ServletException, IOException"? (throw vs throws)](#q9-why-does-dofilterinternal-declare-throws-servletexception-ioexception-throw-vs-throws)
     - [Q10: Where Does GlobalExceptionHandler Run in Our Security Journey? (Filter Pipeline vs DispatcherServlet Exception Handling)](#q10-where-does-globalexceptionhandler-run-in-our-security-journey-filter-pipeline-vs-dispatcherservlet-exception-handling)
+    - [Q11: The Startup Smoke Test vs The Hardcoded Admin Anti-Pattern: Why Keep DataInitializer?](#q11-the-startup-smoke-test-vs-the-hardcoded-admin-anti-pattern-why-keep-datainitializer)
+    - [Q12: Inside RateLimitFilter: How Do 200 Tomcat Threads Track IP Windows in RAM Without Leaks?](#q12-inside-ratelimitfilter-how-do-200-tomcat-threads-track-ip-windows-in-ram-without-leaks)
+    - [Q13: The String Badge Mystery: What Does SimpleGrantedAuthority Actually Generate and How Does hasRole Work?](#q13-the-string-badge-mystery-what-does-simplegrantedauthority-actually-generate-and-how-does-hasrole-work)
+    - [Q14: WebAuthenticationDetails & UsernamePasswordAuthenticationToken: Why Use a Password Class With JWT?](#q14-webauthenticationdetails--usernamepasswordauthenticationtoken-why-use-a-password-class-with-jwt)
+    - [Q15: The Single-Threaded Request Journey & ThreadLocal Lifecycles: How Authentication Reaches Controllers Without Poisoning the Pool](#q15-the-single-threaded-request-journey--threadlocal-lifecycles-how-authentication-reaches-controllers-without-poisoning-the-pool)
+    - [Q16: The 404 Routing Mystery: How Does DispatcherServlet Catch Bad URLs via NoResourceFoundException?](#q16-the-404-routing-mystery-how-does-dispatcherservlet-catch-bad-urls-via-noresourcefoundexception)
+    - [Q17: What Physically IS DispatcherServlet at the Memory & Thread Level? (Class vs Daemon vs Thread)](#q17-what-physically-is-dispatcherservlet-at-the-memory--thread-level-class-vs-daemon-vs-thread)
+    - [Q18: Who Runs doFilterInternal? The Engine Inside VirtualFilterChain and OncePerRequestFilter](#q18-who-runs-dofilterinternal-the-engine-inside-virtualfilterchain-and-onceperrequestfilter)
+  - [Part 7: The Master Error Shield: Anatomy & Architecture of GlobalExceptionHandler.java](#part-7-the-master-error-shield-anatomy--architecture-of-globalexceptionhandlerjava)
+    - [1. How @RestControllerAdvice Intercepts Exceptions via Spring AOP Proxies](#1-how-restcontrolleradvice-intercepts-exceptions-via-spring-aop-proxies)
+    - [2. The 13 Essential Exception Checkpoints Handled in 01Blog](#2-the-13-essential-exception-checkpoints-handled-in-01blog)
+    - [3. How GlobalExceptionHandler is Physically Invoked (The Call Stack & DispatcherServlet)](#3-how-globalexceptionhandler-is-physically-invoked-the-call-stack--dispatcherservlet)
+    - [4. The Architectural Boundary: What GlobalExceptionHandler Can and CANNOT Catch](#4-the-architectural-boundary-what-globalexceptionhandler-can-and-cannot-catch)
+    - [5. The Great Architecture Debate: Local try-catch in AuthController vs Zero try-catch in AdminController](#5-the-great-architecture-debate-local-try-catch-in-authcontroller-vs-zero-try-catch-in-admincontroller)
+    - [6. Zone01 Auditor Defense Drill: 3 Critical Questions & Precision Answers](#6-zone01-auditor-defense-drill-3-critical-questions--precision-answers)
 - [Session 3: The Persistence Layer — Deep Dive into PostgreSQL 16, Hibernate ORM 6 & Spring Data JPA](#session-3-the-persistence-layer--deep-dive-into-postgresql-16-hibernate-orm-6--spring-data-jpa)
   - [Part 0: The Missing Foundations (Ground Zero)](#part-0-the-missing-foundations-ground-zero-1)
     - [1. The Physical Reality of Data: RAM vs. Hard Drive](#1-the-physical-reality-of-data-ram-vs-hard-drive)
@@ -2030,6 +2047,200 @@ public class JwtUtil {
 
 ---
 
+### Anatomy of [`AuthController.java`](backend/src/main/java/com/zone01/blog/controller/AuthController.java) & The DTO Deserialization Engine
+
+```java
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        try {
+            AuthResponse response = authService.register(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An unexpected error occurred"));
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            AuthResponse response = authService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("banned")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "ACCOUNT_BANNED", "message", e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An unexpected error occurred"));
+        }
+    }
+}
+```
+
+#### 1. Deconstructing `public ResponseEntity<?> register(@RequestBody RegisterRequest request)`
+* **`ResponseEntity<?>`:** In raw HTTP, a response consists of three fundamental parts:
+  1. The Status Code (`201 Created`, `400 Bad Request`, `401 Unauthorized`).
+  2. The Headers (`Content-Type: application/json`).
+  3. The Payload Body.
+  Spring's `ResponseEntity` encapsulates all three into a single typed object. We use the wildcard generic `<?>` because in the happy path we return an `AuthResponse` object (`HTTP 201 Created`), while in the error catch block we return a `Map<String, String>` (`HTTP 400 Bad Request`).
+* **`RegisterRequest` (The DTO Carrier):** A Plain Old Java Object (`username`, `email`, `password`) with a no-arg constructor and getters/setters. It acts as the boundary contract between client JSON and server memory, shielding our internal `@Entity User` database model from direct exposure.
+* **`@RequestBody`:** The trigger annotation for Spring MVC's `RequestResponseBodyMethodProcessor`. It instructs Spring to bypass URL parameter extraction and activate Jackson to read the HTTP request body byte stream.
+
+---
+
+#### 2. The Envelope vs The 30MB Shipping Crate: Why Tomcat Uses `request.getInputStream()`
+A fundamental design choice in the Jakarta Servlet specification:
+* **The HTTP Headers (The Envelope):** Tiny (typically 500 bytes to 2 KB). Tomcat parses them **immediately** into Java String fields in `HttpServletRequest` (`getMethod()`, `getRequestURI()`, `getHeader()`).
+* **The HTTP Body (The Shipping Crate):** Can range from a 50-byte JSON string up to a 30-Megabyte video upload!
+  * **The OutOfMemory Disaster:** If Tomcat automatically parsed every body into a `String` or `byte[]` in RAM upon arrival, 100 concurrent 30MB video uploads would consume $100 \times 30\text{ MB} = \mathbf{3\text{ GIGABYTES}}$ of JVM Heap, instantly triggering a fatal `java.lang.OutOfMemoryError`!
+  * **Wasted CPU on Blocked Requests:** If a request is blocked at the gate by `RateLimitFilter` or `JwtAuthFilter`, Tomcat would have wasted bandwidth and CPU reading 30MB for a request that gets rejected anyway!
+* **The Garden Hose Concept:** An `InputStream` is not a bucket holding all bytes in RAM. It is a live open faucet connected directly to the Linux Kernel's network socket buffer (`SO_RCVBUF`). Bytes only flow into JVM memory when someone explicitly calls `stream.read()`.
+* **The Golden Rule (Read Once Only):** Because network streams flow like water through a pipe, once read, the bytes cannot be rewound. Filters deliberately ignore the body stream so that Jackson at the controller layer can consume it without finding an empty stream.
+
+---
+
+#### 3. How Jackson Populates the DTO via Java Reflection
+When `DispatcherServlet` encounters `@RequestBody RegisterRequest request`:
+1. It selects `RequestResponseBodyMethodProcessor` which delegates to `MappingJackson2HttpMessageConverter`.
+2. **Reflection Instantiation:** Jackson invokes the default no-arg constructor:
+   ```java
+   RegisterRequest dto = RegisterRequest.class.getDeclaredConstructor().newInstance();
+   ```
+3. **Stream Parsing & Setter Invocation:** Jackson reads UTF-8 bytes from `request.getInputStream()`. For each matching JSON key, it calls the setter via Reflection:
+   ```java
+   dto.setUsername("karim");
+   dto.setEmail("karim@zone01.ma");
+   dto.setPassword("password123");
+   ```
+4. **Method Execution:** Spring's `InvocableHandlerMethod` invokes our controller:
+   ```java
+   registerMethod.invoke(authControllerInstance, dto);
+   ```
+
+---
+
+#### 4. The Complete End-to-End Execution in `AuthService.java`
+Once inside `AuthService.register(request)` and `AuthService.login(request)`:
+1. **Defensive Validation:** Null/length checks and regex matching guard against invalid inputs before hitting the database.
+2. **The Password Trapdoor:** Plaintext passwords are NEVER stored. `passwordEncoder.encode(request.getPassword())` applies BCrypt with a 10-round cost factor and random 128-bit salt.
+3. **The Bootstrap Admin Pattern:** `userRepository.count() == 0` automatically elevates the platform's first registered student to `ROLE_ADMIN`, ensuring automatic zero-configuration administration.
+4. **Avatar Provisioning:** Assigns a brutalist SVG avatar preset, saving the user record in PostgreSQL via `userRepository.save(user)`.
+5. **Token Issuance:** `jwtUtil.generateToken(user.getUsername())` seals the user's identity into a cryptographically signed HMAC-SHA256 JWT, returning `AuthResponse(token, ...)`.
+
+---
+
+#### 5. The Complete Round-Trip Highway: Incoming Request ──► Outgoing Response
+
+```
+========================================================================================================================
+                     THE COMPLETE ROUND-TRIP HIGHWAY: INCOMING REQUEST ──► OUTGOING RESPONSE
+========================================================================================================================
+
+                                            ANGULAR CLIENT (Browser Port 4200)
+                                                          │     ▲
+  [ 1. SENDS HTTP REQUEST ]                               │     │  [ 8. RECEIVES HTTP 201 CREATED ]
+  POST /api/auth/register                                 │     │  Status: 201 Created
+  Content-Type: application/json                          │     │  Body: {"token":"eyJhbGci...","username":"karim"}
+  Body: {"username":"karim","password":"123"}             │     │
+                                                          ▼     │
+──────────────────────────────────────────────────────────┼─────┼───────────────────────────────────────────────────────
+                                                          │     │
+                                           LINUX KERNEL & TOMCAT (Port 8080)
+                                                          │     │
+  [ 2. TOMCAT CREATES 2 TWIN OBJECTS ]                    │     │
+  ┌──────────────────────────────────────────────┐        │     │  ┌─────────────────────────────────────────────────┐
+  │         HttpServletRequest (IN)              │        │     │  │            HttpServletResponse (OUT)            │
+  ├──────────────────────────────────────────────┤        │     │  ├─────────────────────────────────────────────────┤
+  │ • Method: "POST"                             │        │     │  │ • Status Code: [ EMPTY -> Becomes 201 ]         │
+  │ • URI:    "/api/auth/register"               │        │     │  │ • Headers:     [ EMPTY -> Content-Type JSON ]   │
+  │ • getInputStream() ──► [ RAW JSON BYTES ]    │        │     │  │ • getOutputStream() ──► [ RAW BYTES TO SOCKET ] │
+  └──────────────────────┬───────────────────────┘        │     │  └────────────────────────▲────────────────────────┘
+                         │                                │     │                           │
+                         ▼                                │     │                           │
+  [ 3. SECURITY FILTER CHAIN (Bypass) ]                   │     │                           │
+  RateLimitFilter ──► CorsFilter ──► JwtAuthFilter        │     │                           │
+  (All filters PASS without touching the body stream)     │     │                           │
+                         │                                │     │                           │
+                         ▼                                │     │                           │
+─────────────────────────┼────────────────────────────────┼─────┼───────────────────────────┼───────────────────────────
+                         │                                      │                           │
+                         │                   SPRING MVC REALM (JVM Heap)                    │
+                         ▼                                                                  │
+  [ 4. DISPATCHER SERVLET: INCOMING ]                                                       │
+  • Finds Route: AuthController.register()                                                  │
+  • Needs Parameter: @RequestBody RegisterRequest                                           │
+  • Delegates to: RequestResponseBodyMethodProcessor                                        │
+                         │                                                                  │
+                         ▼                                                                  │
+         ┌───────────────────────────────┐                                                  │
+         │  Jackson ObjectMapper Engine  │                                                  │
+         ├───────────────────────────────┤                                                  │
+         │ 1. new RegisterRequest()      │                                                  │
+         │ 2. Reads getInputStream()     │                                                  │
+         │ 3. setUsername("karim")       │                                                  │
+         │ 4. setPassword("123")         │                                                  │
+         └───────────────┬───────────────┘                                                  │
+                         │                                                                  │
+                         ▼                                                                  │
+  [ 5. AUTH CONTROLLER EXECUTION ]                                                          │
+  AuthController.register(RegisterRequest request)                                          │
+                         │                                                                  │
+                         ├──► Calls: AuthService.register(request)                          │
+                         │           • BCrypt hash password                                 │
+                         │           • userRepository.save(user)                            │
+                         │           • Returns: AuthResponse("token123", "karim")           │
+                         │                                                                  │
+                         ▼                                                                  │
+  [ 6. PACKAGING THE RESPONSE ENTITY ]                                                      │
+  ResponseEntity.status(HttpStatus.CREATED).body(response)                                  │
+                         │                                                                  │
+                         │  Returns ResponseEntity Object in RAM:                           │
+                         │  ┌────────────────────────────────────────────────────────┐      │
+                         │  │ Status:  201 CREATED                                   │      │
+                         │  │ Headers: Content-Type: application/json                │      │
+                         │  │ Body:    AuthResponse("token123", "karim", ...)        │      │
+                         │  └────────────────────────┬───────────────────────────────┘      │
+                         │                           │                                      │
+                         ▼                           ▼                                      │
+  [ 7. DISPATCHER SERVLET: OUTGOING TRANSLATION ]                                           │
+  DispatcherServlet receives ResponseEntity                                                 │
+  Delegates to: HttpEntityMethodProcessor                                                   │
+  • Step A: Reads Status 201    ──────────► httpServletResponse.setStatus(201) ─────────────┤
+  • Step B: Reads Headers       ──────────► httpServletResponse.setHeader(...) ─────────────┤
+  • Step C: Passes Body to Jackson                                                          │
+            Jackson serializes AuthResponse to JSON bytes                                   │
+            Jackson writes bytes directly ──────────────────────────────────────────────────┘
+            to: httpServletResponse.getOutputStream()
+```
+
+##### The Core Takeaway Formula:
+```
+[ INCOMING ]  Network Bytes ──► Tomcat getInputStream() ──► Jackson ──► RegisterRequest DTO ──► Controller
+                                                                                                    │
+                                                                                                    ▼
+[ OUTGOING ]  Network Bytes ◄── Tomcat getOutputStream() ◄── Jackson ◄── ResponseEntity ◄───────────┘
+```
+* **On the way IN:** Jackson consumes `request.getInputStream()` to **build** your Java DTO (`RegisterRequest`).
+* **Inside your Code:** You wrap the result in `ResponseEntity` to **declare** the Status Code (`201`), Headers, and Body.
+* **On the way OUT:** `DispatcherServlet` unpacks `ResponseEntity`, configures Tomcat's `HttpServletResponse`, and Jackson writes JSON bytes into `response.getOutputStream()`.
+
+---
+
 ## Part 6: Summary to Explain to Others (Your Auditor Pitch)
 
 When an evaluator asks:  
@@ -2562,6 +2773,756 @@ public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataInte
 *1. **Outside Spring MVC (Servlet Filter Pipeline):** Exceptions occurring before `DispatcherServlet` (e.g. rate-limiting in `RateLimitFilter` or missing/invalid JWT tokens) are handled directly in the filter chain by `SecurityConfig`'s `authenticationEntryPoint` (401) and `accessDeniedHandler` (403). `GlobalExceptionHandler` cannot catch these because `DispatcherServlet` is not yet on the thread's call stack.*
 
 *2. **Inside Spring MVC (Controllers, Services & Dynamic Proxies):** Once the request enters `DispatcherServlet`, any security exception—such as method security failures (`@PreAuthorize` throwing `AccessDeniedException`), business ownership violations (`SecurityException` for banned users or unauthorized deletions), or invalid login credentials—bubbles up to `DispatcherServlet`. `DispatcherServlet` routes the error to **`GlobalExceptionHandler`** (`@RestControllerAdvice`), which translates raw Java exceptions into standardized, secure JSON API contracts with appropriate HTTP status codes (400, 403, 404, 409)."*
+
+---
+
+### Q11: The Startup Smoke Test vs The Hardcoded Admin Anti-Pattern: Why Keep `DataInitializer.java`?
+
+#### The Evaluator's Trap Question:
+*"In `AuthService.java`, line 86 already checks `userRepository.count() == 0` and makes the first registered user `ROLE_ADMIN`. If your authentication service already handles this dynamically, why do you have `DataInitializer.java`? Could you delete it? What is it actually doing in RAM on boot?"*
+
+#### The Ground-Zero Reality:
+Technically, if you delete `DataInitializer.java`, the platform will still function. However, keeping it provides **three vital architectural benefits** that every senior engineer expects:
+
+1. **The Database "Smoke Test" (Fail-Fast Verification on Boot):**
+   * When Spring Boot boots up, `DataInitializer.run()` runs immediately after all beans are wired and Tomcat binds to port 8080.
+   * By calling `userRepository.count()`, Spring Data JPA issues `SELECT COUNT(*) FROM users;` over TCP to PostgreSQL 16 on port 5432.
+   * If PostgreSQL is offline, if Docker crashed, or if `.env` database credentials are wrong, **the application crashes immediately on boot** with a clean stack trace. Without this, the server would silently start and only crash minutes later when a student tries to register!
+2. **Evaluator & Operator Console Guidance:**
+   * When an evaluator starts the backend with `./mvnw spring-boot:run`, they see:
+     `[01Blog] Clean database detected. The first registered user will automatically become Platform Administrator (ROLE_ADMIN).`
+   * This immediately communicates the bootstrap process without forcing evaluators to hunt through source code for default passwords.
+3. **Mastery of the `CommandLineRunner` Lifecycle:**
+   * By implementing `CommandLineRunner`, the class demonstrates mastery of Spring's post-initialization lifecycle hook. Spring Boot automatically scans for any Bean implementing `CommandLineRunner` and invokes its `run(String... args)` method right before `BlogApplication.main()` finishes.
+
+#### The Security Defense (CWE-798 Eradication):
+In naive student projects, developers hardcode default seed users:
+```java
+// ❌ CRITICAL SECURITY FLAW (CWE-798: Embedded Default Credentials):
+userRepository.save(new User("admin", passwordEncoder.encode("admin123"), UserRole.ROLE_ADMIN));
+```
+If pushed to GitHub, bots scrape `admin:admin123` and instantly hijack deployed servers. In 01Blog, we completely eliminated embedded credentials in favor of the **Dynamic Bootstrap Admin Pattern**: the first user registers their own private password, which is dynamically salted and hashed with BCrypt in memory, while all subsequent registrants receive standard `ROLE_USER`.
+
+---
+
+### Q12: Inside `RateLimitFilter`: How Do 200 Tomcat Threads Track IP Windows in RAM Without Leaks or Race Conditions?
+
+#### The Evaluator's Trap Question:
+*"Walk me through lines 46 to 104 of `RateLimitFilter.java`. If Tomcat spawns 200 concurrent worker threads, what stops race conditions? What stops an attacker from spoofing their IP behind a proxy? And what prevents your in-memory map from exhausting JVM Heap RAM?"*
+
+#### The Step-by-Step Flow in RAM:
+
+```
+[ Incoming Request (e.g. POST /api/auth/login) ]
+                       │
+                       ▼
+    1. Whitelist Bypass (Lines 46-50)
+       - If URI starts with "/uploads/" or is "/error" -> filterChain.doFilter() & return!
+                       │
+                       ▼
+    2. Proxy-Aware IP Detection (Lines 52-56 & 96-102)
+       - Checks "X-Forwarded-For" header from reverse proxy (NGINX/Cloudflare).
+       - Falls back to raw socket IP: request.getRemoteAddr().
+       - Assigns two-tier limit: AUTH_LIMIT (20/min) vs GENERAL_LIMIT (120/min).
+       - Builds key: "AUTH:196.200.5.12"
+                       │
+                       ▼
+    3. Thread-Safe Memory Check: isAllowed() (Lines 71-93)
+       - synchronized keyword locks access across Tomcat's 200 worker threads.
+       - Memory Leak Guard: if map.size() > 500, purge expired records (now - start > 60s).
+       - Reset Window: if now - windowStart > 60s, windowStart = now, count = 0.
+                      / \
+        count >= limit   count < limit
+             /             \
+            v               v
+    4. HTTP 429 Block    5. Pass the Baton
+    - response.setStatus(429)     - tracker.count++
+    - Header: Retry-After: 60     - filterChain.doFilter(req, res)
+    - Direct JSON socket write!   - Moves to JwtAuthFilter!
+    - Short-circuits request!
+```
+
+#### Under-the-Hood Technical Highlights:
+1. **The Whitelist Bypass (Lines 46–50):**  
+   Bypasses `/uploads/**` so that loading a feed containing 20 post images or avatars does not penalize the user's API quota. Also ignores `OPTIONS` preflight requests so CORS handshakes never consume user credits.
+2. **Reverse Proxy IP Resolution (`X-Forwarded-For`, Lines 96–102):**  
+   If the backend sits behind a load balancer, `request.getRemoteAddr()` returns the load balancer's IP (e.g. `127.0.0.1`), which would force all users globally to share one single 20-request limit! Reading `X-Forwarded-For` extracts the true client IP.
+3. **RAM Memory Leak Guard (Line 75):**  
+   If 100,000 distinct IP addresses hit the server once, `ConcurrentHashMap` would accumulate stale entries indefinitely, triggering an `OutOfMemoryError`. When `clientTrackers.size() > 500`, the filter purges all entries whose 60-second window has elapsed.
+4. **Zero-Overhead Short-Circuit (Lines 58–65):**  
+   Blocked requests write JSON and `Retry-After: 60` directly to the `HttpServletResponse` output stream. The request **never touches `DispatcherServlet`**, **never acquires a HikariCP database connection**, and **never runs a SQL query**, preserving server CPU and database bandwidth during DoS floods.
+
+---
+
+### Q13: The String Badge Mystery: What Does `SimpleGrantedAuthority` Actually Generate and How Does `hasRole` Work?
+
+#### The Evaluator's Trap Question:
+*"In `JwtAuthFilter.java`, you write:  
+`List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getRole().name()));`  
+What is `SimpleGrantedAuthority`? If Spring Security doesn't know your custom Java enum, what string does it generate, and what badges does it actually use?"*
+
+#### The Precision Answer:
+Spring Security is a generic enterprise framework built to secure any application in the world. It cannot hardcode references to our custom `com.zone01.blog.entity.UserRole` enum.
+
+To decouple user models from the security engine, Spring Security defines the **`GrantedAuthority` interface**:
+```java
+public interface GrantedAuthority extends Serializable {
+    String getAuthority(); // Contract: any class that can return a permission String
+}
+```
+
+#### What Physically Happens in RAM:
+1. **`user.getRole().name()`:**  
+   In Java, `.name()` on an enum converts the identifier into an exact `String`:  
+   `UserRole.ROLE_ADMIN` $\rightarrow$ literal String **`"ROLE_ADMIN"`**.
+2. **`new SimpleGrantedAuthority("ROLE_ADMIN")`:**  
+   Spring's built-in `SimpleGrantedAuthority` class is literally a single-field wrapper:
+   ```java
+   public final class SimpleGrantedAuthority implements GrantedAuthority {
+       private final String role;
+       public SimpleGrantedAuthority(String role) { this.role = role; }
+       @Override public String getAuthority() { return this.role; }
+   }
+   ```
+   It does not "generate" a random magical string. It simply holds the string `"ROLE_ADMIN"` in JVM Heap RAM.
+3. **How `.hasRole('ADMIN')` Verifies the Badge:**  
+   In [`SecurityConfig.java`](backend/src/main/java/com/zone01/blog/config/SecurityConfig.java), we configure:
+   ```java
+   .requestMatchers("/api/admin/**").hasRole("ADMIN")
+   ```
+   Spring Security enforces **one strict convention**: when you write `.hasRole("ADMIN")`, it automatically prepends the prefix **`"ROLE_"`**:
+   $$\text{"ROLE\_"} + \text{"ADMIN"} = \text{"ROLE\_ADMIN"}$$
+   It then iterates over the user's `authorities` collection and checks if `authority.getAuthority().equals("ROLE_ADMIN")`. Because our `SimpleGrantedAuthority` returns `"ROLE_ADMIN"`, access is granted!
+4. **Why `List.of(...)`?**  
+   In enterprise systems, a user can hold multiple roles simultaneously (e.g. `["ROLE_USER", "ROLE_MODERATOR", "ROLE_ADMIN"]`). Spring Security's `Authentication` object demands a `Collection<? extends GrantedAuthority>`, so we pass our authority inside an immutable `List`.
+
+---
+
+### Q14: `WebAuthenticationDetails` & `UsernamePasswordAuthenticationToken`: Why Use a Password Class With Stateless JWT?
+
+#### The Evaluator's Trap Question:
+*"In `JwtAuthFilter.java`, lines 69-74 create a `UsernamePasswordAuthenticationToken` and pass `null` for the credentials, then call `setDetails(new WebAuthenticationDetailsSource().buildDetails(request))`. Why do you use a class with 'Password' in its name when you are using stateless JWT without passwords? And what is `WebAuthenticationDetails` physically doing?"*
+
+#### The Historical Legacy of Spring Security:
+Spring Security was originally authored in 2003 (as "Acegi Security") for traditional server-rendered HTML applications where users submitted forms with usernames and passwords.
+
+Spring Security's core engine (`SecurityContextHolder`, `@PreAuthorize`, security filter chains) strictly demands an object implementing the **`Authentication` interface**:
+```java
+public interface Authentication extends Principal, Serializable {
+    Collection<? extends GrantedAuthority> getAuthorities();
+    Object getCredentials();
+    Object getDetails();
+    Object getPrincipal();
+    boolean isAuthenticated();
+}
+```
+
+Instead of writing a custom `JwtAuthenticationToken` class with 50 lines of boilerplate implementing 6 interface methods, the industry standard practice is to reuse Spring's pre-built `UsernamePasswordAuthenticationToken`.
+
+#### Look at the 3-Argument Constructor:
+```java
+UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+        user.getUsername(),  // Principal (Who the user is: "youssef")
+        null,                // Credentials (Password is null because JWT signature already verified it!)
+        authorities          // Granted authorities ([ROLE_ADMIN])
+);
+```
+When you invoke this 3-argument constructor, `UsernamePasswordAuthenticationToken` executes:
+```java
+super.setAuthenticated(true); // Marks the token as 100% VALIDATED & AUTHENTICATED in RAM!
+```
+
+#### What `WebAuthenticationDetails` Physically Does in RAM:
+```java
+authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+```
+`WebAuthenticationDetailsSource` reads the incoming `HttpServletRequest` (the Tomcat TCP socket handle) and extracts:
+1. **`request.getRemoteAddr()`** $\rightarrow$ e.g. `"196.200.5.12"` (Client IP address).
+2. **`request.getSession().getId()`** $\rightarrow$ The HTTP session ID (if any).
+
+It bundles these network metadata fields into a `WebAuthenticationDetails` object and attaches it to `authToken.details`. This allows security services and audit loggers to retrieve `((WebAuthenticationDetails) auth.getDetails()).getRemoteAddress()` to log the exact physical IP address from which an administrative action was performed.
+
+---
+
+### Q15: The Single-Threaded Request Journey & `ThreadLocal` Lifecycles: How Authentication Reaches Controllers Without Poisoning the Pool
+
+#### The Evaluator's Trap Question:
+*"You put the `authToken` into `SecurityContextHolder` inside `JwtAuthFilter`. But `SecurityContextHolder` stores data in a `ThreadLocal` variable that only lives for milliseconds. How does `PostController` access this authentication? Isn't the thread dead by then? And what prevents one user's identity from leaking to another user when Tomcat reuses threads?"*
+
+#### The Core Revelation: One Thread Executes the ENTIRE Request!
+Tomcat operates on the **One Thread Per Request** model. When an HTTP packet arrives, Tomcat assigns **ONE worker thread** from its thread pool (e.g. `http-nio-8080-exec-1`).
+
+**That single worker thread executes the filters, the dispatcher, and the controller sequentially on the exact same call stack:**
+
+```
+Time (ms)   Thread: http-nio-8080-exec-1 Execution in RAM
+---------   ----------------------------------------------------------------------------------
+T = 0 ms    Thread picks up parsed HttpServletRequest from Tomcat's TCP network buffer.
+T = 1 ms    Thread executes RateLimitFilter.doFilterInternal() (Passes rate check).
+T = 2 ms    Thread executes JwtAuthFilter.doFilterInternal().
+            - Validates HMAC-SHA256 signature via JwtUtil.
+            - Verifies user.isBanned() == false against PostgreSQL.
+            - Writes authToken to its OWN ThreadLocal memory pocket:
+              SecurityContextHolder.getContext().setAuthentication(authToken);
+T = 3 ms    Thread enters DispatcherServlet.doDispatch().
+T = 4 ms    HandlerMapping finds matching controller method: PostController.createPost().
+T = 5 ms    HandlerMethodArgumentResolver inspects createPost() parameters:
+            - Finds parameter: 'Authentication authentication'.
+            - Reads ThreadLocal: SecurityContextHolder.getContext().getAuthentication().
+            - Injects authToken directly into the controller method parameter!
+T = 6 ms    Thread executes PostController -> PostService.createPost() -> PostRepository.save().
+T = 7 ms    Post is written to PostgreSQL disk blocks. Response DTO is created.
+T = 8 ms    Jackson serializes DTO to JSON; bytes written to HttpServletResponse stream.
+T = 9 ms    >>> THE EXIT GATEWAY (SecurityContextHolderFilter) <<<
+            Spring Security invokes: SecurityContextHolder.clearContext();
+            ThreadLocal memory pocket is completely WIPED CLEAN!
+T = 10 ms   Thread returns to Tomcat's idle pool, ready to serve the next incoming request.
+```
+
+#### Why We Pass `Authentication` to the Controller (Identity Spoofing Defense):
+In [`PostController.java`](backend/src/main/java/com/zone01/blog/controller/PostController.java), we write:
+```java
+@PostMapping
+public ResponseEntity<?> createPost(..., Authentication authentication) {
+    String authorUsername = authentication.getName(); // "youssef"
+```
+If we trusted a client-provided body parameter like `{"author": "admin"}`, an attacker could forge posts under any student's or administrator's name. By reading `authentication.getName()`, the controller extracts the identity that was **cryptographically verified by HMAC-SHA256 in `JwtAuthFilter`**, guaranteeing 100% identity integrity.
+
+#### Why `clearContext()` is Mandatory (ThreadLocal Leakage / Poisoning Defense):
+Because Tomcat does not destroy threads after each request (thread creation overhead is prohibitive), it recycles 200 pooled threads indefinitely.
+
+If Spring Security did not call `SecurityContextHolder.clearContext()` at $T = 9\text{ ms}$:
+* `http-nio-8080-exec-1` would retain Youssef's `Authentication` object in its `ThreadLocal` slot.
+* Minutes later, an unauthenticated guest sending `GET /api/posts` might be assigned `http-nio-8080-exec-1`.
+* The guest would inherit Youssef's identity and privileges, causing a catastrophic security breach!
+* Calling `clearContext()` guarantees that when a thread returns to the pool, its memory pocket is **zeroed out**.
+
+---
+
+### Q16: The 404 Routing Mystery: How Does `DispatcherServlet` Catch Bad URLs via `NoResourceFoundException`?
+
+#### The Evaluator's Trap Question:
+*"In `SecurityConfig.java`, line 70 says `.anyRequest().permitAll()`. If an attacker requests a route that does not exist at all (e.g. `GET /api/does-not-exist`), Spring Security lets it through! Where in the MVC layer does this get caught, who throws the error, and how does your API return a clean 404 JSON instead of a 401 or an HTML page?"*
+
+#### The Exact Journey in RAM:
+
+```
+[ HTTP GET /api/does-not-exist ]
+               │
+               ▼
+   [ Spring Security Filter Chain ]
+   - Passes RateLimitFilter
+   - Reaches AuthorizationFilter: matches .anyRequest().permitAll()
+   - Spring Security steps aside: "Not my problem, let Spring MVC handle it!"
+               │
+               ▼
+   [ DispatcherServlet.doDispatch() ]
+   - Calls: getHandler(processedRequest)
+   - Checks RequestMappingHandlerMapping (All @Controllers) -> NO MATCH!
+   - Checks SimpleUrlHandlerMapping (All /uploads/**)       -> NO MATCH!
+   - In Spring Boot 3.3.4, throws: NoResourceFoundException!
+               │
+               ▼
+   [ GlobalExceptionHandler.java ]
+   - Intercepts: @ExceptionHandler(NoResourceFoundException.class)
+   - Returns HTTP 404 NOT_FOUND with JSON body!
+```
+
+#### Under-the-Hood Code Mechanics:
+1. **The Fall-Through Design:** If we had written `.anyRequest().authenticated()`, any typo or invalid route would return **HTTP 401 Unauthorized**, misleading frontend developers into thinking they just needed to log in. By writing `.anyRequest().permitAll()`, unknown routes fall through cleanly into Spring MVC.
+2. **Spring Boot 3.3+ `NoResourceFoundException`:**  
+   In older Spring versions, unmapped routes called `response.sendError(404)` and forwarded to Tomcat's `/error`. In modern Spring Boot 3, `DispatcherServlet` throws **`org.springframework.web.servlet.resource.NoResourceFoundException`**.
+3. **The Global Exception Catch:**  
+   In [`GlobalExceptionHandler.java`](backend/src/main/java/com/zone01/blog/exception/GlobalExceptionHandler.java#L114-L119):
+   ```java
+   @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+   public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException ex) {
+       return ResponseEntity.status(HttpStatus.NOT_FOUND)
+               .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found: " + ex.getResourcePath()));
+   }
+   ```
+   This catches the exception inside `DispatcherServlet`'s call stack and writes a structured JSON contract directly back to the client:
+   ```json
+   {
+     "timestamp": "2026-10-25T02:05:00.123456",
+     "status": 404,
+     "error": "NOT_FOUND",
+     "message": "Resource not found: /api/does-not-exist"
+   }
+   ```
+
+---
+
+### Q17: What Physically IS `DispatcherServlet` at the Memory & Thread Level? (Class vs Daemon vs Thread)
+
+#### The Evaluator's Trap Question:
+*"What actually is `DispatcherServlet`? Is it an operating system daemon running in the background? Is it an interface? Is it a separate thread pool? Describe what it is in JVM memory."*
+
+#### The Ground-Zero Reality:
+`DispatcherServlet` is a **plain Java Singleton CLASS** living on the JVM Heap.
+
+#### Its Exact Java Class Inheritance Hierarchy:
+```
+jakarta.servlet.Servlet (Interface invented in 1997 for Java Servlets)
+   └── jakarta.servlet.GenericServlet (Abstract protocol-independent base)
+          └── jakarta.servlet.http.HttpServlet (Standard HTTP servlet)
+                 └── org.springframework.web.servlet.HttpServletBean (Spring context-aware bean)
+                        └── org.springframework.web.servlet.FrameworkServlet (Wires ApplicationContext)
+                               └── org.springframework.web.servlet.DispatcherServlet (The Front Controller)
+```
+
+#### Memory & Threading Under the Microscope:
+1. **It is NOT an OS Process or Daemon:** It has no PID (Process ID) on Linux. The only OS process is the JVM itself (`java -jar blog.jar`).
+2. **It is NOT a Background Thread:** `DispatcherServlet` does not have its own thread. It has zero active threads running inside it.
+3. **It is a Singleton Object in Heap RAM:** On startup, Spring Boot instantiates exactly **ONE** instance of `DispatcherServlet` and stores its reference in the `ApplicationContext` Bean Map.
+4. **Who Executes It?** Tomcat's pooled worker thread (`http-nio-8080-exec-1`) does! When the worker thread finishes running the security filters, that exact same worker thread invokes:
+   ```java
+   dispatcherServlet.service(request, response);
+   ```
+   Which invokes `doDispatch(request, response)` on the same CPU core, on the same thread stack frame!
+
+---
+
+### Q18: Who Runs `doFilterInternal`? The Engine Inside `VirtualFilterChain` and `OncePerRequestFilter`
+
+#### The Evaluator's Trap Question:
+*"In both `RateLimitFilter` and `JwtAuthFilter`, you implemented `doFilterInternal()`. Neither class implements `jakarta.servlet.Filter` directly. Who physically calls `doFilterInternal()`? What is the calling loop in RAM, and what happens when your code calls `filterChain.doFilter(request, response)`?"*
+
+#### The Calling Architecture in RAM:
+
+```
+Tomcat Worker Thread
+       │
+       ▼
+[ FilterChainProxy.doFilter() ]
+       │
+       ▼ Instantiates runner with ordered List<Filter>:
+[ VirtualFilterChain.doFilter() ]
+       │
+       ├── Calls standard Servlet method: filter.doFilter(req, res, chain)
+       │
+       ▼ Intercepted by Spring base class:
+[ OncePerRequestFilter.doFilter() ]
+       │
+       ├── Checks request.getAttribute("ALREADY_FILTERED_...") != null
+       │   (Prevents duplicate execution on forwards/asynchronous dispatches)
+       │
+       ▼ Invokes your custom subclass method:
+[ RateLimitFilter.doFilterInternal() / JwtAuthFilter.doFilterInternal() ]
+       │
+       ├── Executes your logic (IP counter, JWT validation)
+       │
+       ▼ Calls: filterChain.doFilter(request, response)
+       │
+[ VirtualFilterChain.doFilter() ] ──> Increments currentPosition++ and executes NEXT filter!
+```
+
+#### The Internal Source Code Mechanics:
+1. **The Ordered Filter List in RAM:**  
+   Inside Spring Security's `FilterChainProxy`, all active security filters are stored inside an ordered `List<Filter>` in JVM Heap memory:
+   ```java
+   // Managed by FilterChainProxy:
+   List<Filter> filters = [CorsFilter, RateLimitFilter, LogoutFilter, JwtAuthFilter, ... AuthorizationFilter];
+   ```
+2. **The `VirtualFilterChain` Index Pointer:**  
+   To iterate through this list without recursion stack overflow, Spring Security uses an inner class implementing `jakarta.servlet.FilterChain`:
+   ```java
+   private static class VirtualFilterChain implements FilterChain {
+       private final List<Filter> additionalFilters;
+       private int currentPosition = 0; // Tracks which filter is currently executing
+
+       @Override
+       public void doFilter(ServletRequest request, ServletResponse response) {
+           if (this.currentPosition < this.additionalFilters.size()) {
+               Filter nextFilter = this.additionalFilters.get(this.currentPosition++);
+               nextFilter.doFilter(request, response, this); // Passes 'this' as the chain!
+           }
+       }
+   }
+   ```
+3. **The `OncePerRequestFilter` Guard:**  
+   When `VirtualFilterChain` calls `filter.doFilter()`, the call lands in `OncePerRequestFilter.doFilter()`. It checks if a unique attribute key (`"org.springframework.web.filter.OncePerRequestFilter.FILTERED"`) exists on the `HttpServletRequest`. If not, it stamps the attribute and calls **`doFilterInternal()`**.
+4. **Passing the Baton:**  
+   When your method finishes and executes `filterChain.doFilter(request, response)`, you are calling the `VirtualFilterChain` instance back. It reads `currentPosition++`, retrieves the next filter in line (`JwtAuthFilter`), and executes it!
+
+---
+
+## Part 7: The Master Error Shield: Anatomy & Architecture of `GlobalExceptionHandler.java`
+
+Handling runtime errors gracefully is the hallmark of a resilient, production-ready system. Without a global exception translator, any unhandled runtime error produces an **ugly, vulnerable 500 HTML Whitelabel Error Page** that leaks server stack traces, database schema names, and internal file paths to attackers.
+
+In **01Blog**, [`GlobalExceptionHandler.java`](backend/src/main/java/com/zone01/blog/exception/GlobalExceptionHandler.java) acts as the **master centralized error firewall** for the entire Spring MVC layer.
+
+---
+
+### 1. How `@RestControllerAdvice` Intercepts Exceptions via Spring AOP Proxies
+
+```
+[ Controller / Service Layer throws Exception ]
+                     │
+                     ▼
+         [ DispatcherServlet.doDispatch() ]
+                     │
+                     ▼ Catches Exception in master try-catch:
+         [ processHandlerException() ]
+                     │
+                     ▼ Queries HandlerExceptionResolverComposite:
+    [ ExceptionHandlerExceptionResolver ]
+                     │
+                     ▼ Discovers @RestControllerAdvice Bean:
+       [ GlobalExceptionHandler ] ── Matches Class with @ExceptionHandler(Target.class)
+                     │
+                     ▼ Serializes JSON Response via Jackson
+       [ HTTP 400 / 403 / 404 / 409 / 413 / 500 JSON Payload ]
+```
+
+#### The Engine Mechanics in RAM:
+1. **`@RestControllerAdvice`:** A specialized Spring `@Component` that combines `@ControllerAdvice` and `@ResponseBody`. On boot, Spring detects this bean and registers it inside `DispatcherServlet`'s `ExceptionHandlerExceptionResolver`.
+2. **Java Reflection Exception Mapping:** When an exception occurs during the execution of any `@RestController`, `DispatcherServlet` catches it and scans `GlobalExceptionHandler`'s methods for the closest matching `@ExceptionHandler(Class<T>)`.
+3. **Standardized API Error Contract:** Every single error emitted by `GlobalExceptionHandler` strictly conforms to our unified JSON contract via `buildErrorResponse()`:
+   ```json
+   {
+     "timestamp": "2026-10-25T02:10:00.000",
+     "status": 400,
+     "error": "BAD_REQUEST",
+     "message": "Specific human-readable failure explanation"
+   }
+   ```
+
+---
+
+### 2. The 13 Essential Exception Checkpoints Handled in 01Blog
+
+Let us dissect each of the 13 specialized exception handlers in [`GlobalExceptionHandler.java`](backend/src/main/java/com/zone01/blog/exception/GlobalExceptionHandler.java):
+
+```java
+// Checkpoint 1: Validation & Business Logic Errors (400 Bad Request or 404 Not Found)
+@ExceptionHandler(IllegalArgumentException.class)
+public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+    if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage()));
+    }
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(buildErrorResponse(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage()));
+}
+```
+* **Why it matters:** Thrown by service methods (e.g. invalid username regex, empty post titles, or password mismatch). If the message indicates a missing resource (e.g. `"Author not found"`), it cleanly returns **404**; otherwise **400**.
+
+```java
+// Checkpoint 2: Missing Entity Lookups (404 Not Found)
+@ExceptionHandler(NoSuchElementException.class)
+public ResponseEntity<Map<String, Object>> handleNoSuchElement(NoSuchElementException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage()));
+}
+```
+* **Why it matters:** Thrown when calling `Optional.orElseThrow()` or `.get()` on an empty database query result.
+
+```java
+// Checkpoint 3: Path Variable Type Mismatch (404 Not Found)
+@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found: " + ex.getValue()));
+}
+```
+* **Why it matters:** If an attacker calls `GET /api/posts/abc` (expecting a `Long id`), Spring cannot convert `"abc"` to `Long`. Instead of a confusing 500 error, our handler translates it into a clean **404 Not Found**.
+
+```java
+// Checkpoint 4: Security Invariants & Banned User Violations (403 Forbidden)
+@ExceptionHandler(SecurityException.class)
+public ResponseEntity<Map<String, Object>> handleSecurity(SecurityException ex) {
+    String code = (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("banned"))
+            ? "ACCOUNT_BANNED" : "FORBIDDEN";
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(buildErrorResponse(HttpStatus.FORBIDDEN, code, ex.getMessage()));
+}
+```
+* **Why it matters:** Thrown by `UserService` or `PostService` when a banned user attempts to perform social actions, or when a non-author attempts to edit someone else's post. Emits error code `"ACCOUNT_BANNED"` so Angular can display the suspension modal.
+
+```java
+// Checkpoint 5: Spring Security Access Denied (403 Forbidden)
+@ExceptionHandler(AccessDeniedException.class)
+public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(buildErrorResponse(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "You do not have permission to access this resource."));
+}
+```
+* **Why it matters:** Thrown by Spring Security AOP proxies when `@PreAuthorize("hasRole('ADMIN')")` fails.
+
+```java
+// Checkpoint 6: Media Upload Size Exceeded (413 Payload Too Large)
+@ExceptionHandler(MaxUploadSizeExceededException.class)
+public ResponseEntity<Map<String, Object>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+            .body(buildErrorResponse(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_TOO_LARGE", "Uploaded file exceeds the maximum 30MB size limit."));
+}
+```
+* **Why it matters:** Thrown by Tomcat's `StandardServletMultipartResolver` when an uploaded media file exceeds our 30 MB clamp. Returns standard **HTTP 413 Payload Too Large**.
+
+```java
+// Checkpoint 7: Bean Validation Constraints (400 Bad Request)
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+    String message = ex.getBindingResult().getFieldErrors().stream()
+            .map(err -> err.getField() + ": " + err.getDefaultMessage())
+            .findFirst()
+            .orElse("Validation failed");
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(buildErrorResponse(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", message));
+}
+```
+* **Why it matters:** Extracts clean field validation error messages (e.g. `"email: must not be empty"`) without exposing raw internal Spring validation binding results.
+
+```java
+// Checkpoint 8: Malformed JSON Syntax (400 Bad Request)
+@ExceptionHandler(HttpMessageNotReadableException.class)
+public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(buildErrorResponse(HttpStatus.BAD_REQUEST, "MALFORMED_JSON", "Invalid or malformed JSON request body."));
+}
+```
+* **Why it matters:** Catches syntax errors in client JSON bodies (missing quotes, trailing commas) and prevents Jackson parser stack traces from leaking to the network.
+
+```java
+// Checkpoint 9: Missing Request Parameters (400 Bad Request)
+@ExceptionHandler(MissingServletRequestParameterException.class)
+public ResponseEntity<Map<String, Object>> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(buildErrorResponse(HttpStatus.BAD_REQUEST, "MISSING_PARAMETER", "Required parameter '" + ex.getParameterName() + "' is missing."));
+}
+```
+* **Why it matters:** Explicitly informs the client which `@RequestParam` was omitted from the request.
+
+```java
+// Checkpoint 10: Method Not Supported (405 Method Not Allowed)
+@ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+public ResponseEntity<Map<String, Object>> handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+            .body(buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", ex.getMessage()));
+}
+```
+* **Why it matters:** Returns standard **HTTP 405** when an endpoint mapped to `POST` is called with `PUT` or `DELETE`.
+
+```java
+// Checkpoint 11: Non-Existent API Routes (404 Not Found)
+@ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+public ResponseEntity<Map<String, Object>> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found: " + ex.getResourcePath()));
+}
+```
+* **Why it matters:** Catches unmapped routes in Spring Boot 3.3 and returns a clean 404 JSON response.
+
+```java
+// Checkpoint 12: Database Constraint & SQL Duplicate Violations (409 Conflict)
+@ExceptionHandler(DataIntegrityViolationException.class)
+public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(buildErrorResponse(HttpStatus.CONFLICT, "CONFLICT", "A duplicate entry or database constraint violation occurred."));
+}
+```
+* **Why it matters:** Intercepts low-level PostgreSQL unique constraint violations (e.g. duplicate username, double-like race condition) and shields database table structures from the client.
+
+```java
+// Checkpoint 13: Unsupported Media Types (415 Unsupported Media Type)
+@ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+public ResponseEntity<Map<String, Object>> handleHttpMediaTypeNotSupported(org.springframework.web.HttpMediaTypeNotSupportedException ex) {
+    return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+            .body(buildErrorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE",
+                    "Content-Type '" + (ex.getContentType() != null ? ex.getContentType() : "unknown") + "' is not supported. Request body must be 'application/json'."));
+}
+```
+* **Why it matters:** When a client sends a `POST` or `PUT` request without `Content-Type: application/json` (or with `text/plain` or form data), Jackson's `MappingJackson2HttpMessageConverter` refuses to process it and throws `HttpMediaTypeNotSupportedException`. Without this handler, the error falls down to the 500 catch-all! This checkpoint guarantees RFC-compliant **HTTP 415** error feedback.
+
+```java
+// Catch-All Fallback (500 Internal Server Error)
+@ExceptionHandler(Exception.class)
+public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_ERROR", "An unexpected error occurred. Please try again."));
+}
+```
+* **Why it matters:** The ultimate safety net. Any unexpected `NullPointerException` or runtime glitch is trapped here, returning a safe HTTP 500 error without exposing stack traces.
+
+---
+
+### 3. How GlobalExceptionHandler is Physically Invoked (The Call Stack & DispatcherServlet)
+
+#### Do WE Forward Errors to `GlobalExceptionHandler`?
+**NO! Absolutely not.** We never write `globalExceptionHandler.handle(ex)` or inject `GlobalExceptionHandler` into our services or controllers. 
+
+Invocation relies entirely on **Inversion of Control (IoC)**, **Java Call Stack Unwinding**, and **Reflection**.
+
+```
+[ Tomcat Worker Thread: http-nio-8080-exec-1 ]
+  │
+  ▼
+DispatcherServlet.doDispatch()  <── [ MASTER TRY-CATCH SAFETY NET AT THE TOP ]
+  │
+  ▼
+HandlerAdapter.handle()
+  │
+  ▼
+InvocableHandlerMethod.invokeForRequest()
+  │
+  ▼
+Your Controller (e.g., AdminController)
+  │
+  ▼
+Your Service (e.g., ReportService)  <── 💥 throw new IllegalArgumentException("Report not found with ID: 99");
+```
+
+#### The Two-Phase Engine Mechanics in RAM:
+
+1. **Phase 1: Bootup Discovery & Hash Map Caching (Startup Phase)**
+   * During Spring application boot, Spring scans the IoC container for `@RestControllerAdvice` (which is meta-annotated with `@Component`).
+   * It creates a singleton instance of `GlobalExceptionHandler` in JVM heap memory.
+   * Spring's built-in `ExceptionHandlerExceptionResolver` inspects every method of `GlobalExceptionHandler` via Java Reflection (`Class.getDeclaredMethods()`).
+   * It builds an in-memory lookup cache: `Map<Class<? extends Throwable>, Method>` in RAM:
+
+     | Cached Exception Key (`Class<?>`) | Registered Handler Method (`java.lang.reflect.Method`) |
+     |---|---|
+     | `IllegalArgumentException.class` | `handleIllegalArgument(IllegalArgumentException)` |
+     | `NoSuchElementException.class` | `handleNoSuchElement(NoSuchElementException)` |
+     | `HttpMediaTypeNotSupportedException.class` | `handleHttpMediaTypeNotSupported(...)` |
+     | `AccessDeniedException.class` | `handleAccessDenied(AccessDeniedException)` |
+     | `Exception.class` | `handleGeneralException(Exception)` |
+
+2. **Phase 2: Runtime Unwinding & DispatcherServlet Interception (Request Phase)**
+   * Inside Spring's `DispatcherServlet.doDispatch()`:
+     ```java
+     try {
+         // 1. Argument resolution (@RequestBody, @RequestParam)
+         // 2. Controller method execution
+         mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+     } catch (Exception ex) {
+         // Catches ANY unhandled exception escaping the controller!
+         dispatchException = ex;
+     }
+     processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
+     ```
+   * When `dispatchException != null`, `processDispatchResult` loops through registered `HandlerExceptionResolver` beans.
+   * `ExceptionHandlerExceptionResolver` executes:
+     1. It queries its in-memory map for `dispatchException.getClass()` in $O(1)$ time.
+     2. If an exact match is found (or its closest superclass), it invokes the method via Java Reflection:
+        ```java
+        method.invoke(globalExceptionHandlerInstance, dispatchException);
+        ```
+     3. Because of `@RestControllerAdvice` (meta-annotated with `@ResponseBody`), Spring passes the returned `ResponseEntity` to Jackson (`MappingJackson2HttpMessageConverter`), which writes the JSON bytes directly into Tomcat's `HttpServletResponse.getOutputStream()`.
+
+---
+
+### 4. The Architectural Boundary: What GlobalExceptionHandler Can and CANNOT Catch
+
+In peer evaluations, evaluators love asking: *"Does `@RestControllerAdvice` catch every single error in the entire application?"*
+
+**The Answer is NO.**
+
+```
+                       TOMCAT SERVLET CONTAINER
+┌────────────────────────────────────────────────────────────────────────┐
+│   HTTP Request                                                         │
+│        │                                                               │
+│        ▼                                                               │
+│   [ RateLimitFilter ]      <── Filter errors CANNOT be caught by       │
+│        │                        GlobalExceptionHandler!                │
+│        ▼                                                               │
+│   [ SecurityFilterChain ]  <── (e.g. Malformed JWT in JwtAuthFilter)   │
+│        │                                                               │
+│   ══════════════════════════════════════════════════════════════════   │
+│        │                                                               │
+│        ▼                                                               │
+│   ┌────────────────────────────────────────────────────────────────┐   │
+│   │               SPRING MVC REALM (DispatcherServlet)             │   │
+│   │                                                                │   │
+│   │   [ DispatcherServlet ]  <── 🛡️ GlobalExceptionHandler         │   │
+│   │        │                      catches EVERYTHING here!         │   │
+│   │        ├── Argument Resolvers (Content-Type, JSON parsing)     │   │
+│   │        ├── Controllers                                         │   │
+│   │        ├── Services                                            │   │
+│   │        └── Repositories                                        │   │
+│   └────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Inside Spring MVC (Caught by `GlobalExceptionHandler`):**
+   * Exceptions in Controllers, Services, and Repositories (e.g. `IllegalArgumentException`, `NoSuchElementException`, `DataIntegrityViolationException`).
+   * Exceptions thrown by Spring MVC argument resolvers *before* controller methods run (e.g. `HttpMediaTypeNotSupportedException` when `Content-Type: application/json` is missing, `HttpMessageNotReadableException` on malformed JSON).
+   * Unmapped route 404 errors (`NoResourceFoundException`).
+
+2. **Outside Spring MVC (Bypasses `GlobalExceptionHandler`):**
+   * Servlet Filters running in Tomcat (`RateLimitFilter`, `JwtAuthFilter`, `CorsFilter`).
+   * Because filters run **before** `DispatcherServlet` is ever invoked, any exception thrown inside a filter never reaches `DispatcherServlet.doDispatch()`.
+   * *That is why `RateLimitFilter` writes HTTP 429 directly to `response.getOutputStream()`, and Spring Security relies on `AuthenticationEntryPoint` (401) and `AccessDeniedHandler` (403).*
+
+---
+
+### 5. The Great Architecture Debate: Local try-catch in AuthController vs Zero try-catch in AdminController
+
+Why does [`AuthController.java`](backend/src/main/java/com/zone01/blog/controller/AuthController.java) contain a `try-catch` block, while [`AdminController.java`](backend/src/main/java/com/zone01/blog/controller/AdminController.java) has **zero** `try-catch` blocks, even though both [`AuthService.java`](backend/src/main/java/com/zone01/blog/service/AuthService.java) and [`ReportService.java`](backend/src/main/java/com/zone01/blog/service/ReportService.java) throw `IllegalArgumentException`?
+
+```
+ReportService / AdminController Flow:
+throw new IllegalArgumentException("Report not found with ID: 99")
+    │
+    ▼ Bubbles up to GlobalExceptionHandler
+handleIllegalArgument() detects contains("not found") ──► Returns HTTP 404 NOT FOUND (Correct!)
+
+AuthService / AuthController Flow:
+throw new IllegalArgumentException("Invalid username or password")
+    │
+    ▼ IF bubbling to GlobalExceptionHandler without try-catch:
+handleIllegalArgument() does NOT find "not found" ──► Returns HTTP 400 BAD REQUEST (WRONG!)
+    │
+    ▼ SOLUTION in AuthController.java:
+Local try-catch intercepts it and returns HTTP 401 UNAUTHORIZED! (RFC Compliant!)
+```
+
+#### The Comparative Breakdown:
+
+| Service & Controller | Exception Thrown | What `GlobalExceptionHandler` Produces | What RFC / Client Requires | Why `try-catch` is (or isn't) Needed |
+|---|---|---|---|---|
+| **`ReportService`** $\rightarrow$ `AdminController` | `IllegalArgumentException("Report not found...")` | **404 NOT FOUND** | **404 NOT FOUND** | **Zero `try-catch` needed!** `GlobalExceptionHandler` already produces the exact expected status code. |
+| **`AuthService`** $\rightarrow$ `AuthController` | `IllegalArgumentException("Invalid username or password")` | **400 BAD REQUEST** | **401 UNAUTHORIZED** | **Local `try-catch` required!** To override the default 400 and return RFC 401 Unauthorized. |
+| **`AuthService`** $\rightarrow$ `AuthController` | `IllegalArgumentException("...account has been suspended...")` | **400 BAD REQUEST** | **403 FORBIDDEN** (`ACCOUNT_BANNED`) | **Local `try-catch` required!** To return 403 Forbidden with custom `"ACCOUNT_BANNED"` error badge. |
+
+#### The 3 Architectural Evolution Levels:
+1. **Level 1 (Local Interception - Used in `AuthController`):**  
+   Controller catches the generic exception locally to force an endpoint-specific HTTP code (401/403).  
+   *Trade-off:* Adds local boilerplate, but gives strict control over security responses without polluting global handlers.
+2. **Level 2 (Global String Sniffing - Used in `GlobalExceptionHandler`):**  
+   `ex.getMessage().contains("not found")` maps to 404 across all entity lookups.  
+   *Trade-off:* Eliminates `try-catch` across 20 entity endpoints, but relies on string stability.
+3. **Level 3 (Strict Typed Custom Exceptions - Enterprise Approach):**  
+   Create dedicated exception classes (`BadCredentialsException`, `UserBannedException`, `ResourceNotFoundException`).  
+   *Trade-off:* 100% type-safe, but creates 10+ extra Java files, violating Zone01's **Minimalist Architecture** rule.
+
+---
+
+### 6. Zone01 Auditor Defense Drill: 3 Critical Questions & Precision Answers
+
+#### Drill 1: "Why did POST /api/auth/login return HTTP 500 when I sent the request without Content-Type: application/json?"
+> **Your Auditor Pitch:**  
+> *"When a client sends a POST request without `Content-Type: application/json` (or with `text/plain`), Spring MVC's `RequestResponseBodyMethodProcessor` attempts to resolve the `@RequestBody LoginRequest` parameter before the controller method is even called. Jackson's `MappingJackson2HttpMessageConverter` inspects the media type, finds it unsupported, and throws `HttpMediaTypeNotSupportedException`.  
+> 
+> Because this exception occurred before the controller method, `AuthController`'s local try-catch never ran. In `GlobalExceptionHandler`, if an explicit `@ExceptionHandler(HttpMediaTypeNotSupportedException.class)` is missing, the exception bubbles to the catch-all `Exception.class` handler, producing an uninformative HTTP 500. By adding a dedicated handler, we correctly return RFC-compliant **HTTP 415 Unsupported Media Type**."*
+
+#### Drill 2: "How does GlobalExceptionHandler know which method to invoke? Do we forward the error to it?"
+> **Your Auditor Pitch:**  
+> *"We never forward errors manually. Spring uses an Inversion of Control (IoC) exception translation mechanism. At application startup, `ExceptionHandlerExceptionResolver` scans the IoC container for `@RestControllerAdvice` beans, inspects all methods annotated with `@ExceptionHandler`, and builds an in-memory `Map<Class<? extends Throwable>, Method>` lookup cache.  
+> 
+> At runtime, `DispatcherServlet.doDispatch()` wraps controller execution in a master `try-catch` block. When any exception is thrown, `DispatcherServlet` catches it, performs an $O(1)$ lookup in the cached map for the matching exception class (or nearest ancestor), invokes the handler method via Java Reflection, and Jackson serializes the `ResponseEntity` into our standard JSON error contract."*
+
+#### Drill 3: "Why did you put try-catch in AuthController but not in AdminController?"
+> **Your Auditor Pitch:**  
+> *"That reflects a conscious separation of concerns under our Minimalist Architecture constraint.  
+> 
+> In `AdminController` and `ReportService`, missing resources throw `IllegalArgumentException` with `'not found'` in the message. Our `GlobalExceptionHandler` globally recognizes `'not found'` and maps it to `404 Not Found`, making local try-catch blocks in `AdminController` completely redundant.  
+> 
+> In contrast, `AuthService.login()` throws `IllegalArgumentException` for wrong credentials and banned accounts. If left unhandled, `GlobalExceptionHandler` would return `400 Bad Request`. However, RFC HTTP semantics require authentication failure to return `401 Unauthorized` and account bans to return `403 Forbidden`. Rather than leaking authentication-specific string checks into our global handler or bloating the project with 10 custom exception classes, `AuthController` uses a localized try-catch adapter to strictly enforce RFC security compliance."*
 
 ---
 
