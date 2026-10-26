@@ -66,6 +66,9 @@ public class AdminService {
         if (user.getUsername().equalsIgnoreCase(requestingAdminUsername)) {
             throw new IllegalArgumentException("Administrators cannot ban their own account.");
         }
+        if (user.getRole() == com.zone01.blog.entity.UserRole.ROLE_ADMIN) {
+            throw new IllegalArgumentException("Administrator accounts are immune to moderation bans.");
+        }
 
         user.setBanned(!user.isBanned());
         User saved = userRepository.save(user);
@@ -80,6 +83,9 @@ public class AdminService {
 
         if (user.getUsername().equalsIgnoreCase(requestingAdminUsername)) {
             throw new IllegalArgumentException("Administrators cannot delete their own account.");
+        }
+        if (user.getRole() == com.zone01.blog.entity.UserRole.ROLE_ADMIN) {
+            throw new IllegalArgumentException("Administrator accounts cannot be deleted.");
         }
 
         // 1. Delete moderation reports involving this user
