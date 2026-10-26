@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { Observable, BehaviorSubject, tap, map, catchError, of } from 'rxjs';
 import { Router } from '@angular/router';
-import { RegisterRequest, LoginRequest, AuthResponse, CurrentUser } from '../models/auth.models';
+import { RegisterRequest, LoginRequest, AuthResponse, CurrentUser, UserProfile } from '../models/auth.models';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +11,7 @@ export class AuthService {
   // Base backend API URL
   private apiUrl = 'http://localhost:8080/api/auth';
 
-  // Reactive state holding the currently logged-in user
+  // Reactive state holding the currently logged-in user (derived strictly from signed JWT claims)
   private currentUserSubject = new BehaviorSubject<CurrentUser | null>(this.loadUserFromStorage());
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -31,18 +31,27 @@ export class AuthService {
     );
   }
 
-  // Save JWT token and user info in browser localStorage
+  // Save JWT token in browser localStorage and extract authentic claims
   saveSession(response: AuthResponse): void {
     localStorage.setItem('token', response.token);
-    localStorage.setItem('username', response.username);
-    localStorage.setItem('role', response.role);
     if (response.avatarUrl) {
       localStorage.setItem('avatarUrl', response.avatarUrl);
+    } else {
+      localStorage.removeItem('avatarUrl');
     }
 
+    // Clean up any old plain text keys so tampering with them is impossible
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
+
+    // Extract authentic identity and authority strictly from signed JWT claims
+    const claims = this.decodeToken(response.token);
+    const username = claims?.sub || response.username;
+    const role = claims?.role || response.role;
+
     this.currentUserSubject.next({
-      username: response.username,
-      role: response.role,
+      username,
+      role,
       avatarUrl: response.avatarUrl
     });
   }
@@ -65,15 +74,19 @@ export class AuthService {
 
   // Clear session on logout and redirect to login page (unless redirect is false)
   logout(redirect: boolean = true): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('role');
-    localStorage.removeItem('avatarUrl');
-
+    this.clearStorage();
     this.currentUserSubject.next(null);
     if (redirect) {
       this.router.navigate(['/login']);
     }
+  }
+
+  // Clear all auth items from localStorage
+  private clearStorage(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
+    localStorage.removeItem('avatarUrl');
   }
 
   // Retrieve stored JWT token
@@ -104,41 +117,90 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  // Helper to check if a JWT token payload has expired
-  isTokenExpired(token: string): boolean {
+  // Safely decode payload claims from a signed JWT token
+  decodeToken(token: string): { sub?: string; role?: string; exp?: number } | null {
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
-        return true;
+        return null;
       }
-      const payload = JSON.parse(atob(parts[1]));
-      if (payload && payload.exp) {
-        // exp is in seconds, convert to ms
-        return payload.exp * 1000 < Date.now();
-      }
-      return false;
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
     } catch {
-      return true;
+      return null;
     }
   }
 
-  // Helper to read initial user state from localStorage on app load
-  private loadUserFromStorage(): CurrentUser | null {
-    const token = localStorage.getItem('token');
-    const username = localStorage.getItem('username');
-    const role = localStorage.getItem('role');
-    const avatarUrl = localStorage.getItem('avatarUrl') || undefined;
-
-    if (token && username && role) {
-      if (this.isTokenExpired(token)) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        localStorage.removeItem('role');
-        localStorage.removeItem('avatarUrl');
-        return null;
-      }
-      return { username, role, avatarUrl };
+  // Helper to check if a JWT token payload has expired
+  isTokenExpired(token: string): boolean {
+    const claims = this.decodeToken(token);
+    if (!claims || !claims.exp) {
+      return true;
     }
-    return null;
+    return claims.exp * 1000 < Date.now();
+  }
+
+  // Synchronize and verify current user with backend database
+  verifySession(): Observable<CurrentUser | null> {
+    const token = this.getToken();
+    if (!token || this.isTokenExpired(token)) {
+      this.logout(false);
+      return of(null);
+    }
+
+    return this.http.get<UserProfile>('http://localhost:8080/api/users/me').pipe(
+      map(profile => {
+        const user: CurrentUser = {
+          username: profile.username,
+          role: profile.role,
+          avatarUrl: profile.avatarUrl
+        };
+        this.currentUserSubject.next(user);
+        if (profile.avatarUrl) {
+          localStorage.setItem('avatarUrl', profile.avatarUrl);
+        }
+        return user;
+      }),
+      catchError(err => {
+        // If 401 Unauthorized or 403 Forbidden, token is invalid, forged, or user is banned
+        if (err.status === 401 || err.status === 403) {
+          this.logout(false);
+        }
+        return of(null);
+      })
+    );
+  }
+
+  // Helper to read initial user state strictly from the cryptographically signed JWT token on app load
+  private loadUserFromStorage(): CurrentUser | null {
+    if (typeof localStorage === 'undefined') return null;
+
+    const token = localStorage.getItem('token');
+    if (!token || this.isTokenExpired(token)) {
+      this.clearStorage();
+      return null;
+    }
+
+    // NEVER read raw 'role' or 'username' strings from localStorage as they can be tampered with in DevTools!
+    // Extract identity and role strictly from the signed token payload claims:
+    const claims = this.decodeToken(token);
+    if (!claims || !claims.sub) {
+      this.clearStorage();
+      return null;
+    }
+
+    const avatarUrl = localStorage.getItem('avatarUrl') || undefined;
+    return {
+      username: claims.sub,
+      role: claims.role || 'ROLE_USER',
+      avatarUrl
+    };
   }
 }

@@ -25,22 +25,33 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Create a token valid for 24h with username as the subject
-    public String generateToken(String username) {
+    // Create a token valid for 24h with username as the subject and role in claims
+    public String generateToken(String username, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .setSubject(username)
+                .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // Overload for backward compatibility
+    public String generateToken(String username) {
+        return generateToken(username, "ROLE_USER");
+    }
+
     // Get the username stored inside the token
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
+    }
+
+    // Extract user role stored in token claims
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
     }
 
     // Check if token signature is valid and not expired

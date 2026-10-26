@@ -80,22 +80,25 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.userPosts = [];
     this.cdr.detectChanges();
 
-    const loggedInUsername = this.authService.getCurrentUser()?.username;
-    const usernameToFetch = targetUsername || loggedInUsername;
+    const currentAuthUser = this.authService.getCurrentUser();
+    const loggedInUsername = currentAuthUser?.username;
 
-    // Check if viewing own profile or another student's profile
-    if (!targetUsername || targetUsername === loggedInUsername) {
+    // Check if viewing own profile (/profile or /profile/:myUsername)
+    if (!targetUsername || (loggedInUsername && targetUsername === loggedInUsername)) {
       this.isOwnProfile = true;
       this.sub.add(
         this.userService.getCurrentUser().subscribe({
           next: (data) => {
             this.profile = data;
             this.isLoading = false;
+            // Always fetch posts for the authentic server-verified username
+            this.loadUserPosts(data.username);
             this.cdr.detectChanges();
           },
           error: (err) => {
             this.errorMessage = err.error?.message || 'Could not load your profile details from server.';
             this.isLoading = false;
+            this.isLoadingPosts = false;
             this.cdr.detectChanges();
           }
         })
@@ -108,19 +111,18 @@ export class UserProfileComponent implements OnInit, OnDestroy {
             this.profile = data;
             this.isFollowing = !!data.isFollowing;
             this.isLoading = false;
+            // Load posts for the requested target student
+            this.loadUserPosts(targetUsername);
             this.cdr.detectChanges();
           },
           error: (err) => {
             this.errorMessage = err.error?.message || `Student profile '@${targetUsername}' not found.`;
             this.isLoading = false;
+            this.isLoadingPosts = false;
             this.cdr.detectChanges();
           }
         })
       );
-    }
-
-    if (usernameToFetch) {
-      this.loadUserPosts(usernameToFetch);
     }
   }
 

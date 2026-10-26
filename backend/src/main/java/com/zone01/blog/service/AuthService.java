@@ -91,8 +91,8 @@ public class AuthService {
         user.setAvatarUrl(randomAvatar);
         userRepository.save(user);
 
-        // Generate a JWT token for immediate login
-        String token = jwtUtil.generateToken(user.getUsername());
+        // Generate a JWT token for immediate login containing username and role
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
 
         return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getAvatarUrl());
     }
@@ -132,8 +132,8 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        // Generate a JWT token for the authenticated user
-        String token = jwtUtil.generateToken(user.getUsername());
+        // Generate a JWT token for the authenticated user containing username and role
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
 
         return new AuthResponse(token, user.getUsername(), user.getRole().name(), avatarUrl);
     }
