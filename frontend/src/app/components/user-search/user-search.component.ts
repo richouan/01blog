@@ -61,8 +61,8 @@ export class UserSearchComponent implements OnInit, OnDestroy {
 
   getMediaUrl(url?: string | null): string {
     if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
     const clean = url.startsWith('/') ? url : `/${url}`;
+    if (!clean.startsWith('/uploads/')) return '';
     return `http://localhost:8080${clean}`;
   }
 

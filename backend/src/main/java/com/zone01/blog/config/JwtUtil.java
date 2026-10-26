@@ -25,23 +25,32 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Create a token valid for 24h with username as the subject and role in claims
-    public String generateToken(String username, String role) {
+    // Create a token valid for 24h with username, role, and avatarUrl in claims
+    public String generateToken(String username, String role, String avatarUrl) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setSubject(username)
                 .claim("role", role)
                 .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+                .setExpiration(expiryDate);
+
+        if (avatarUrl != null && !avatarUrl.isBlank()) {
+            builder.claim("avatarUrl", avatarUrl);
+        }
+
+        return builder.signWith(getSigningKey(), SignatureAlgorithm.HS256).compact();
+    }
+
+    // Overload for username and role
+    public String generateToken(String username, String role) {
+        return generateToken(username, role, null);
     }
 
     // Overload for backward compatibility
     public String generateToken(String username) {
-        return generateToken(username, "ROLE_USER");
+        return generateToken(username, "ROLE_USER", null);
     }
 
     // Get the username stored inside the token
@@ -52,6 +61,11 @@ public class JwtUtil {
     // Extract user role stored in token claims
     public String extractRole(String token) {
         return extractAllClaims(token).get("role", String.class);
+    }
+
+    // Extract avatarUrl stored in token claims
+    public String extractAvatarUrl(String token) {
+        return extractAllClaims(token).get("avatarUrl", String.class);
     }
 
     // Check if token signature is valid and not expired

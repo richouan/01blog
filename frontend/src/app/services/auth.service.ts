@@ -33,36 +33,29 @@ export class AuthService {
 
   // Save JWT token in browser localStorage and extract authentic claims
   saveSession(response: AuthResponse): void {
+    // ONLY store the cryptographically signed token in localStorage!
     localStorage.setItem('token', response.token);
-    if (response.avatarUrl) {
-      localStorage.setItem('avatarUrl', response.avatarUrl);
-    } else {
-      localStorage.removeItem('avatarUrl');
-    }
 
-    // Clean up any old plain text keys so tampering with them is impossible
+    // Clean up any plain text keys so tampering with them in DevTools is impossible
     localStorage.removeItem('username');
     localStorage.removeItem('role');
+    localStorage.removeItem('avatarUrl');
 
-    // Extract authentic identity and authority strictly from signed JWT claims
+    // Extract authentic identity, role, and avatar strictly from signed JWT claims
     const claims = this.decodeToken(response.token);
     const username = claims?.sub || response.username;
     const role = claims?.role || response.role;
+    const avatarUrl = claims?.avatarUrl || response.avatarUrl;
 
     this.currentUserSubject.next({
       username,
       role,
-      avatarUrl: response.avatarUrl
+      avatarUrl
     });
   }
 
-  // Update current user avatar in state and storage
+  // Update current user avatar in reactive in-memory state
   updateAvatar(newAvatarUrl: string): void {
-    if (newAvatarUrl) {
-      localStorage.setItem('avatarUrl', newAvatarUrl);
-    } else {
-      localStorage.removeItem('avatarUrl');
-    }
     const current = this.currentUserSubject.value;
     if (current) {
       this.currentUserSubject.next({
@@ -118,7 +111,7 @@ export class AuthService {
   }
 
   // Safely decode payload claims from a signed JWT token
-  decodeToken(token: string): { sub?: string; role?: string; exp?: number } | null {
+  decodeToken(token: string): { sub?: string; role?: string; avatarUrl?: string; exp?: number } | null {
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
@@ -163,9 +156,6 @@ export class AuthService {
           avatarUrl: profile.avatarUrl
         };
         this.currentUserSubject.next(user);
-        if (profile.avatarUrl) {
-          localStorage.setItem('avatarUrl', profile.avatarUrl);
-        }
         return user;
       }),
       catchError(err => {
@@ -188,7 +178,7 @@ export class AuthService {
       return null;
     }
 
-    // NEVER read raw 'role' or 'username' strings from localStorage as they can be tampered with in DevTools!
+    // NEVER read raw 'role', 'username', or 'avatarUrl' from localStorage!
     // Extract identity and role strictly from the signed token payload claims:
     const claims = this.decodeToken(token);
     if (!claims || !claims.sub) {
@@ -196,11 +186,10 @@ export class AuthService {
       return null;
     }
 
-    const avatarUrl = localStorage.getItem('avatarUrl') || undefined;
     return {
       username: claims.sub,
       role: claims.role || 'ROLE_USER',
-      avatarUrl
+      avatarUrl: claims.avatarUrl
     };
   }
 }

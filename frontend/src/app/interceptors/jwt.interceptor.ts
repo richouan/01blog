@@ -1,14 +1,12 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
 import { catchError, throwError } from 'rxjs';
 
 // Attach JWT Bearer token to outgoing HTTP requests and auto-logout on 401 or banned 403 errors
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
   const router = inject(Router);
-  const token = authService.getToken();
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
 
   let authReq = req;
   if (token) {
@@ -29,7 +27,12 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
       );
 
       if (isBanned) {
-        authService.logout(false);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          localStorage.removeItem('role');
+          localStorage.removeItem('avatarUrl');
+        }
         const banMessage = typeof error.error?.message === 'string'
           ? error.error.message
           : 'Your account has been suspended or banned by an administrator.';
@@ -41,11 +44,17 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
       // If server returns 401 Unauthorized on protected routes, automatically clear session and redirect to login
       if (error.status === 401 && !req.url.includes('/api/auth/login')) {
-        authService.logout();
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          localStorage.removeItem('role');
+          localStorage.removeItem('avatarUrl');
+        }
         router.navigate(['/login']);
       }
       return throwError(() => error);
     })
   );
 };
+
 

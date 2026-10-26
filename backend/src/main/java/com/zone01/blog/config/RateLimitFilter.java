@@ -19,7 +19,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     // Thresholds per IP address per 1-minute window
     private static final int AUTH_LIMIT = 20;    // Login & Register attempts per minute
-    private static final int GENERAL_LIMIT = 120; // General API requests per minute
+    private static final int GENERAL_LIMIT = 300; // General API requests per minute (allows smooth page refreshes & SPA loads)
     private static final long WINDOW_MS = 60_000L; // 1 minute in milliseconds
 
     // In-memory counter for request tracking
