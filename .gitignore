@@ -4,9 +4,6 @@ backend/target/
 *.class
 *.jar
 *.war
-mvnw
-mvnw.cmd
-.mvn/
 
 # Node / Angular dependencies and build output
 node_modules/

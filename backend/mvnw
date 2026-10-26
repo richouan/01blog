@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+MAVEN_VERSION=3.9.9
+MAVEN_ARCHIVE="apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+MAVEN_SHA512="a555254d6b53d267965a3404ecb14e53c3827c09c3b94b5678835887ab404556bfaf78dcfe03ba76fa2508649dca8531c74bca4d5846513522404d48e8c4ac8b"
+MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/${MAVEN_ARCHIVE}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+MAVEN_HOME_BASE="${MAVEN_USER_HOME:-${HOME}/.m2}/wrapper/dists"
+MAVEN_HOME="${MAVEN_HOME_BASE}/apache-maven-${MAVEN_VERSION}"
+
+if ! command -v java >/dev/null 2>&1; then
+    echo "Error: Java is required to run the backend. Install JDK 17 or higher." >&2
+    exit 1
+fi
+
+if [[ ! -x "${MAVEN_HOME}/bin/mvn" ]]; then
+    for tool in curl tar; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            echo "Error: '$tool' is required to download Maven." >&2
+            exit 1
+        fi
+    done
+
+    if command -v sha512sum >/dev/null 2>&1; then
+        CHECKSUM_COMMAND=(sha512sum -c)
+    elif command -v shasum >/dev/null 2>&1; then
+        CHECKSUM_COMMAND=(shasum -a 512 -c)
+    else
+        echo "Error: sha512sum or shasum is required to verify the Maven download." >&2
+        exit 1
+    fi
+
+    mkdir -p "$MAVEN_HOME_BASE"
+    DOWNLOAD_DIR="$(mktemp -d "${MAVEN_HOME_BASE}/.maven-download.XXXXXX")"
+    trap 'rm -rf "$DOWNLOAD_DIR"' EXIT
+
+    echo "Downloading Apache Maven ${MAVEN_VERSION}..."
+    curl --fail --location --retry 3 "$MAVEN_URL" --output "${DOWNLOAD_DIR}/${MAVEN_ARCHIVE}"
+    printf '%s  %s\n' "$MAVEN_SHA512" "${DOWNLOAD_DIR}/${MAVEN_ARCHIVE}" | "${CHECKSUM_COMMAND[@]}"
+    tar -xzf "${DOWNLOAD_DIR}/${MAVEN_ARCHIVE}" -C "$DOWNLOAD_DIR"
+
+    if [[ ! -x "${MAVEN_HOME}/bin/mvn" ]]; then
+        mv "${DOWNLOAD_DIR}/apache-maven-${MAVEN_VERSION}" "$MAVEN_HOME"
+    fi
+fi
+
+exec "${MAVEN_HOME}/bin/mvn" --file "${SCRIPT_DIR}/pom.xml" "$@"
