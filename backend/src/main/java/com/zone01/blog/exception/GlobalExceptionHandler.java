@@ -118,6 +118,14 @@ public class GlobalExceptionHandler {
                 .body(buildErrorResponse(HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found: " + ex.getResourcePath()));
     }
 
+    // Handles unsupported media types / Content-Type mismatches (415 Unsupported Media Type)
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleHttpMediaTypeNotSupported(org.springframework.web.HttpMediaTypeNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(buildErrorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE",
+                        "Content-Type '" + (ex.getContentType() != null ? ex.getContentType() : "unknown") + "' is not supported. Request body must be 'application/json'."));
+    }
+
     // Handles database constraint and duplicate key violations (409 Conflict)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {

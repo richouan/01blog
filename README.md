@@ -54,7 +54,8 @@
 │   │   ├── models/          # TypeScript domain models & DTO interfaces
 │   │   └── services/        # AuthService, PostService, AdminService, ThemeService, etc.
 │   └── styles.css           # Global Neo-Brutalist theme variables & modal system
-├── LEARNING_BOOK.md         # Comprehensive chapter-by-chapter defense manual
+├── NEW_STUDY_BOOK.md        # Living master study book (Ground Zero to Advanced)
+├── REQUEST_FLOWS_ENCYCLOPEDIA.md # Complete end-to-end request flows for all 36 endpoints
 ├── ROADMAP.md               # 60-commit roadmap tracker
 ├── audit_subject.md         # Official evaluation questions
 └── project_subject.md       # Project specifications & requirements
