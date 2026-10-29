@@ -64,11 +64,13 @@
 /* Compact Card Inner Padding */
 .post-card-inner {
   padding: 13px 16px;
+  min-width: 0;
 }
 
 @media (min-width: 576px) {
   .post-card-inner {
     padding: 16px 20px;
+    min-width: 0;
   }
 }
 
@@ -137,6 +139,9 @@
   text-decoration: none;
   color: inherit;
   cursor: pointer;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* Prominent Post Title (Screenshot Style) */
@@ -148,6 +153,9 @@
   line-height: 1.35;
   margin-top: 4px;
   margin-bottom: 6px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 

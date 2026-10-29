@@ -78,8 +78,12 @@ export class ReportModalComponent implements OnChanges {
       this.errorMessage = 'Please select a reason or provide at least 5 characters of explanation.';
       return;
     }
-    if (reason.length > 1000) {
-      this.errorMessage = 'Report reason cannot exceed 1000 characters.';
+    if (this.customDetails.length > 1000) {
+      this.errorMessage = 'Additional details cannot exceed 1000 characters.';
+      return;
+    }
+    if (reason.length > 2000) {
+      this.errorMessage = 'Report reason cannot exceed 2000 characters.';
       return;
     }
     this.errorMessage = '';

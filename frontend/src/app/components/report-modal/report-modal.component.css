@@ -136,6 +136,8 @@
   background-color: var(--nb-subtle-bg);
   border: var(--nb-border-sm);
   border-radius: 8px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .reason-preview-quote {

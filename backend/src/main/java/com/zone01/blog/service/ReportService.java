@@ -39,8 +39,8 @@ public class ReportService {
         if (reason == null || reason.isEmpty()) {
             throw new IllegalArgumentException("Report reason is required.");
         }
-        if (reason.length() > 1000) {
-            throw new IllegalArgumentException("Report reason must not exceed 1000 characters.");
+        if (reason.length() > 2000) {
+            throw new IllegalArgumentException("Report reason must not exceed 2000 characters.");
         }
 
         User reporter = userRepository.findByUsername(reporterUsername)
