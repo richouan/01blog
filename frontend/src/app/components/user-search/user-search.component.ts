@@ -22,6 +22,8 @@ export class UserSearchComponent implements OnInit, OnDestroy {
   errorMessage = '';
   currentUser: CurrentUser | null = null;
   togglingUsernames: Set<string> = new Set();
+  actionMessage = '';
+  private actionTimer: any = null;
 
   private searchSubject = new Subject<string>();
   private sub = new Subscription();
@@ -120,6 +122,12 @@ export class UserSearchComponent implements OnInit, OnDestroy {
           user.isFollowing = true;
           user.followersCount = (user.followersCount || 0) + 1;
           this.togglingUsernames.delete(user.username);
+          this.actionMessage = `Subscribed to @${user.username}'s profile!`;
+          if (this.actionTimer) clearTimeout(this.actionTimer);
+          this.actionTimer = setTimeout(() => {
+            this.actionMessage = '';
+            this.cdr.detectChanges();
+          }, 3500);
           this.cdr.detectChanges();
         },
         error: () => {
@@ -135,6 +143,12 @@ export class UserSearchComponent implements OnInit, OnDestroy {
             user.followersCount -= 1;
           }
           this.togglingUsernames.delete(user.username);
+          this.actionMessage = `Unsubscribed from @${user.username}.`;
+          if (this.actionTimer) clearTimeout(this.actionTimer);
+          this.actionTimer = setTimeout(() => {
+            this.actionMessage = '';
+            this.cdr.detectChanges();
+          }, 3500);
           this.cdr.detectChanges();
         },
         error: () => {

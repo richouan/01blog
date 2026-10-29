@@ -96,9 +96,23 @@ export class PostListComponent implements OnInit, OnDestroy {
   isSubmittingDelete: boolean = false;
   deleteErrorMessage: string | null = null;
 
-  // Report Modal State
+  // Report & Post Feedback Banner State
   reportingPost: DisplayPost | null = null;
   reportFeedbackMessage: string | null = null;
+  feedFeedbackMessage: string | null = null;
+  private feedbackTimer: any = null;
+
+  showFeedback(msg: string): void {
+    this.feedFeedbackMessage = msg;
+    if (this.feedbackTimer) {
+      clearTimeout(this.feedbackTimer);
+    }
+    this.feedbackTimer = setTimeout(() => {
+      this.feedFeedbackMessage = null;
+      this.cdr.detectChanges();
+    }, 4000);
+    this.cdr.detectChanges();
+  }
 
   // Image Preview Lightbox State
   previewImageUrl: string | null = null;
@@ -618,6 +632,7 @@ export class PostListComponent implements OnInit, OnDestroy {
         this.processPosts();
         this.postUpdated.emit(updatedPost);
         this.closeEditModal();
+        this.showFeedback('Publication updated successfully.');
       },
       error: (err) => {
         this.isSubmittingEdit = false;
@@ -656,6 +671,7 @@ export class PostListComponent implements OnInit, OnDestroy {
         this.processPosts();
         this.postDeleted.emit(idToDelete);
         this.closeDeleteModal();
+        this.showFeedback('Publication deleted successfully.');
       },
       error: (err) => {
         this.isSubmittingDelete = false;
@@ -677,11 +693,6 @@ export class PostListComponent implements OnInit, OnDestroy {
   }
 
   onReportSubmitted(): void {
-    this.reportFeedbackMessage = 'Moderation report submitted to administrators.';
-    setTimeout(() => {
-      this.reportFeedbackMessage = null;
-      this.cdr.detectChanges();
-    }, 4000);
-    this.cdr.detectChanges();
+    this.showFeedback('Moderation report submitted to administrators.');
   }
 }

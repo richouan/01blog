@@ -99,11 +99,25 @@
       <main class="home-main-col">
         
         <!-- Post Create Component (Compact) -->
-        <div class="mb-4">
+        <div class="mb-3">
           <app-post-create
             [currentUser]="currentUser"
             (postCreated)="onPostCreated($event)"
           ></app-post-create>
+        </div>
+
+        <!-- Visual Confirmation Feedback Banner (Audit requirement: confirmed with visual feedback) -->
+        <div *ngIf="postFeedbackMessage" class="alert-nb alert-nb-success py-2 px-3 mb-4 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-check2-circle fs-4 text-success flex-shrink-0"></i>
+            <div>
+              <div class="fw-bold font-display text-dark">{{ postFeedbackMessage.title }}</div>
+              <div class="small text-muted">{{ postFeedbackMessage.subtitle }}</div>
+            </div>
+          </div>
+          <button type="button" class="btn-close-nb" (click)="postFeedbackMessage = null" aria-label="Dismiss notification">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
 
         <!-- Feed Subheader Tabs (My Feed | Global Stream) -->

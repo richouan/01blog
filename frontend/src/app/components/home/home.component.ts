@@ -82,6 +82,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // Triggered by sidebar "Create post +" CTA button
+  // Visual feedback confirmation banner for post creation
+  postFeedbackMessage: { title: string; subtitle: string } | null = null;
+  private postFeedbackTimer: any = null;
+
   triggerCreatePost(): void {
     if (this.postCreateComponent) {
       this.postCreateComponent.focusInput();
@@ -93,7 +97,19 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Prepend newly created post with new array reference
     this.posts = [createdPost, ...this.posts];
     this.isLoadingPosts = false;
+    this.postFeedbackMessage = {
+      title: 'Post Published Successfully!',
+      subtitle: createdPost.title ? `"${createdPost.title}" is now live on the feed.` : 'Your publication is now live on the feed.'
+    };
     this.cdr.markForCheck();
+
+    if (this.postFeedbackTimer) {
+      clearTimeout(this.postFeedbackTimer);
+    }
+    this.postFeedbackTimer = setTimeout(() => {
+      this.postFeedbackMessage = null;
+      this.cdr.markForCheck();
+    }, 4500);
   }
 
   onPostDeleted(deletedId: number): void {

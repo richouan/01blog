@@ -46,6 +46,17 @@
           <span>{{ errorMessage }}</span>
         </div>
 
+        <!-- Visual Action Feedback Banner (Subscribe / Unsubscribe) -->
+        <div *ngIf="actionMessage" class="alert-nb alert-nb-success py-2 px-3 mb-3 d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill fs-5"></i>
+            <span class="fw-bold">{{ actionMessage }}</span>
+          </div>
+          <button type="button" class="btn-close-nb" (click)="actionMessage = ''" aria-label="Dismiss">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
         <!-- Results Section -->
         <div *ngIf="hasSearched">
           <!-- Result Counter Banner -->

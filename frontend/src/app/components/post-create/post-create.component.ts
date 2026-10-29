@@ -28,7 +28,6 @@ export class PostCreateComponent {
   isDragging: boolean = false;
   isSubmitting: boolean = false;
   errorMessage: string = '';
-  successMessage: string = '';
 
   constructor(
     private postService: PostService,
@@ -178,7 +177,6 @@ export class PostCreateComponent {
 
     this.isSubmitting = true;
     this.errorMessage = '';
-    this.successMessage = '';
 
     const titleToSend = this.title.trim();
     const textToSend = this.textContent.trim() || undefined;
@@ -187,7 +185,6 @@ export class PostCreateComponent {
     this.postService.createPost(titleToSend, textToSend, fileToSend).subscribe({
       next: (createdPost) => {
         this.isSubmitting = false;
-        this.successMessage = 'Post published successfully!';
         this.postCreated.emit(createdPost);
 
         // Reset form after submission
@@ -196,11 +193,6 @@ export class PostCreateComponent {
         this.removeMedia();
         this.isExpanded = false;
         this.cdr.detectChanges();
-
-        setTimeout(() => {
-          this.successMessage = '';
-          this.cdr.detectChanges();
-        }, 3000);
       },
       error: (err) => {
         this.isSubmitting = false;
