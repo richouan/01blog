@@ -175,6 +175,33 @@
     - [Anatomy of application.properties (Multipart Limits)](#anatomy-of-applicationproperties-multipart-limits)
   - [Part 5: Summary to Explain to Others (Your Auditor Pitch)](#part-5-summary-to-explain-to-others-your-auditor-pitch-2)
   - [Part 6: Zone01 Auditor Defense Drill: 5 Tough Evaluator Questions & Precision Answers](#part-6-zone01-auditor-defense-drill-5-tough-evaluator-questions--precision-answers-1)
+- [Session 5: The Angular Client Machine — Standalone Components, RxJS Reactive State, HTTP Interceptors & Route Guards](#session-5-the-angular-client-machine--standalone-components-rxjs-reactive-state-http-interceptors--route-guards)
+  - [Part 0: The Missing Foundations (Ground Zero in the Browser)](#part-0-the-missing-foundations-ground-zero-in-the-browser)
+    - [1. What is a Single Page Application (SPA)? The DOM vs. Full-Page Reloads](#1-what-is-a-single-page-application-spa-the-dom-vs-full-page-reloads)
+    - [2. The Single-Threaded JavaScript Event Loop in Browser RAM](#2-the-single-threaded-javascript-event-loop-in-browser-ram)
+    - [3. Reactive Streams vs Imperative Programming: The Water Pipe Analogy](#3-reactive-streams-vs-imperative-programming-the-water-pipe-analogy)
+    - [4. The Death of NgModule: Why Angular 18 Embraced Standalone Architecture](#4-the-death-of-ngmodule-why-angular-18-embraced-standalone-architecture)
+  - [Part 1: The Core Architecture of Angular 18 in Memory (The Big Picture)](#part-1-the-core-architecture-of-angular-18-in-memory-the-big-picture)
+    - [1. The 4-Tier Angular Client Stack & Visual Architecture](#1-the-4-tier-angular-client-stack--visual-architecture)
+    - [2. State Management with RxJS: Observable vs Subject vs BehaviorSubject](#2-state-management-with-rxjs-observable-vs-subject-vs-behaviorsubject)
+    - [3. The In-Memory Session Fortress: Why We Never Trust Plaintext localStorage](#3-the-in-memory-session-fortress-why-we-never-trust-plaintext-localstorage)
+  - [Part 2: Step-by-Step Chronological Client Highways](#part-2-step-by-step-chronological-client-highways)
+    - [Journey 1: Route Navigation & The Double-Gate Defense (authGuard & adminGuard)](#journey-1-route-navigation--the-double-gate-defense-authguard--adminguard)
+    - [Journey 2: The Outgoing HTTP Request & Functional jwtInterceptor](#journey-2-the-outgoing-http-request--functional-jwtinterceptor)
+    - [Journey 3: Real-Time Interaction & Optimistic UI with Rollback (Like Toggle)](#journey-3-real-time-interaction--optimistic-ui-with-rollback-like-toggle)
+  - [Part 3: How the Framework "Magic" Works (Under-the-Hood Engine)](#part-3-how-the-framework-magic-works-under-the-hood-engine)
+    - [1. Functional Interceptor Chaining: Function Composition over Class Trees](#1-functional-interceptor-chaining-function-composition-over-class-trees)
+    - [2. Angular Change Detection: markForCheck() vs detectChanges()](#2-angular-change-detection-markforcheck-vs-detectchanges)
+    - [3. RxJS Operator Mechanics: pipe, map, tap, catchError, of, throwError](#3-rxjs-operator-mechanics-pipe-map-tap-catcherror-of-throwerror)
+    - [4. Memory Leak Neutralization: Subscription Garbage Collection in ngOnDestroy](#4-memory-leak-neutralization-subscription-garbage-collection-in-ngondestroy)
+  - [Part 4: Line-by-Line Code Breakdown of 01Blog](#part-4-line-by-line-code-breakdown-of-01blog-2)
+    - [Anatomy of app.config.ts](#anatomy-of-appconfigts)
+    - [Anatomy of jwt.interceptor.ts (Cloning & Banned Account Lockdown)](#anatomy-of-jwtinterceptorts-cloning--banned-account-lockdown)
+    - [Anatomy of auth.guard.ts & admin.guard.ts (Server Attestation)](#anatomy-of-authguardts--adminguardts-server-attestation)
+    - [Anatomy of auth.service.ts (JWT Decoding & Reactive State)](#anatomy-of-authservicets-jwt-decoding--reactive-state)
+    - [Anatomy of post-list.component.ts (Optimistic UI & State Rollback)](#anatomy-of-post-listcomponentts-optimistic-ui--state-rollback)
+  - [Part 5: Summary to Explain to Others (Your Auditor Pitch)](#part-5-summary-to-explain-to-others-your-auditor-pitch-3)
+  - [Part 6: Zone01 Auditor Defense Drill: 5 Tough Evaluator Questions & Precision Answers](#part-6-zone01-auditor-defense-drill-5-tough-evaluator-questions--precision-answers-2)
 
 ---
 
@@ -186,8 +213,8 @@
 | **Session 2** | **The Security Fortress** | Spring Security Architecture, ThreadLocal Context, Stateless JWT, BCrypt, CORS, CSRF, Ban Lockdown | **COMPLETED & DOCUMENTED** |
 | **Session 3** | **The Persistence Layer** | PostgreSQL 16, Spring Data JPA, Hibernate ORM 6, Dirty Checking, Byte Buddy Proxies, N+1 Prevention | **COMPLETED & DOCUMENTED** |
 | **Session 4** | **Media Uploads & OS Safety** | Apache Tika Magic Bytes, UUID File Renaming, Path Traversal Guards | **COMPLETED & DOCUMENTED** |
-| **Session 5** | **The Angular Client Machine** | Standalone Components, RxJS State, Interceptors, Optimistic UI | *NEXT UP* |
-| **Session 6** | **System Governance & Defense** | Cascade Deletions, Global Error Contracts, Mock Audit Defense Drill | *PENDING* |
+| **Session 5** | **The Angular Client Machine** | Standalone Components, RxJS State, Interceptors, Optimistic UI | **COMPLETED & DOCUMENTED** |
+| **Session 6** | **System Governance & Defense** | Cascade Deletions, Global Error Contracts, Mock Audit Defense Drill | *FINAL DRILL* |
 
 ---
 
@@ -5316,6 +5343,77 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 ---
 
+#### 🔬 Deep-Dive Architectural Breakdown of `WebMvcConfig.java`
+
+##### 1. The Big Picture Problem: Why is this file needed?
+By default, Spring Boot's `DispatcherServlet` routes all incoming HTTP requests to `@RestController` beans (like `PostController` or `UserController`). When a student uploads an image or video, the binary file is saved to the local hard drive under `backend/uploads/` with a URL like `/uploads/{uuid}.png`.
+
+If a client requests `GET /uploads/{uuid}.png`, `DispatcherServlet` searches its `@RequestMapping` hash table, finds zero matching controller methods, and returns **HTTP 404 Not Found**.
+
+`WebMvcConfig.java` solves this by registering a specialized **Static Resource Handler** that instructs `DispatcherServlet`:
+> *"Whenever an HTTP request URL matches `/uploads/**`, bypass all `@RestController` beans and stream the file directly from our OS disk directory!"*
+
+##### 2. The 2-Phase Chronological Story in 01Blog
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 1: BOOT-TIME CHRONOLOGY (When running `make run`)                     │
+│                                                                             │
+│ 1. Spring scans @Configuration classes.                                     │
+│ 2. WebMvcConfig is instantiated as a Singleton Bean in ApplicationContext.  │
+│ 3. Spring calls the callback: webMvcConfig.addResourceHandlers(registry).  │
+│ 4. Paths.get("uploads").toAbsolutePath().normalize() resolves:              │
+│    "file:/home/richouan/Desktop/01blog/backend/uploads/"                    │
+│ 5. Spring creates a specialized internal ResourceHttpRequestHandler         │
+│    and registers the route pattern in SimpleUrlHandlerMapping:              │
+│    Pattern "/uploads/**" ➔ Destination "file:/.../backend/uploads/"         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 2: RUNTIME REQUEST CHRONOLOGY (GET /uploads/{uuid}.png)               │
+│                                                                             │
+│ 1. Browser requests: GET /uploads/c5b6c891-321e-45fa-8b1e-08975a53e411.png  │
+│ 2. Embedded Tomcat receives TCP packet on port 8080.                        │
+│ 3. SecurityFilterChain permits the request:                                 │
+│    .requestMatchers("/uploads/**").permitAll() (Public read access)         │
+│ 4. DispatcherServlet inspects its HandlerMapping table:                      │
+│    Finds match in SimpleUrlHandlerMapping registered by WebMvcConfig.       │
+│ 5. Direct handoff to ResourceHttpRequestHandler:                            │
+│    - Checks disk for file: backend/uploads/{uuid}.png                       │
+│    - Inspects caching headers (If-None-Match, If-Modified-Since)            │
+│    - If cached: Returns instantaneous HTTP 304 Not Modified!                │
+│    - If new: Streams binary bytes using Linux zero-copy sendfile(2).        │
+│ 6. Response returned with correct MIME type (image/png) and HTTP 200 OK.    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+##### 3. Under-The-Hood Mechanics: Zero-Copy Streaming vs Heap Explosion
+
+```
+❌ THE NAIVE WAY (Writing a custom @GetMapping in a @RestController):
+   @GetMapping("/uploads/{filename}")
+   public byte[] getMedia(@PathVariable String filename) {
+       return Files.readAllBytes(path); // ⚠️ ALLOCATES 10 MB IN JVM HEAP RAM!
+   }
+   • 50 concurrent users streaming media = 500 MB of heap memory thrashing.
+   • Triggers frequent, painful Java Garbage Collection (GC) stop-the-world pauses.
+   • Vulnerable to OutOfMemoryError (OOM) crashes.
+
+✅ THE 01BLOG WAY (WebMvcConfig + ResourceHttpRequestHandler):
+   • Leverages Java NIO FileChannel.transferTo().
+   • On Linux, translates directly to the sendfile(2) system call.
+   • Bytes flow directly: Disk Blocks ➔ OS Page Cache ➔ Network Card Buffer.
+   • ZERO BYTES copied into JVM user-space RAM! Negligible memory footprint.
+   • Built-in HTTP 206 Partial Content support for video timeline seeking.
+```
+
+##### 4. Why `uploadDir.toUri().toString()` and Trailing Slash Are Mandatory
+- Spring's resource resolution engine supports multiple protocols (`classpath:`, `file:`, `http:`). Passing a raw string like `uploads/` confuses the resource resolver. Calling `uploadDir.toUri().toString()` produces the explicit standardized `file:/` scheme.
+- Spring strictly expects directory locations to terminate with a trailing slash (`/`). Without lines 19–21 (`if (!uploadPath.endsWith("/")) uploadPath += "/";`), Spring treats the location as a single file prefix rather than a directory container, causing file resolution inside the folder to fail silently with 404s.
+
+---
+
 ### Anatomy of `application.properties` (Multipart Limits)
 
 ```properties
@@ -5419,4 +5517,630 @@ You can deliver this confident, structured answer:
 > When the HTTP request arrives, Tomcat's `StandardServletMultipartResolver` inspects the `Content-Length` header in the HTTP request line. If the header indicates a size greater than 35 MB, Tomcat immediately rejects the request. Even if the attacker omits the `Content-Length` header or uses chunked transfer encoding, Tomcat counts the incoming bytes as they stream across the TCP socket. The moment the 30 MB threshold is breached, Tomcat cuts the stream, discards the temporary buffer, and throws a `MaxUploadSizeExceededException`, returning an HTTP error.
 >
 > Furthermore, Tomcat never buffers entire large files in RAM; it streams chunks through temporary disk files on the host OS (`java.io.tmpdir`), ensuring our JVM heap memory stays clean and responsive for other users."*
+
+---
+
+# Session 5: The Angular Client Machine — Standalone Components, RxJS Reactive State, HTTP Interceptors & Route Guards
+
+Before we inspect our TypeScript code, we must understand what happens inside the web browser when modern client applications run. Evaluators at Zone01 love to test if you know how browser memory, the JavaScript engine, and DOM nodes operate, or if you simply think Angular is "magic HTML".
+
+---
+
+## Part 0: The Missing Foundations (Ground Zero in the Browser)
+
+### 1. What is a Single Page Application (SPA)? The DOM vs. Full-Page Reloads
+
+In traditional web applications (the 1995–2010 model):
+1. When you clicked a link `<a href="/posts">`, the browser discarded the entire page in RAM.
+2. It sent an HTTP request to the server, and the server responded with a huge block of raw HTML text.
+3. The browser had to tear down the entire screen, blank out to white, re-parse CSS, re-download images, and re-construct the **Document Object Model (DOM)** tree from scratch.
+
+```
+TRADITIONAL MULTI-PAGE APPLICATION (MPA):
+Click Link ➔ Wipe Browser RAM ➔ White Screen Flash ➔ Full HTML Download ➔ Rebuild DOM from scratch
+
+MODERN SINGLE-PAGE APPLICATION (SPA - Angular 18):
+Click Link ➔ URL changes in address bar (HTML5 PushState) ➔ No network trip for HTML!
+Angular swaps components in memory ➔ Updates only changed DOM nodes in microseconds.
+```
+
+**What physically is the DOM?**
+The DOM is a C++ tree data structure inside the browser engine (e.g., Google Chrome's Blink or Firefox's Gecko). When you write `<div><span>Hello</span></div>`, the browser allocates C++ objects in RAM representing elements. Touching or replacing DOM nodes is the slowest operation in web computing because it triggers browser **Reflow** (calculating element dimensions) and **Repaint** (drawing pixels on screen).
+
+In **01Blog**, Angular is an SPA:
+- The browser downloads only **one single HTML file** once: `index.html`.
+- From that moment on, the browser **never downloads another HTML page**.
+- Angular intercepts user clicks, reads the URL, and dynamically adds, updates, or destroys component DOM nodes in client RAM using JavaScript.
+
+---
+
+### 2. The Single-Threaded JavaScript Event Loop in Browser RAM
+
+Unlike our backend Spring Boot server—which uses **200 concurrent worker threads** in Tomcat—the browser JavaScript engine (V8) is strictly **Single-Threaded**. It has **one call stack** and can only execute one line of code at any given microsecond.
+
+If JavaScript were synchronous, calling `http.get('/api/posts')` would freeze the entire browser window: buttons couldn't be clicked, animations would halt, and the OS would mark the tab as *"Not Responding"*.
+
+To solve this, browser architectures utilize the **JavaScript Event Loop**:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        BROWSER MEMORY & V8 ENGINE                      │
+│                                                                        │
+│   ┌────────────────────┐                   ┌───────────────────────┐   │
+│   │     CALL STACK     │                   │     WEB APIs (C++)    │   │
+│   │  (Executes code)   │                   │  • Network Fetch/XHR  │   │
+│   │                    │                   │  • Timers (setTimeout)│   │
+│   │ postService.get()  │ ──── delegates ──>│  • DOM Events         │   │
+│   └────────────────────┘                   └───────────┬───────────┘   │
+│             ▲                                          │               │
+│             │                                          ▼               │
+│    Pushes next callback                    ┌───────────────────────┐   │
+│             │                              │   MICROTASK QUEUE     │   │
+│      ┌──────────────┐                      │  (Promises, RxJS)     │   │
+│      │  EVENT LOOP  │ <─── pulls from ──── ├───────────────────────┤   │
+│      └──────────────┘                      │   MACROTASK QUEUE     │   │
+│                                            │  (setTimeout, I/O)    │   │
+│                                            └───────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Call Stack:** Executes synchronous functions immediately (e.g., `this.isLoading = true`).
+2. **Web APIs:** When an asynchronous task begins (like an HTTP request), the single thread offloads the socket I/O to the browser's background C++ threads and continues executing the next line without blocking.
+3. **Queues:** When the network response returns from Spring Boot, the callback is placed into the **Microtask Queue** (for Promises and RxJS observables).
+4. **The Event Loop:** An infinite loop continuously asking: *"Is the Call Stack empty? If yes, take the next callback from the queue and push it onto the stack."*
+
+---
+
+### 3. Reactive Streams vs Imperative Programming: The Water Pipe Analogy
+
+In procedural JavaScript, you deal with static variables:
+```typescript
+let postCount = 5; // Static value in memory
+```
+If `postCount` changes later, other variables that used it don't automatically update.
+
+In **01Blog**, we build on **Reactive Programming** using **RxJS (Reactive Extensions for JavaScript)**.
+
+#### 💡 The Water Pipe Analogy
+- An **Observable** is a plumbing pipe through which data flows over time. The pipe can emit values at any moment (like water drops), emit an error (dirty water), or signal completion (the tap turned off).
+- An **Observer / Subscriber** is a bucket placed at the end of the pipe waiting to catch the water.
+- **Operators (`map`, `tap`, `catchError`)** are water filters placed inside the pipe that clean, transform, or inspect the water as it travels before reaching the bucket.
+
+```
+[Producer: HTTP / User] ──(Value 1)──(Value 2)──(Value 3)──> [Pipe: Operators] ──> [Subscriber: Component]
+```
+
+**Crucial RxJS Concept:** Observables are **Cold** by default. A cold observable does nothing until someone calls `.subscribe()`. If you write `this.http.get('/api/posts');` without `.subscribe()`, **zero network packets leave the browser!** The tap was never turned on.
+
+---
+
+### 4. The Death of `NgModule`: Why Angular 18 Embraced Standalone Architecture
+
+In older Angular versions (v2 through v14), developers had to organize code using massive container modules called `@NgModule`. Every component, directive, and pipe had to be registered inside an `AppModule` or feature module.
+
+**Why `NgModule` Died:**
+1. **Compilation Bloat & Weak Tree-Shaking:** The compiler struggled to know which imports a component truly needed. If you imported a shared module with 50 components, the bundler often packaged components that were never used, inflating bundle sizes.
+2. **High Cognitive Overhead:** Beginners spent hours diagnosing errors like `Component is not declared in any NgModule`.
+
+**The Angular 18 Standalone Revolution (Used in 01Blog):**
+- In modern Angular, components declare `standalone: true`.
+- A component directly declares its own dependencies via the `imports: [CommonModule, FormsModule, RouterLink]` array in its decorator.
+- **Zero NgModules!** The application boots directly from [app.config.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/app.config.ts) and renders [app.component.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/app.component.ts) with maximum tree-shaking and faster build times.
+
+---
+
+## Part 1: The Core Architecture of Angular 18 in Memory (The Big Picture)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                ANGULAR 18 CLIENT MACHINE IN RAM                             │
+│                                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ VIEW TIER (Components)                                                                │  │
+│  │ [PostListComponent] <──> [PostDetailComponent] <──> [NavbarComponent]                 │  │
+│  │ • Holds local UI view state (visible posts, modals, toggle states).                   │  │
+│  │ • Renders HTML templates using ChangeDetectorRef (markForCheck / detectChanges).       │  │
+│  └───────────────────────────────────┬───────────────────────────────────────────────────┘  │
+│                                      │ Delegates data requests                              │
+│                                      ▼                                                      │
+│  ┌───────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ SERVICE TIER (Singleton Reactive State)                                               │  │
+│  │ [AuthService]                   [PostService]                [CommentService]         │  │
+│  │ • BehaviorSubject<CurrentUser>  • HTTP calls with RxJS       • CRUD Operations        │  │
+│  │ • Cryptographic JWT Decoding    • Observable Streams         • Subject State          │  │
+│  └───────────────────────────────────┬───────────────────────────────────────────────────┘  │
+│                                      │ Sends HTTP request                                   │
+│                                      ▼                                                      │
+│  ┌───────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ GATEWAY TIER (HTTP Interceptor Pipeline)                                              │  │
+│  │ [jwtInterceptor]                                                                      │  │
+│  │ • Inspects req, clones immutable request, injects Authorization: Bearer {token}       │  │
+│  │ • Catches 403 ACCOUNT_BANNED ➔ Clears RAM & LocalStorage ➔ Instant Lockdown Redirect  │  │
+│  │ • Catches 401 Unauthorized ➔ Clears Session ➔ Redirects to /login                     │  │
+│  └───────────────────────────────────┬───────────────────────────────────────────────────┘  │
+│                                      │ TCP Socket Fetch                                     │
+│                                      ▼                                                      │
+│  ┌───────────────────────────────────────────────────────────────────────────────────────┐  │
+│  │ ROUTE DEFENSE TIER (Guards)                                                           │  │
+│  │ [authGuard] (CanActivateFn)       [adminGuard] (CanActivateFn + Server Attestation)   │  │
+│  └───────────────────────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                               │
+                                       HTTP / TCP over Wire
+                                               │
+                                               ▼
+                                 [Spring Boot Backend :8080]
+```
+
+### 1. State Management with RxJS: Observable vs. Subject vs. BehaviorSubject
+
+In [AuthService.java](file:///home/richouan/Desktop/01blog/frontend/src/app/services/auth.service.ts), we store the logged-in user in a `BehaviorSubject`:
+
+```typescript
+private currentUserSubject = new BehaviorSubject<CurrentUser | null>(this.loadUserFromStorage());
+public currentUser$ = this.currentUserSubject.asObservable();
+```
+
+Why did we use `BehaviorSubject` instead of a plain `Observable` or regular `Subject`?
+
+| RxJS Stream Type | Has Initial Value? | Stores Last Value in Memory? | Late Subscriber Receives |
+|---|---|---|---|
+| **Plain Observable** | ❌ No | ❌ No | Emits only when triggered; cold stream |
+| **Subject** | ❌ No | ❌ No | Misses all values emitted before subscribing! |
+| **`BehaviorSubject`** ✅ | ✅ **Yes** (e.g. `null` or user) | ✅ **Yes** (Buffer size = 1) | **Immediately receives the current state!** |
+
+**Why this is crucial for 01Blog:**
+When the user navigates between pages, new components (like [NavbarComponent](file:///home/richouan/Desktop/01blog/frontend/src/app/components/navbar/navbar.component.ts) or [UserProfileComponent](file:///home/richouan/Desktop/01blog/frontend/src/app/components/user-profile/user-profile.component.ts)) are created in RAM. If we used a regular `Subject`, the navbar would subscribe *after* the login event occurred and would never know the user was logged in! `BehaviorSubject` caches the most recent value and replays it immediately to every new subscriber.
+
+---
+
+### 2. The In-Memory Session Fortress: Why We Never Trust Plaintext `localStorage`
+
+A common amateur vulnerability in frontend development:
+```typescript
+// ❌ CRITICAL SECURITY FLAW - NEVER DO THIS!
+localStorage.setItem('role', 'ROLE_USER');
+// Attacker opens DevTools Console and runs:
+localStorage.setItem('role', 'ROLE_ADMIN'); // Instant privilege escalation!
+```
+If your frontend checks `if (localStorage.getItem('role') === 'ROLE_ADMIN')`, any user can promote themselves to Admin in 2 seconds!
+
+**The 01Blog Architecture Defense:**
+In [AuthService.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/services/auth.service.ts), we implemented an ironclad security rule:
+1. **Never read `role` or `username` from plaintext localStorage.**
+2. We only store the **cryptographically signed JWT token**: `localStorage.setItem('token', token)`.
+3. We explicitly delete plain keys:
+   ```typescript
+   localStorage.removeItem('username');
+   localStorage.removeItem('role');
+   ```
+4. Whenever user role or identity is needed, our method `decodeToken()` extracts the payload **strictly from the signed JWT token claims** (`claims.sub`, `claims.role`).
+5. Even if an attacker edits the token string in localStorage, the cryptographic signature check on the Spring Boot backend fails instantly with **401 Unauthorized**!
+
+---
+
+## Part 2: Step-by-Step Chronological Client Highways
+
+### Journey 1: Route Navigation & The Double-Gate Defense (`authGuard` & `adminGuard`)
+
+What happens when a user types `http://localhost:4200/admin` in their browser?
+
+```
+User navigates to /admin
+         │
+         ▼
+Angular Router checks app.routes.ts
+         │
+         ▼
+[adminGuard invoked (CanActivateFn)]
+         │
+         ├──> GATE 1 (Instant Local Check):
+         │    Is user logged in? Does client JWT claim have 'ROLE_ADMIN'?
+         │    If NO ➔ router.navigate(['/']) ➔ Blocks navigation immediately!
+         │
+         └──> GATE 2 (Cryptographic Server Attestation):
+              Calls authService.verifySession() ➔ GET /api/users/me
+              • Backend validates JWT signature with HMAC-SHA256 secret.
+              • Backend checks PostgreSQL database: Is user banned? Is role STILL ROLE_ADMIN?
+              • If verified: Returns true ➔ Component mounts in RAM!
+              • If revoked/banned: Returns false ➔ Clear session ➔ Redirect to login!
+```
+
+---
+
+### Journey 2: Outgoing HTTP Request & Functional `jwtInterceptor`
+
+Every time `HttpClient` makes a request (e.g. `GET /api/posts` or `POST /api/posts/10/like`), it passes through [jwtInterceptor.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/interceptors/jwt.interceptor.ts).
+
+```
+Component calls: postService.toggleLike(postId)
+         │
+         ▼
+Angular HttpClient
+         │
+         ▼
+jwtInterceptor (Function Execution in Call Stack)
+         │
+         ├── 1. Reads 'token' from localStorage.
+         │
+         ├── 2. Is token present?
+         │      YES ➔ req.clone({ setHeaders: { Authorization: "Bearer " + token } })
+         │      (Creates new immutable request object with authentication badge)
+         │
+         ├── 3. next(authReq) passes request down the pipeline to the Network Card.
+         │
+         ▼
+[HTTP Request arrives at Spring Boot Backend :8080]
+         │
+         ▼
+[HTTP Response returns across TCP Socket]
+         │
+         ├── Case A: HTTP 200 OK ➔ Passes through cleanly to component's .subscribe(next).
+         │
+         ├── Case B: HTTP 403 Forbidden with ACCOUNT_BANNED
+         │    • Admin banned this user in the backend 2 seconds ago!
+         │    • Interceptor detects error.error === 'ACCOUNT_BANNED'.
+         │    • Wipes localStorage immediately!
+         │    • Redirects to /login with state: { wasBanned: true }.
+         │    • Displays red lockdown alert banner on screen!
+         │
+         └── Case C: HTTP 401 Unauthorized (Expired Token)
+              • Interceptor catches 401.
+              • Purges token from storage.
+              • router.navigate(['/login']).
+```
+
+---
+
+### Journey 3: Real-Time Interaction & Optimistic UI with Rollback (Like Toggle)
+
+In high-performance web applications, waiting 150 milliseconds for a server round-trip before updating the UI feels sluggish. Users expect instant visual feedback.
+
+In [PostListComponent.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/components/post-list/post-list.component.ts), we implemented **Optimistic UI with Automatic Error Rollback**:
+
+```
+User clicks "Like" Button
+         │
+         ▼
+[Step 1: Save Previous State in RAM]
+const wasLiked = this.isLiked(post.id);
+const prevCount = post.likesCount ?? 0;
+         │
+         ▼
+[Step 2: Instant Optimistic UI Mutation (0 milliseconds!)]
+if (wasLiked) {
+    post.liked = false;
+    post.likesCount = prevCount - 1;
+} else {
+    post.liked = true;
+    post.likesCount = prevCount + 1;
+}
+this.cdr.markForCheck(); // Heart icon turns red INSTANTLY on screen!
+         │
+         ▼
+[Step 3: Background HTTP Call to Backend]
+this.postService.toggleLike(post.id).subscribe({
+    next: (res) => {
+        // Server confirmed! Synchronize exact authoritative counts:
+        post.likesCount = res.likesCount;
+        post.liked = res.liked;
+        this.cdr.markForCheck();
+    },
+    error: (err) => {
+        // 💥 NETWORK FAILED OR USER BANNED!
+        // Step 4: Automatic Atomic Rollback!
+        post.liked = wasLiked;
+        post.likesCount = prevCount;
+        this.cdr.markForCheck(); // Heart icon reverts back seamlessly!
+        console.error('Failed to toggle like on backend', err);
+    }
+});
+```
+
+---
+
+## Part 3: How the Framework "Magic" Works (Under the Hood)
+
+### 1. Functional Interceptor Chaining: Function Composition over Class Trees
+
+In Angular 18, class-based interceptors (`implements HttpInterceptor`) are deprecated. Instead, Angular uses **Functional Interceptors** (`HttpInterceptorFn`).
+
+How does Angular chain them internally?
+```typescript
+type HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => Observable<HttpEvent<unknown>>;
+```
+When you register `provideHttpClient(withInterceptors([jwtInterceptor]))` in [app.config.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/app.config.ts), Angular uses **Higher-Order Function Composition**:
+- `next` is a pointer to the next function in the chain (or the final `HttpXhrBackend` that calls the browser's native `fetch()` or `XMLHttpRequest`).
+- There are no heavy class instances or dependency injection overhead for each request; it is a pure function executed directly on the JavaScript call stack.
+
+---
+
+### 2. Angular Change Detection: `markForCheck()` vs `detectChanges()`
+
+Angular manages a tree of component views in memory. When data changes in a JavaScript variable, the browser DOM does not automatically know about it.
+
+In 01Blog, we inject `ChangeDetectorRef` into our components:
+
+```typescript
+constructor(private cdr: ChangeDetectorRef) {}
+```
+
+**The Two Methods Compared:**
+1. **`this.cdr.detectChanges()`**:
+   - Immediately runs change detection starting from the current component and down through all its child components.
+   - It synchronously recalculates bindings and updates the DOM in the current JavaScript turn.
+2. **`this.cdr.markForCheck()`**:
+   - Does not run change detection immediately.
+   - It marks the component and all its ancestors as **"Dirty"**.
+   - During the next scheduled tick of the Angular event loop, Angular will re-render all dirty components in a single batch pass, maximizing rendering performance and preventing UI stutter.
+
+---
+
+### 3. RxJS Operator Mechanics: `pipe()`, `map()`, `tap()`, `catchError()`, `of()`, `throwError()`
+
+Our services make extensive use of RxJS operators inside the `.pipe()` function:
+
+1. **`tap()` (Side-Effect Tap):**
+   - Peeks at the value flowing through the pipe without altering it.
+   - Used in `AuthService.login()`:
+     ```typescript
+     this.http.post<AuthResponse>(...).pipe(
+         tap(response => this.saveSession(response)) // Saves token without changing stream data
+     );
+     ```
+2. **`map()` (Projection Transformer):**
+   - Transforms each item into another shape (analogous to `Array.prototype.map`).
+   - Used in `adminGuard` to transform a `UserProfile` object into a boolean `true`/`false`.
+3. **`catchError()` (The Rescue Net):**
+   - Intercepts an error signal emitted from the pipe and either returns a fallback stream or re-throws.
+4. **`of()` (Instant Observable Wrapper):**
+   - Takes a plain synchronous value (like `of(null)`) and wraps it into an Observable that emits that value and immediately completes.
+5. **`throwError()` (Error Propagation):**
+   - Re-throws the error down to the component's `error: (err) => ...` block after the interceptor finishes logging or cleaning up storage.
+
+---
+
+### 4. Memory Leak Neutralization: Subscription Garbage Collection in `ngOnDestroy`
+
+In JavaScript, if Component A subscribes to an Observable from a Singleton Service (like `route.paramMap` or `authService.currentUser$`), the Service holds a reference to the Component's callback in memory.
+
+If the user navigates away to another page:
+- The component DOM is destroyed.
+- **BUT the component instance cannot be Garbage Collected** by the browser's V8 engine because the service's subscriber list still holds a live pointer to it!
+- Every time the user visits that page, a new zombie component is created, leaking RAM and running duplicate handlers.
+
+**The 01Blog Defense in [PostDetailComponent.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/components/post-detail/post-detail.component.ts):**
+```typescript
+export class PostDetailComponent implements OnInit, OnDestroy {
+  private sub = new Subscription();
+
+  ngOnInit(): void {
+    // Add all active streams to our subscription registry
+    this.sub.add(this.route.paramMap.subscribe(...));
+    this.sub.add(this.postService.getPostById(id).subscribe(...));
+  }
+
+  ngOnDestroy(): void {
+    // Clean up every stream the exact microsecond the component leaves the screen!
+    this.sub.unsubscribe();
+  }
+}
+```
+When `this.sub.unsubscribe()` executes, all pointers are severed, allowing the browser's Garbage Collector to reclaim heap memory immediately.
+
+---
+
+## Part 4: Line-by-Line Code Breakdown of 01Blog
+
+### 1. Anatomy of [app.config.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/app.config.ts)
+
+```typescript
+1: import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+2: import { provideRouter, withInMemoryScrolling } from '@angular/router';
+3: import { provideHttpClient, withInterceptors } from '@angular/common/http';
+4: import { routes } from './app.routes';
+5: import { jwtInterceptor } from './interceptors/jwt.interceptor';
+6: 
+7: export const appConfig: ApplicationConfig = {
+8:   providers: [
+9:     provideBrowserGlobalErrorListeners(),
+10:     provideRouter(
+11:       routes,
+12:       withInMemoryScrolling({ scrollPositionRestoration: 'top' })
+13:     ),
+14:     provideHttpClient(withInterceptors([jwtInterceptor]))
+15:   ]
+16: };
+```
+
+- **Line 7 (`appConfig: ApplicationConfig`)**: The central dependency injection configuration for the entire Angular application, replacing the old `AppModule`.
+- **Line 10–13 (`provideRouter(...)`)**: Configures the client router with `withInMemoryScrolling({ scrollPositionRestoration: 'top' })`, ensuring that whenever a user navigates to a new post, the window automatically resets to the top of the viewport instead of keeping the previous page's scroll position.
+- **Line 14 (`provideHttpClient(withInterceptors([jwtInterceptor]))`)**: Registers Angular's modern functional HTTP client and binds our custom `jwtInterceptor` into the global request pipeline.
+
+---
+
+### 2. Anatomy of [jwt.interceptor.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/interceptors/jwt.interceptor.ts)
+
+```typescript
+7: export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
+8:   const router = inject(Router);
+9:   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+10: 
+11:   let authReq = req;
+12:   if (token) {
+13:     authReq = req.clone({
+14:       setHeaders: {
+15:         Authorization: `Bearer ${token}`
+16:       }
+17:     });
+18:   }
+```
+
+- **Line 7 (`jwtInterceptor: HttpInterceptorFn`)**: Functional interceptor conforming to modern Angular standards.
+- **Line 9 (`typeof localStorage !== 'undefined'`)**: A defensive guard ensuring SSR (Server-Side Rendering) or headless testing environments that lack a browser `window` object won't crash with a `ReferenceError`.
+- **Line 13 (`req.clone(...)`)**: **Key Evaluator Question!** Why must we call `.clone()`? In Angular, `HttpRequest` objects are strictly **Immutable** (read-only) for safety. You cannot directly modify `req.headers.set(...)`. Calling `.clone()` produces a new request copy with our injected `Authorization: Bearer <token>` header while preserving all other properties.
+
+```typescript
+20:   return next(authReq).pipe(
+21:     catchError((error: HttpErrorResponse) => {
+22:       // Check if the backend flagged this account as banned or suspended
+23:       const isBanned = error.status === 403 && (
+24:         error.error?.error === 'ACCOUNT_BANNED' ||
+25:         (typeof error.error?.message === 'string' && error.error.message.toLowerCase().includes('banned')) ||
+26:         (typeof error.error?.message === 'string' && error.error.message.toLowerCase().includes('suspended'))
+27:       );
+28: 
+29:       if (isBanned) {
+30:         if (typeof localStorage !== 'undefined') {
+31:           localStorage.removeItem('token');
+32:           localStorage.removeItem('username');
+33:           localStorage.removeItem('role');
+34:           localStorage.removeItem('avatarUrl');
+35:         }
+36:         const banMessage = typeof error.error?.message === 'string'
+37:           ? error.error.message
+38:           : 'Your account has been suspended or banned by an administrator.';
+39:         router.navigate(['/login'], {
+40:           state: { wasBanned: true, bannedReason: banMessage }
+41:         });
+42:         return throwError(() => error);
+43:       }
+```
+
+- **Line 23–27 (`const isBanned = ...`)**: The instant client lockdown mechanism. If an administrator bans a user while they are actively browsing, their next HTTP call receives a `403 Forbidden` with the payload `{ error: "ACCOUNT_BANNED" }`.
+- **Line 30–35**: The interceptor instantly purges the JWT token from client storage to prevent any further authenticated calls.
+- **Line 39–41 (`router.navigate(['/login'], { state: ... })`)**: Ejects the user to the login screen and passes the ban explanation in the router navigation state so the login component can render a prominent warning banner explaining why access was terminated.
+
+---
+
+### 3. Anatomy of [admin.guard.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/guards/admin.guard.ts)
+
+```typescript
+7: export const adminGuard: CanActivateFn = (route, state) => {
+8:   const authService = inject(AuthService);
+9:   const router = inject(Router);
+10: 
+11:   if (!authService.isLoggedIn() || !authService.isAdmin()) {
+12:     router.navigate(['/']);
+13:     return false;
+14:   }
+15: 
+16:   // Double check with backend: ensures token signature is authentic and user actually holds ROLE_ADMIN in database
+17:   return authService.verifySession().pipe(
+18:     map(verifiedUser => {
+19:       if (verifiedUser && verifiedUser.role === 'ROLE_ADMIN') {
+20:         return true;
+21:       }
+22:       router.navigate(['/']);
+23:       return false;
+24:     })
+25:   );
+26: };
+```
+
+- **Line 7 (`CanActivateFn`)**: Modern functional route guard returning either a synchronous `boolean` or an asynchronous `Observable<boolean>`.
+- **Line 11–14 (Gate 1)**: Instant client-side check. If the in-memory state shows the user is unauthenticated or not an admin, it halts navigation instantly and redirects to `/` without sending any network traffic.
+- **Line 17–25 (Gate 2: Server Attestation)**: If local claims pass, the guard calls `authService.verifySession()`. This queries `GET /api/users/me` on the Spring Boot server. If an admin has had their privileges demoted in the database, the backend returns the updated role or a 403, and the guard automatically kicks them back to the home page!
+
+---
+
+### 4. Anatomy of [auth.service.ts](file:///home/richouan/Desktop/01blog/frontend/src/app/services/auth.service.ts)
+
+```typescript
+114:   decodeToken(token: string): { sub?: string; role?: string; avatarUrl?: string; exp?: number } | null {
+115:     try {
+116:       const parts = token.split('.');
+117:       if (parts.length !== 3) {
+118:         return null;
+119:       }
+120:       const base64Url = parts[1];
+121:       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+122:       const jsonPayload = decodeURIComponent(
+123:         atob(base64)
+124:           .split('')
+125:           .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+126:           .join('')
+127:       );
+128:       return JSON.parse(jsonPayload);
+129:     } catch {
+130:       return null;
+131:     }
+132:   }
+```
+
+- **Line 116 (`token.split('.')`)**: Splits the JWT string by its two periods into `[Header, Payload, Signature]`.
+- **Line 120–121**: Converts RFC 7515 **Base64Url** characters into standard Base64 by replacing `-` with `+` and `_` with `/`.
+- **Line 122–127 (`atob` + `decodeURIComponent`)**: Decodes the base64 string into UTF-8 text safely, ensuring non-ASCII Unicode characters in user names or profile URLs are parsed without corruption.
+- **Line 128 (`JSON.parse`)**: Converts the payload JSON string into a structured JavaScript object containing `sub` (username), `role`, and `exp` (expiration timestamp).
+- **Zero Third-Party Dependencies:** We did this using pure native browser JavaScript without needing heavyweight external libraries like `jwt-decode`!
+
+---
+
+## Part 5: Summary to Explain to Others (Your Auditor Pitch)
+
+When an evaluator asks:
+> *"How is the Angular client structured in 01Blog, and how do you ensure security and instant UI responsiveness?"*
+
+### Your Precision Answer:
+> *"Our Angular 18 client machine is built using **Standalone Components** and a strict **Reactive Architecture**:
+>
+> 1. **Zero NgModules:** Every component declares its own dependencies via `standalone: true`, enabling maximal tree-shaking and fast bundling.
+> 2. **Session Security:** We never trust plaintext roles in `localStorage`. Only the signed JWT token is persisted, and all identity claims (`sub`, `role`) are dynamically decoded in RAM. Route guards like `adminGuard` enforce a double-gate check: an instant client-side claim verification followed by live cryptographic backend attestation (`/api/users/me`).
+> 3. **The Functional Interceptor Gateway:** Our `jwtInterceptor` automatically clones outgoing requests to attach Bearer tokens. It acts as our first line of defense, intercepting `403 ACCOUNT_BANNED` responses to instantly wipe client storage and lock down banned users.
+> 4. **Optimistic UI:** For interactive actions like post likes, we apply optimistic updates immediately on screen and seamlessly roll back state if the network or backend returns an error.
+> 5. **Memory Safety:** All subscriptions are tracked via `Subscription.add()` and purged in `ngOnDestroy()`, ensuring zero memory leaks in the browser's JavaScript V8 heap."*
+
+---
+
+## Part 6: Zone01 Auditor Defense Drill (5 Tough Evaluator Questions & Precision Answers)
+
+### ❓ Q1: Why did you use Standalone Components instead of traditional `NgModule` containers?
+**Evaluator Trap:** The evaluator wants to know if you understand modern Angular standards and build performance.
+
+**Your Precision Defense:**
+> *"In Angular 18, `NgModule` is considered legacy. Standalone components simplify the architecture by making each component fully self-contained through its `imports` array. This provides two massive benefits:
+> 1. **Granular Tree-Shaking:** The Angular compiler can accurately identify unused code and eliminate it from the production JavaScript bundle, keeping our bundle size small.
+> 2. **Explicit Dependency Graphs:** Every component explicitly states what it needs (`CommonModule`, `FormsModule`, `RouterLink`), eliminating hidden module coupling and making the codebase much easier to maintain and audit."*
+
+---
+
+### ❓ Q2: If an attacker modifies their `localStorage` in browser DevTools to change their role to `ROLE_ADMIN`, can they access the Admin Dashboard?
+**Evaluator Trap:** The evaluator is testing if your frontend is vulnerable to client-side privilege escalation.
+
+**Your Precision Defense:**
+> *"No, absolutely not, for two distinct reasons:
+> 1. In `AuthService`, we completely ignore any plaintext keys in `localStorage`. User role is derived strictly by parsing the signed payload claims of the JWT token string. If the attacker tampers with the JWT string itself, the signature becomes mathematically invalid.
+> 2. Furthermore, our `adminGuard` does not rely solely on client state; it triggers `authService.verifySession()`, which sends an authenticated request to `GET /api/users/me` on Spring Boot. Spring Security validates the HMAC-SHA256 signature and queries PostgreSQL to verify the user truly holds `ROLE_ADMIN`. If the backend rejects the claim, the guard denies access and redirects to `/`."*
+
+---
+
+### ❓ Q3: Why does `jwtInterceptor` call `req.clone()` instead of modifying `req.headers` directly?
+**Evaluator Trap:** Probing your knowledge of Angular's HTTP design patterns and immutability.
+
+**Your Precision Defense:**
+> *"In Angular, `HttpRequest` objects are strictly **immutable**. This is by design: an HTTP request may pass through multiple interceptors or be retried multiple times upon failure. If an interceptor could mutate the original request directly, concurrent retries or subsequent interceptors would receive unpredictable, corrupted state. Therefore, Angular enforces that any modification must be made on a cloned copy via `req.clone({ setHeaders: { ... } })`."*
+
+---
+
+### ❓ Q4: What is the difference between an `Observable` and a `BehaviorSubject`, and why did we use `BehaviorSubject` in `AuthService`?
+**Evaluator Trap:** Testing deep knowledge of reactive streams in RxJS.
+
+**Your Precision Defense:**
+> *"A standard `Observable` is a unicast, cold data stream that only emits values when subscribed to and does not maintain a memory buffer of its past state.
+> A `BehaviorSubject` is a multicast, hot stream that holds a **current value in memory** (buffer size of 1) and requires an initial state.
+> We chose `BehaviorSubject<CurrentUser | null>` in `AuthService` because newly mounted components (such as the Navbar or User Profile) subscribe *after* the user logs in. With a `BehaviorSubject`, any new subscriber immediately receives the currently cached user session without needing to wait for a new login event."*
+
+---
+
+### ❓ Q5: How does your Optimistic UI work for post likes, and how do you handle network failure?
+**Evaluator Trap:** Verifying your frontend error handling and UX engineering under real-world conditions.
+
+**Your Precision Defense:**
+> *"When the user clicks the like button in `PostListComponent`:
+> 1. We record the previous state (`wasLiked` boolean and `prevCount` integer).
+> 2. We immediately update the local component model (`post.liked = !wasLiked; post.likesCount += wasLiked ? -1 : 1`) and invoke `cdr.markForCheck()`. The heart icon flips instantly with zero perceptible latency.
+> 3. Concurrently, we fire the asynchronous HTTP request `postService.toggleLike(postId)`.
+> 4. If the server responds with success, we sync our counts with the authoritative database response.
+> 5. If the request fails (due to network timeout, expired token, or a banned account), the `error` callback immediately executes and restores `post.liked = wasLiked` and `post.likesCount = prevCount`, reverting the UI to its true state without leaving ghost data."*
+
 
