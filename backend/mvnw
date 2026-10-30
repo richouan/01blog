@@ -9,6 +9,11 @@ MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 MAVEN_HOME_BASE="${MAVEN_USER_HOME:-${HOME}/.m2}/wrapper/dists"
 MAVEN_HOME="${MAVEN_HOME_BASE}/apache-maven-${MAVEN_VERSION}"
+NESTED_MAVEN_HOME="${MAVEN_HOME}/apache-maven-${MAVEN_VERSION}"
+
+if [[ ! -x "${MAVEN_HOME}/bin/mvn" && -x "${NESTED_MAVEN_HOME}/bin/mvn" ]]; then
+    MAVEN_HOME="$NESTED_MAVEN_HOME"
+fi
 
 if ! command -v java >/dev/null 2>&1; then
     echo "Error: Java is required to run the backend. Install JDK 17 or higher." >&2
